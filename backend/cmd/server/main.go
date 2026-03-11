@@ -425,7 +425,7 @@ func main() {
 		adminGroup.Use(func(c *gin.Context) {
 			accept := c.GetHeader("Accept")
 			if c.Request.Method == "GET" && strings.Contains(accept, "text/html") {
-				if !serveSPAWithMeta(c, seoRenderer) {
+				if !serveSPAWithMeta(c, seoRenderer, cfg.BaseURL) {
 					c.File(indexPath)
 					c.Abort()
 				}
@@ -581,7 +581,7 @@ func main() {
 				path != "/metrics" &&
 				path != "/sitemap.xml" &&
 				path != "/robots.txt" {
-				if !serveSPAWithMeta(c, seoRenderer) {
+				if !serveSPAWithMeta(c, seoRenderer, cfg.BaseURL) {
 					http.ServeFile(c.Writer, c.Request, indexHTML)
 					c.Abort()
 				}
@@ -637,12 +637,15 @@ func main() {
 
 // serveSPAWithMeta renders index.html with SEO meta tags. Returns true if served
 // successfully, false if caller should fall back to static file serving.
-func serveSPAWithMeta(c *gin.Context, renderer *seo.Renderer) bool {
+func serveSPAWithMeta(c *gin.Context, renderer *seo.Renderer, baseURL string) bool {
 	if renderer == nil {
 		return false
 	}
-	meta := seo.DefaultPageMeta()
-	// Future: resolve meta from request path via content/article/page lookups
+	locale := c.DefaultQuery("locale", "zh")
+	if locale != "zh" && locale != "en" {
+		locale = "zh"
+	}
+	meta := seo.ResolveFromPath(c.Request.URL.Path, baseURL, locale)
 	html, err := renderer.Render(meta)
 	if err != nil {
 		return false
