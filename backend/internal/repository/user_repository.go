@@ -25,4 +25,7 @@ type UserRepository interface {
 
 	// List returns a paginated list of users
 	List(ctx context.Context, offset, limit int) ([]*model.User, int64, error)
+
+	// CountSuperAdmins returns the number of super admin users
+	CountSuperAdmins(ctx context.Context) (int64, error)
 }

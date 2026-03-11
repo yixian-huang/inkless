@@ -32,7 +32,9 @@ import (
 	bootstrapHandler "blotting-consultancy/internal/handler/bootstrap"
 	formSubmissionHandler "blotting-consultancy/internal/handler/form_submission"
 	installedThemeHandler "blotting-consultancy/internal/handler/installed_theme"
+	menuHandler "blotting-consultancy/internal/handler/menu"
 	themeHandler "blotting-consultancy/internal/handler/theme"
+	userHandler "blotting-consultancy/internal/handler/user"
 	"blotting-consultancy/internal/middleware"
 	"blotting-consultancy/internal/model"
 	"blotting-consultancy/internal/repository"
@@ -123,8 +125,16 @@ func main() {
 		&model.Page{},
 		&model.InstalledTheme{},
 		&model.FormSubmission{},
+		&model.MenuGroup{},
+		&model.MenuItem{},
 	); err != nil {
 		log.Error("Failed to run migrations", "error", err)
+		os.Exit(1)
+	}
+
+	// Run data migrations
+	if err := migrator.RunMigrations(db.DataMigrations()); err != nil {
+		log.Error("Failed to run data migrations", "error", err)
 		os.Exit(1)
 	}
 	log.Info("Database migrations completed")
@@ -152,6 +162,7 @@ func main() {
 	pageRepo := repository.NewGormPageRepository(database.DB)
 	installedThemeRepo := repository.NewGormInstalledThemeRepository(database.DB)
 	formSubmissionRepo := repository.NewGormFormSubmissionRepository(database.DB)
+	menuRepo := repository.NewGormMenuRepository(database.DB)
 	log.Info("Repositories initialized")
 
 	// Initialize theme page service early (needed for seeding)
@@ -199,8 +210,9 @@ func main() {
 	publicHandlerInst := publicHandler.NewHandler(contentDocRepo, pageViewRepo)
 	mediaHandlerInst := mediaHandler.NewHandler(mediaRepo, cfg.UploadDir, "")
 	analyticsHandlerInst := analyticsHandler.NewHandler(pageViewRepo)
-	categoryHandlerInst := categoryHandler.NewHandler(categoryRepo)
-	tagHandlerInst := tagHandler.NewHandler(tagRepo)
+	categoryHandlerInst := categoryHandler.NewHandler(categoryRepo, articleRepo)
+	tagHandlerInst := tagHandler.NewHandler(tagRepo, articleRepo)
+	menuHandlerInst := menuHandler.NewHandler(menuRepo)
 	articleHandlerInst := articleHandler.NewHandler(articleRepo, categoryRepo, tagRepo)
 	backupHandlerInst := backupHandler.NewHandler(backupSvc)
 	auditlogHandlerInst := auditlogHandler.NewHandler(auditEventRepo)
@@ -210,6 +222,7 @@ func main() {
 	installedThemeHandlerInst := installedThemeHandler.NewHandler(installedThemeRepo, themePageService)
 	bootstrapHandlerInst := bootstrapHandler.NewHandler(contentDocRepo, installedThemeRepo, pageRepo)
 	formSubmissionHandlerInst := formSubmissionHandler.NewHandler(formSubmissionRepo)
+	userHandlerInst := userHandler.NewHandler(userRepo)
 	log.Info("Handlers initialized")
 
 	// Setup Gin router
@@ -235,6 +248,16 @@ func main() {
 	}
 	router.Use(cors.New(corsConfig))
 	router.Use(apierror.ErrorHandler()) // API error handling
+
+	// Version endpoint (public, no auth required)
+	router.GET("/version", func(c *gin.Context) {
+		c.JSON(200, gin.H{
+			"version":   Version,
+			"buildTime": BuildTime,
+			"gitCommit": GitCommit,
+			"gitBranch": GitBranch,
+		})
+	})
 
 	// Health endpoint (no auth required)
 	router.GET("/health", func(c *gin.Context) {
@@ -310,6 +333,17 @@ func main() {
 		publicGroup.GET("/pages", pageHandlerInst.PublicList)
 		publicGroup.GET("/pages/:slug", pageHandlerInst.PublicGetBySlug)
 
+		// Public category routes
+		publicGroup.GET("/categories", categoryHandlerInst.PublicList)
+		publicGroup.GET("/categories/:slug", categoryHandlerInst.PublicGetBySlug)
+
+		// Public tag routes
+		publicGroup.GET("/tags", tagHandlerInst.PublicList)
+		publicGroup.GET("/tags/:slug", tagHandlerInst.PublicGetBySlug)
+
+		// Public menu route
+		publicGroup.GET("/menu", menuHandlerInst.PublicGetPrimary)
+
 		// Public theme route
 		publicGroup.GET("/theme", themeHandlerInst.PublicGet)
 
@@ -378,6 +412,9 @@ func main() {
 		adminGroup.POST("/media/upload", mediaHandlerInst.Upload)
 		adminGroup.GET("/media", mediaHandlerInst.List)
 		adminGroup.DELETE("/media/:id", mediaHandlerInst.Delete)
+		adminGroup.PUT("/media/:id/crop", mediaHandlerInst.Recrop)
+		adminGroup.PUT("/media/:id", mediaHandlerInst.Rename)
+		adminGroup.GET("/media/:id/usages", mediaHandlerInst.GetUsages)
 
 		// Analytics
 		adminGroup.GET("/analytics/summary", analyticsHandlerInst.GetSummary)
@@ -391,6 +428,8 @@ func main() {
 
 		// Category management
 		adminGroup.GET("/categories", categoryHandlerInst.List)
+		adminGroup.GET("/categories/tree", categoryHandlerInst.ListTree)
+		adminGroup.GET("/categories/:id", categoryHandlerInst.GetByID)
 		adminGroup.POST("/categories", categoryHandlerInst.Create)
 		adminGroup.PUT("/categories/:id", categoryHandlerInst.Update)
 		adminGroup.DELETE("/categories/:id", categoryHandlerInst.Delete)
@@ -398,7 +437,20 @@ func main() {
 		// Tag management
 		adminGroup.GET("/tags", tagHandlerInst.List)
 		adminGroup.POST("/tags", tagHandlerInst.Create)
+		adminGroup.PUT("/tags/:id", tagHandlerInst.Update)
 		adminGroup.DELETE("/tags/:id", tagHandlerInst.Delete)
+
+		// Menu management
+		adminGroup.GET("/menus", menuHandlerInst.ListGroups)
+		adminGroup.POST("/menus", menuHandlerInst.CreateGroup)
+		adminGroup.GET("/menus/:id", menuHandlerInst.GetGroup)
+		adminGroup.PUT("/menus/:id", menuHandlerInst.UpdateGroup)
+		adminGroup.DELETE("/menus/:id", menuHandlerInst.DeleteGroup)
+		adminGroup.PUT("/menus/:id/primary", menuHandlerInst.SetPrimary)
+		adminGroup.POST("/menus/:id/items", menuHandlerInst.CreateItem)
+		adminGroup.PUT("/menus/:id/items/:itemId", menuHandlerInst.UpdateItem)
+		adminGroup.DELETE("/menus/:id/items/:itemId", menuHandlerInst.DeleteItem)
+		adminGroup.PUT("/menus/:id/items/reorder", menuHandlerInst.ReorderItems)
 
 		// Backup management
 		adminGroup.GET("/backups", backupHandlerInst.List)
@@ -445,6 +497,17 @@ func main() {
 		adminGroup.PATCH("/form-submissions/:id/status", formSubmissionHandlerInst.HandleAdminUpdateStatus)
 		adminGroup.POST("/form-submissions/bulk-status", formSubmissionHandlerInst.HandleAdminBulkUpdateStatus)
 		adminGroup.DELETE("/form-submissions/:id", formSubmissionHandlerInst.HandleAdminDelete)
+
+		// User management (super admin only)
+		adminUsers := adminGroup.Group("/users")
+		adminUsers.Use(middleware.RequireSuperAdmin(userRepo))
+		{
+			adminUsers.GET("", userHandlerInst.List)
+			adminUsers.GET("/:id", userHandlerInst.GetByID)
+			adminUsers.POST("", userHandlerInst.Create)
+			adminUsers.PUT("/:id", userHandlerInst.Update)
+			adminUsers.DELETE("/:id", userHandlerInst.Delete)
+		}
 	}
 
 	// Serve uploaded files statically
@@ -465,6 +528,7 @@ func main() {
 				!strings.HasPrefix(path, "/auth/") &&
 				!strings.HasPrefix(path, "/uploads/") &&
 				path != "/health" &&
+				path != "/version" &&
 				path != "/metrics" &&
 				path != "/sitemap.xml" {
 				// Use http.ServeFile instead of c.File to ensure 200 status

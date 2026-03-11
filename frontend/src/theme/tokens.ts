@@ -18,6 +18,9 @@ export interface ThemeTokens {
   layout: {
     maxWidth: string;
     borderRadius: string;
+    contentPadding: string;
+    sectionSpacing: string;
+    contentGap: string;
   };
 }
 
@@ -39,7 +42,10 @@ export const defaultTokens: ThemeTokens = {
     heading: "system-ui, -apple-system, sans-serif",
   },
   layout: {
-    maxWidth: "1344px",
+    maxWidth: "1400px",
     borderRadius: "0.5rem",
+    contentPadding: "1.5rem",
+    sectionSpacing: "5rem",
+    contentGap: "2rem",
   },
 };

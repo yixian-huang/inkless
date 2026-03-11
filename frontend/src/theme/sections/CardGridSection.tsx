@@ -28,11 +28,11 @@ export default function CardGridSection({ data }: SectionProps<CardGridSectionDa
   const gridClass = columnClasses[columns] || columnClasses[4];
 
   return (
-    <div className="max-w-layout w-full mx-auto px-4 sm:px-6">
+    <div className="max-w-layout w-full mx-auto px-4 md:px-content xl:px-8">
       {title && (
         <div className="flex items-center mb-8 sm:mb-12">
           <div className="w-5 h-5 sm:w-[26px] sm:h-[26px] bg-accent mr-2 sm:mr-3 flex-shrink-0 rounded-sm" />
-          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 truncate min-w-0">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-on-surface truncate min-w-0">
             {title}
           </h2>
           <span className="ml-1 sm:ml-2 text-xl sm:text-2xl text-accent flex-shrink-0 cursor-pointer">
@@ -52,7 +52,7 @@ export default function CardGridSection({ data }: SectionProps<CardGridSectionDa
                 alt={card.title || `Card ${index + 1}`}
                 className="w-full h-full object-cover object-top transition-transform duration-300 group-hover:scale-105"
               />
-              <div className="absolute inset-0 bg-amber-50/95 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-center items-center p-4 sm:p-5 text-center">
+              <div className="absolute inset-0 bg-surface-alt/95 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-center items-center p-4 sm:p-5 text-center">
                 {card.title && (
                   <h3 className="text-primary text-lg sm:text-xl md:text-2xl font-bold mb-3 w-full">
                     {card.title}
@@ -64,7 +64,7 @@ export default function CardGridSection({ data }: SectionProps<CardGridSectionDa
                   </p>
                 )}
                 {card.description && (
-                  <p className="text-amber-900 text-sm sm:text-base font-normal leading-loose max-w-[92%] sm:max-w-xs line-clamp-4 sm:line-clamp-5 text-left">
+                  <p className="text-on-surface text-sm sm:text-base font-normal leading-loose max-w-[92%] sm:max-w-xs line-clamp-4 sm:line-clamp-5 text-left">
                     {card.description}
                   </p>
                 )}

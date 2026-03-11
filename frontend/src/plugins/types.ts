@@ -59,6 +59,23 @@ export interface TokenPreset {
   tokens: ThemeTokens;
 }
 
+export interface ThemeSettingField {
+  name: string;
+  type: "text" | "textarea" | "number" | "boolean" | "select" | "color";
+  label: string;
+  labelZh: string;
+  description?: string;
+  defaultValue?: any;
+  options?: { label: string; value: string }[];
+}
+
+export interface ThemeSettingGroup {
+  group: string;
+  label: string;
+  labelZh: string;
+  fields: ThemeSettingField[];
+}
+
 export interface ThemePlugin extends Plugin {
   manifest: PluginManifest & { type: "theme" };
   defaultTokens: ThemeTokens;
@@ -66,5 +83,6 @@ export interface ThemePlugin extends Plugin {
   pages: ThemePageDefinition[];
   sections?: Record<string, ComponentType<SectionProps<any>>>;
   sectionMetas?: SectionMeta[];
+  settingSchema?: ThemeSettingGroup[];
   defaultLayout?: LayoutConfig;
 }

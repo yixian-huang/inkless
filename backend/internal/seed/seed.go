@@ -56,11 +56,12 @@ func (s *Seeder) SeedAll(ctx context.Context) error {
 // SeedUsers creates default admin and editor users if they don't exist
 func (s *Seeder) SeedUsers(ctx context.Context) error {
 	defaultUsers := []struct {
-		Username string
-		Password string
-		Role     model.Role
+		Username     string
+		Password     string
+		Role         model.Role
+		IsSuperAdmin bool
 	}{
-		{Username: "admin", Password: "admin123", Role: model.RoleAdmin},
+		{Username: "admin", Password: "admin123", Role: model.RoleAdmin, IsSuperAdmin: true},
 		{Username: "editor", Password: "editor123", Role: model.RoleEditor},
 	}
 
@@ -87,6 +88,7 @@ func (s *Seeder) SeedUsers(ctx context.Context) error {
 			Username:     userData.Username,
 			PasswordHash: hashedPassword,
 			Role:         userData.Role,
+			IsSuperAdmin: userData.IsSuperAdmin,
 		}
 
 		if err := s.userRepo.Create(ctx, user); err != nil {

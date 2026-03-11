@@ -100,3 +100,10 @@ func (r *GormUserRepository) List(ctx context.Context, offset, limit int) ([]*mo
 
 	return users, total, nil
 }
+
+// CountSuperAdmins returns the number of super admin users
+func (r *GormUserRepository) CountSuperAdmins(ctx context.Context) (int64, error) {
+	var count int64
+	err := r.db.WithContext(ctx).Model(&model.User{}).Where("is_super_admin = ?", true).Count(&count).Error
+	return count, err
+}

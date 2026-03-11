@@ -1,0 +1,11 @@
+{"type":"click","text":"A\n      \n        内容区域太窄\n        1920px 屏幕上两侧各 360px 空白，内容应该更充分地利用屏幕宽度","choice":"a","id":null,"timestamp":1773215007475}
+{"type":"click","text":"A\n      \n        内容区域太窄\n        1920px 屏幕上两侧各 360px 空白，内容应该更充分地利用屏幕宽度","choice":"a","id":null,"timestamp":1773215009428}
+{"type":"click","text":"B\n      \n        图片/卡片比例失调\n        不同分辨率下图片被裁剪、留白不好看，卡片高度固定导致内容溢出或空间浪费","choice":"b","id":null,"timestamp":1773215023749}
+{"type":"click","text":"A\n      \n        内容区域太窄\n        1920px 屏幕上两侧各 360px 空白，内容应该更充分地利用屏幕宽度","choice":"a","id":null,"timestamp":1773215024667}
+{"type":"click","text":"B\n      \n        图片/卡片比例失调\n        不同分辨率下图片被裁剪、留白不好看，卡片高度固定导致内容溢出或空间浪费","choice":"b","id":null,"timestamp":1773215025258}
+{"type":"click","text":"C\n      \n        布局跳变不平滑\n        在 1024-1366-1440-1920 等分辨率之间布局突然变化，缺少过渡断点","choice":"c","id":null,"timestamp":1773215026175}
+{"type":"click","text":"D\n      \n        以上都有，全面优化\n        内容宽度、图片适配、布局过渡都需要改进，做到多分辨率下的统一体验","choice":"d","id":null,"timestamp":1773215028187}
+{"type":"click","text":"D\n      \n        以上都有，全面优化\n        内容宽度、图片适配、布局过渡都需要改进，做到多分辨率下的统一体验","choice":"d","id":null,"timestamp":1773215034833}
+{"type":"click","text":"D\n      \n        以上都有，全面优化\n        内容宽度、图片适配、布局过渡都需要改进，做到多分辨率下的统一体验","choice":"d","id":null,"timestamp":1773215039141}
+{"type":"click","text":"D\n      \n        以上都有，全面优化\n        内容宽度、图片适配、布局过渡都需要改进，做到多分辨率下的统一体验","choice":"d","id":null,"timestamp":1773215039608}
+{"type":"click","text":"D\n      \n        以上都有，全面优化\n        内容宽度、图片适配、布局过渡都需要改进，做到多分辨率下的统一体验","choice":"d","id":null,"timestamp":1773215045053}

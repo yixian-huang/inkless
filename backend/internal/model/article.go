@@ -30,7 +30,14 @@ type Article struct {
 	OgImage           string        `gorm:"size:500" json:"ogImage"`
 	CategoryID        *uint         `gorm:"index" json:"categoryId"`
 	Category          *Category     `gorm:"foreignKey:CategoryID" json:"category,omitempty"`
+	Categories        []Category    `gorm:"many2many:article_categories" json:"categories,omitempty"`
 	Tags              []Tag         `gorm:"many2many:article_tags" json:"tags,omitempty"`
+	Author            string        `gorm:"size:200" json:"author"`
+	AutoSummary       bool          `gorm:"default:false" json:"autoSummary"`
+	AllowComments     bool          `gorm:"default:true" json:"allowComments"`
+	Pinned            bool          `gorm:"default:false" json:"pinned"`
+	Visibility        string        `gorm:"size:30;default:'public'" json:"visibility"`
+	Metadata          JSONMap       `gorm:"type:jsonb" json:"metadata"`
 	PublishedAt       *time.Time    `json:"publishedAt"`
 	CreatedAt         time.Time     `gorm:"autoCreateTime" json:"createdAt"`
 	UpdatedAt         time.Time     `gorm:"autoUpdateTime" json:"updatedAt"`

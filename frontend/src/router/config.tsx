@@ -20,11 +20,19 @@ const AdminPageEditorPage = lazy(() => import('../pages/admin/pages/editor/page'
 const AdminThemePage = lazy(() => import('../pages/admin/theme/page'));
 const AdminDashboardPage = lazy(() => import('../pages/admin/dashboard/page'));
 const AdminFormSubmissionsPage = lazy(() => import('../pages/admin/form-submissions/page'));
+const AdminMenusPage = lazy(() => import('../pages/admin/menus/page'));
+const AdminUsersPage = lazy(() => import('../pages/admin/users/page'));
 const NotFound = lazy(() => import('../pages/NotFound'));
 
 // Public blog routes
 const BlogPage = lazy(() => import('../pages/blog/page'));
 const BlogDetailPage = lazy(() => import('../pages/blog/[slug]/page'));
+
+// Public category & tag routes
+const CategoriesPage = lazy(() => import('../pages/categories/page'));
+const CategoryDetailPage = lazy(() => import('../pages/categories/[slug]/page'));
+const TagsPage = lazy(() => import('../pages/tags/page'));
+const TagDetailPage = lazy(() => import('../pages/tags/[slug]/page'));
 
 // Dynamic page (section-based rendering)
 const DynamicPage = lazy(() => import('../theme/DynamicPage'));
@@ -43,6 +51,22 @@ export const staticRoutes: RouteObject[] = [
   {
     path: '/blog/:slug',
     element: <BlogDetailPage />,
+  },
+  {
+    path: '/categories',
+    element: <CategoriesPage />,
+  },
+  {
+    path: '/categories/:slug',
+    element: <CategoryDetailPage />,
+  },
+  {
+    path: '/tags',
+    element: <TagsPage />,
+  },
+  {
+    path: '/tags/:slug',
+    element: <TagDetailPage />,
   },
   {
     path: '/admin',
@@ -116,6 +140,14 @@ export const staticRoutes: RouteObject[] = [
       {
         path: 'form-submissions',
         element: <AdminFormSubmissionsPage />,
+      },
+      {
+        path: 'menus',
+        element: <AdminMenusPage />,
+      },
+      {
+        path: 'users',
+        element: <AdminUsersPage />,
       },
     ],
   },

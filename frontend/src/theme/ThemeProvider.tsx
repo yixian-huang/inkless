@@ -21,6 +21,17 @@ function applyTokens(tokens: ThemeTokens) {
   root.style.setProperty("--layout-max-width", tokens.layout.maxWidth);
   root.style.setProperty("--radius-card", tokens.layout.borderRadius);
   root.style.setProperty("--radius-button", "0.375rem");
+  root.style.setProperty("--layout-content-padding", tokens.layout.contentPadding);
+  root.style.setProperty("--layout-section-spacing", tokens.layout.sectionSpacing);
+  root.style.setProperty("--layout-content-gap", tokens.layout.contentGap);
+}
+
+function mergeWithDefaults(tokens: ThemeTokens): ThemeTokens {
+  return {
+    colors: { ...defaultTokens.colors, ...tokens.colors },
+    fonts: { ...defaultTokens.fonts, ...tokens.fonts },
+    layout: { ...defaultTokens.layout, ...tokens.layout },
+  };
 }
 
 interface ThemeProviderProps {
@@ -55,8 +66,9 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
     if (themeTokens) {
       // The bootstrap response returns raw token data; check if it has a valid structure
       if (themeTokens.colors && themeTokens.fonts && themeTokens.layout) {
-        setTokens(themeTokens);
-        applyTokens(themeTokens);
+        const merged = mergeWithDefaults(themeTokens);
+        setTokens(merged);
+        applyTokens(merged);
       } else {
         // API returned token data in a different shape — keep base tokens
         applyTokens(baseTokens);

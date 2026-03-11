@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # deploy-run.sh — 解析 deploy-workflow.json 执行生产部署
+# 文件传输通过 rclone + pCloud 中转（dev→pCloud→prod）
 # Usage:
 #   ./scripts/deploy-run.sh                  # 默认: backend-only
 #   ./scripts/deploy-run.sh backend-only     # 仅后端
@@ -12,6 +13,13 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 WORKFLOW_FILE="$SCRIPT_DIR/deploy-workflow.json"
 CONF_FILE="$ROOT_DIR/.prod_server"
+
+# ── pCloud config ────────────────────────────────────
+PCLOUD_REMOTE="pcloud:/deploy/impress"
+PCLOUD_API="https://eapi.pcloud.com"
+PCLOUD_USER="pcloudd@hotmail.com"
+PCLOUD_PASS="Gx62qo6mvvu@Pcloud"
+PCLOUD_AUTH=""  # filled by pcloud_auth()
 
 # ── Colors ──────────────────────────────────────────
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; CYAN='\033[0;36m'; NC='\033[0m'
@@ -33,14 +41,48 @@ parse_server_conf() {
   NGINX_PORT=$(grep '^port=' "$CONF_FILE" | cut -d= -f2)
 }
 
-# ── SSH / SCP helpers ──────────────────────────────
+# ── SSH helper ──────────────────────────────────────
 remote_exec() {
   sshpass -p "$SERVER_PASS" ssh -o StrictHostKeyChecking=no -p "$SERVER_PORT" \
     "$SERVER_USER@$SERVER_IP" "$@"
 }
 
-remote_scp() {
-  sshpass -p "$SERVER_PASS" scp -o StrictHostKeyChecking=no -P "$SERVER_PORT" "$@"
+# ── pCloud helpers ──────────────────────────────────
+
+# Authenticate with pCloud API, store auth token
+pcloud_auth() {
+  PCLOUD_AUTH=$(curl -sf "${PCLOUD_API}/userinfo?getauth=1&username=${PCLOUD_USER}&password=${PCLOUD_PASS}" \
+    | python3 -c "import sys,json; print(json.load(sys.stdin)['auth'])")
+  if [ -z "$PCLOUD_AUTH" ]; then
+    step_fail "pCloud 认证失败"; exit 1
+  fi
+}
+
+# Upload local file to pCloud via rclone
+pcloud_upload() {
+  local src="$1" dst_name="$2"
+  rclone copyto "$src" "${PCLOUD_REMOTE}/${dst_name}" --progress 2>&1 | tail -3
+}
+
+# Get direct download URL for a file on pCloud
+pcloud_get_link() {
+  local filepath="$1"
+  local resp
+  resp=$(curl -sf "${PCLOUD_API}/getfilelink?auth=${PCLOUD_AUTH}&path=/deploy/impress/${filepath}")
+  local url
+  url=$(echo "$resp" | python3 -c "
+import sys, json
+d = json.load(sys.stdin)
+if 'hosts' not in d:
+    print('ERROR:' + d.get('error', 'unknown'), file=sys.stderr)
+    sys.exit(1)
+print('https://' + d['hosts'][0] + d['path'])
+")
+  if [ $? -ne 0 ] || [ -z "$url" ]; then
+    step_fail "获取 pCloud 下载链接失败"
+    exit 1
+  fi
+  echo "$url"
 }
 
 
@@ -113,29 +155,37 @@ job_build_frontend() {
 }
 
 job_deploy_backend() {
-  header "DEPLOY" "部署后端"
+  header "DEPLOY" "部署后端 (via pCloud)"
 
-  step_info "上传二进制到 ${SERVER_IP}..."
-  remote_scp "$ROOT_DIR/backend/server" "$SERVER_USER@$SERVER_IP:$REMOTE_BASE/backend/server.new"
-  step_ok "上传完成"
+  step_info "获取 pCloud 认证..."
+  pcloud_auth
+  step_ok "pCloud 认证成功"
 
-  step_info "停止旧进程..."
-  remote_exec "PID=\$(ss -tlnp sport = :8088 | grep -oP 'pid=\K\d+' | head -1); [ -n \"\$PID\" ] && kill \$PID && sleep 1 || true" 2>/dev/null
-  step_ok "旧进程已停止"
+  step_info "上传二进制到 pCloud..."
+  pcloud_upload "$ROOT_DIR/backend/server" "server"
+  step_ok "上传至 pCloud 完成"
 
-  step_info "替换并启动..."
-  # Build env string from workflow JSON
-  ENV_STR=""
-  while IFS='=' read -r key value; do
-    ENV_STR+="$key='$value' "
-  done < <(get_backend_env)
+  step_info "生产服务器从 pCloud 下载二进制..."
+  remote_exec "
+    RESP=\$(curl -sk '${PCLOUD_API}/getfilelink?auth=${PCLOUD_AUTH}&path=/deploy/impress/server')
+    URL=\$(echo \"\$RESP\" | python3 -c \"import sys,json; d=json.load(sys.stdin); print('https://'+d['hosts'][0]+d['path'])\")
+    curl -sk -o $REMOTE_BASE/backend/server.new \"\$URL\"
+  "
+  # Verify downloaded file size
+  local remote_size
+  remote_size=$(remote_exec "stat -c%s $REMOTE_BASE/backend/server.new 2>/dev/null || echo 0")
+  if [ "$remote_size" -lt 1000000 ]; then
+    step_fail "下载文件异常 (${remote_size} bytes)"; exit 1
+  fi
+  step_ok "下载完成 ($(numfmt --to=iec "$remote_size" 2>/dev/null || echo "${remote_size}B"))"
 
-  remote_exec "cd $REMOTE_BASE/backend && mv server.new server && chmod +x server && nohup env $ENV_STR ./server > /tmp/backend.log 2>&1 &" 2>/dev/null
+  step_info "替换二进制并重启服务..."
+  remote_exec "cd $REMOTE_BASE/backend && mv server.new server && chmod +x server && systemctl restart impress-backend"
   sleep 3
-  step_ok "新进程已启动"
+  step_ok "服务已重启"
 
   step_info "健康检查..."
-  local retries=3
+  local retries=5
   for i in $(seq 1 $retries); do
     if remote_exec "curl -sf http://127.0.0.1:8088/public/pages > /dev/null" 2>/dev/null; then
       step_ok "健康检查通过"
@@ -143,26 +193,37 @@ job_deploy_backend() {
     fi
     [ "$i" -lt "$retries" ] && sleep 2
   done
-  step_fail "健康检查失败（服务可能未正常启动，请检查 /tmp/backend.log）"
+  step_fail "健康检查失败（请检查 systemctl status impress-backend）"
   exit 1
 }
 
 job_deploy_frontend() {
-  header "DEPLOY" "部署前端"
+  header "DEPLOY" "部署前端 (via pCloud)"
+
+  step_info "获取 pCloud 认证..."
+  [ -z "$PCLOUD_AUTH" ] && pcloud_auth
+  step_ok "pCloud 认证成功"
 
   step_info "打包前端产物..."
   tar czf /tmp/frontend-out.tar.gz -C "$ROOT_DIR/frontend/out" .
   step_ok "打包完成"
 
-  step_info "上传到 ${SERVER_IP}..."
-  remote_scp /tmp/frontend-out.tar.gz "$SERVER_USER@$SERVER_IP:$REMOTE_BASE/frontend-out.tar.gz"
-  step_ok "上传完成"
+  step_info "上传到 pCloud..."
+  pcloud_upload /tmp/frontend-out.tar.gz "frontend-out.tar.gz"
+  rm -f /tmp/frontend-out.tar.gz
+  step_ok "上传至 pCloud 完成"
+
+  step_info "生产服务器从 pCloud 下载前端包..."
+  remote_exec "
+    RESP=\$(curl -sk '${PCLOUD_API}/getfilelink?auth=${PCLOUD_AUTH}&path=/deploy/impress/frontend-out.tar.gz')
+    URL=\$(echo \"\$RESP\" | python3 -c \"import sys,json; d=json.load(sys.stdin); print('https://'+d['hosts'][0]+d['path'])\")
+    curl -sk -o $REMOTE_BASE/frontend-out.tar.gz \"\$URL\"
+  "
+  step_ok "下载完成"
 
   step_info "解压并替换..."
   remote_exec "cd $REMOTE_BASE && rm -rf frontend/* && tar xzf frontend-out.tar.gz -C frontend/ && rm frontend-out.tar.gz" 2>/dev/null
   step_ok "前端文件已同步"
-
-  rm -f /tmp/frontend-out.tar.gz
 
   step_info "重载 Nginx..."
   remote_exec "nginx -t && systemctl reload nginx" 2>/dev/null

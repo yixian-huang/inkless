@@ -2,6 +2,8 @@ import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { getPublicArticles } from "@/api/articles";
 import type { Article } from "@/api/articles";
+import { PublicLayout } from "@/theme/layouts";
+import PageHero from "@/components/feature/PageHero";
 
 export default function BlogPage() {
   const navigate = useNavigate();
@@ -72,16 +74,14 @@ export default function BlogPage() {
 
   const getExcerpt = (body: string, maxLen: number = 120) => {
     if (!body) return "";
-    const text = body.replace(/[#*`>\-[\]()]/g, "").trim();
+    const text = body.replace(/<[^>]*>/g, "").trim();
     return text.length > maxLen ? text.slice(0, maxLen) + "..." : text;
   };
 
   return (
+    <PublicLayout>
+      <PageHero title="Blog" subtitle="Insights, updates, and expert perspectives" />
     <div className="max-w-6xl mx-auto px-4 py-12">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Blog</h1>
-        <p className="text-gray-600">Insights, updates, and expert perspectives</p>
-      </div>
 
       {/* Active filters */}
       {(categoryFilter || tagFilter) && (
@@ -206,5 +206,6 @@ export default function BlogPage() {
         </>
       )}
     </div>
+    </PublicLayout>
   );
 }

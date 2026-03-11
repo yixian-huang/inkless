@@ -13,8 +13,8 @@ export default function ChecklistSection({ data }: SectionProps<ChecklistSection
   const { categories = [] } = data;
 
   return (
-    <div className="max-w-layout mx-auto px-4 md:px-6">
-      <div className="space-y-10 md:space-y-14">
+    <div className="max-w-layout mx-auto px-4 md:px-content xl:px-8">
+      <div className="space-y-10 md:space-y-14 xl:space-y-16">
         {categories.map((category, index) => {
           const items = category.items || [];
           if (!category.title && items.length === 0) return null;
@@ -30,7 +30,7 @@ export default function ChecklistSection({ data }: SectionProps<ChecklistSection
                   {items.map((item, i) => (
                     <li
                       key={i}
-                      className="flex items-start gap-2 text-base text-gray-700 leading-relaxed"
+                      className="flex items-start gap-2 text-base text-on-surface-muted leading-relaxed"
                     >
                       <span className="text-primary flex-shrink-0" aria-hidden>
                         &#x2705;

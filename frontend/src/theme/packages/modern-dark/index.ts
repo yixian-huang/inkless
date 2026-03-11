@@ -19,8 +19,11 @@ const tokens: ThemeTokens = {
     heading: "Inter, system-ui, -apple-system, sans-serif",
   },
   layout: {
-    maxWidth: "1344px",
+    maxWidth: "1400px",
     borderRadius: "0.75rem",
+    contentPadding: "2rem",
+    sectionSpacing: "5rem",
+    contentGap: "2rem",
   },
 };
 

@@ -14,17 +14,17 @@ function SectionWrapper({ settings, children }: SectionWrapperProps) {
     settings?.background === "primary"
       ? "bg-primary"
       : settings?.background === "surface-alt"
-        ? "bg-gray-50"
-        : "bg-white";
+        ? "bg-surface-alt"
+        : "bg-surface";
 
   const padClass =
     settings?.padding === "lg"
-      ? "py-12 md:py-16 lg:py-24"
+      ? "py-section-lg"
       : settings?.padding === "sm"
-        ? "py-6 md:py-8"
+        ? "py-section-sm"
         : settings?.padding === "none"
           ? ""
-          : "py-10 sm:py-16 md:py-20";
+          : "py-section";
 
   return (
     <section className={`${bgClass} ${padClass}`}>

@@ -19,8 +19,11 @@ const tokens: ThemeTokens = {
     heading: "Georgia, 'Times New Roman', serif",
   },
   layout: {
-    maxWidth: "1200px",
+    maxWidth: "1400px",
     borderRadius: "0.25rem",
+    contentPadding: "1.25rem",
+    sectionSpacing: "4rem",
+    contentGap: "1.5rem",
   },
 };
 

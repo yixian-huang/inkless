@@ -97,7 +97,6 @@ export default function ContactPage() {
     <PublicLayout>
       <PageHero
         title={hero.title}
-        subtitle={hero.subtitle}
         backgroundColor={heroBgColor}
       />
 
@@ -114,11 +113,6 @@ export default function ContactPage() {
                     {form.title}
                   </h2>
                 </div>
-              )}
-              {form.subtitle && (
-                <p className="text-gray-500 text-sm">
-                  {form.subtitle}
-                </p>
               )}
             </div>
             <div className="space-y-6">
@@ -179,7 +173,7 @@ export default function ContactPage() {
             <form onSubmit={handleSubmit} className="w-full max-w-md space-y-4">
               <div>
                 <label htmlFor="contact-name" className="block text-gray-900 text-sm font-medium mb-1">
-                  {form.nameLabel || 'Name'} *
+                  {form.nameLabel || (locale === "zh" ? "姓名" : "Name")} *
                 </label>
                 <input
                   id="contact-name"
@@ -187,13 +181,13 @@ export default function ContactPage() {
                   required
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder={form.namePlaceholder}
+                  placeholder={form.namePlaceholder || (locale === "zh" ? "请输入您的姓名" : "Your name")}
                   className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                 />
               </div>
               <div>
                 <label htmlFor="contact-email" className="block text-gray-900 text-sm font-medium mb-1">
-                  {form.emailLabel || 'Email'} *
+                  {form.emailLabel || (locale === "zh" ? "邮箱" : "Email")} *
                 </label>
                 <input
                   id="contact-email"
@@ -201,20 +195,20 @@ export default function ContactPage() {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder={form.emailPlaceholder}
+                  placeholder={form.emailPlaceholder || (locale === "zh" ? "请输入您的邮箱地址" : "Your email address")}
                   className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                 />
               </div>
               <div>
                 <label htmlFor="contact-message" className="block text-gray-900 text-sm font-medium mb-1">
-                  {form.messageLabel || 'Message'}
+                  {form.messageLabel || (locale === "zh" ? "留言" : "Message")}
                 </label>
                 <textarea
                   id="contact-message"
                   rows={5}
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
-                  placeholder={form.messagePlaceholder}
+                  placeholder={form.messagePlaceholder || (locale === "zh" ? "请输入您的留言" : "Your message")}
                   className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent resize-y"
                 />
               </div>

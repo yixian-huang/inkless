@@ -1,0 +1,124 @@
+<h2>当前响应式布局问题诊断</h2>
+<p class="subtitle">在不同分辨率下，corporate-classic 主题存在以下视觉问题</p>
+
+<div class="section">
+  <h3>问题概览：1200px 最大宽度在宽屏上的效果</h3>
+  <div class="split">
+    <div class="mockup">
+      <div class="mockup-header">1920×1080 屏幕（当前效果）</div>
+      <div class="mockup-body" style="background:#f3f4f6;padding:0;">
+        <div style="display:flex;height:200px;">
+          <div style="flex:0 0 360px;background:repeating-linear-gradient(45deg,#e5e7eb,#e5e7eb 10px,#f3f4f6 10px,#f3f4f6 20px);display:flex;align-items:center;justify-content:center;">
+            <span style="color:#9ca3af;font-size:12px;background:#fff;padding:4px 8px;border-radius:4px;">空白 360px</span>
+          </div>
+          <div style="flex:1;background:#fff;border-left:2px dashed #3b82f6;border-right:2px dashed #3b82f6;padding:16px;">
+            <div style="background:#1e40af;height:100px;border-radius:8px;display:flex;align-items:center;justify-content:center;color:white;font-size:14px;">Hero 区域 (max-w: 1200px)</div>
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px;">
+              <div style="background:#e0e7ff;height:50px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:11px;color:#4338ca;">卡片</div>
+              <div style="background:#e0e7ff;height:50px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:11px;color:#4338ca;">卡片</div>
+              <div style="background:#e0e7ff;height:50px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:11px;color:#4338ca;">卡片</div>
+            </div>
+          </div>
+          <div style="flex:0 0 360px;background:repeating-linear-gradient(45deg,#e5e7eb,#e5e7eb 10px,#f3f4f6 10px,#f3f4f6 20px);display:flex;align-items:center;justify-content:center;">
+            <span style="color:#9ca3af;font-size:12px;background:#fff;padding:4px 8px;border-radius:4px;">空白 360px</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="mockup">
+      <div class="mockup-header">1366×768 屏幕（当前效果）</div>
+      <div class="mockup-body" style="background:#f3f4f6;padding:0;">
+        <div style="display:flex;height:200px;">
+          <div style="flex:0 0 83px;background:repeating-linear-gradient(45deg,#e5e7eb,#e5e7eb 10px,#f3f4f6 10px,#f3f4f6 20px);display:flex;align-items:center;justify-content:center;">
+            <span style="color:#9ca3af;font-size:10px;background:#fff;padding:2px 4px;border-radius:4px;">83px</span>
+          </div>
+          <div style="flex:1;background:#fff;border-left:2px dashed #3b82f6;border-right:2px dashed #3b82f6;padding:16px;">
+            <div style="background:#1e40af;height:100px;border-radius:8px;display:flex;align-items:center;justify-content:center;color:white;font-size:14px;">Hero (1200px)</div>
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px;">
+              <div style="background:#e0e7ff;height:50px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:11px;color:#4338ca;">卡片</div>
+              <div style="background:#e0e7ff;height:50px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:11px;color:#4338ca;">卡片</div>
+              <div style="background:#e0e7ff;height:50px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:11px;color:#4338ca;">卡片</div>
+            </div>
+          </div>
+          <div style="flex:0 0 83px;background:repeating-linear-gradient(45deg,#e5e7eb,#e5e7eb 10px,#f3f4f6 10px,#f3f4f6 20px);display:flex;align-items:center;justify-content:center;">
+            <span style="color:#9ca3af;font-size:10px;background:#fff;padding:2px 4px;border-radius:4px;">83px</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>你觉得最主要的问题是？</h3>
+  <div class="options">
+    <div class="option" data-choice="a" onclick="toggleSelect(this)">
+      <div class="letter">A</div>
+      <div class="content">
+        <h3>内容区域太窄</h3>
+        <p>1920px 屏幕上两侧各 360px 空白，内容应该更充分地利用屏幕宽度</p>
+      </div>
+    </div>
+    <div class="option" data-choice="b" onclick="toggleSelect(this)">
+      <div class="letter">B</div>
+      <div class="content">
+        <h3>图片/卡片比例失调</h3>
+        <p>不同分辨率下图片被裁剪、留白不好看，卡片高度固定导致内容溢出或空间浪费</p>
+      </div>
+    </div>
+    <div class="option" data-choice="c" onclick="toggleSelect(this)">
+      <div class="letter">C</div>
+      <div class="content">
+        <h3>布局跳变不平滑</h3>
+        <p>在 1024-1366-1440-1920 等分辨率之间布局突然变化，缺少过渡断点</p>
+      </div>
+    </div>
+    <div class="option" data-choice="d" onclick="toggleSelect(this)">
+      <div class="letter">D</div>
+      <div class="content">
+        <h3>以上都有，全面优化</h3>
+        <p>内容宽度、图片适配、布局过渡都需要改进，做到多分辨率下的统一体验</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section" style="margin-top:24px;">
+  <h3>当前硬编码尺寸一览</h3>
+  <table style="width:100%;border-collapse:collapse;font-size:13px;">
+    <thead>
+      <tr style="border-bottom:2px solid #e5e7eb;">
+        <th style="text-align:left;padding:8px;color:#6b7280;">组件</th>
+        <th style="text-align:left;padding:8px;color:#6b7280;">当前值</th>
+        <th style="text-align:left;padding:8px;color:#6b7280;">问题</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr style="border-bottom:1px solid #f3f4f6;">
+        <td style="padding:8px;">HeroSection</td>
+        <td style="padding:8px;font-family:monospace;font-size:12px;">h-[280px] → h-[560px]</td>
+        <td style="padding:8px;color:#dc2626;">固定高度，不随屏幕比例缩放</td>
+      </tr>
+      <tr style="border-bottom:1px solid #f3f4f6;">
+        <td style="padding:8px;">CardGrid 图片</td>
+        <td style="padding:8px;font-family:monospace;font-size:12px;">h-[180px] → h-[240px]</td>
+        <td style="padding:8px;color:#dc2626;">宽屏下图片偏矮</td>
+      </tr>
+      <tr style="border-bottom:1px solid #f3f4f6;">
+        <td style="padding:8px;">TextImage</td>
+        <td style="padding:8px;font-family:monospace;font-size:12px;">max-h-[400px]</td>
+        <td style="padding:8px;color:#dc2626;">限制了大屏展示空间</td>
+      </tr>
+      <tr style="border-bottom:1px solid #f3f4f6;">
+        <td style="padding:8px;">ServiceCards</td>
+        <td style="padding:8px;font-family:monospace;font-size:12px;">sm:w-[320px] sm:h-[240px]</td>
+        <td style="padding:8px;color:#dc2626;">固定尺寸，不随容器伸缩</td>
+      </tr>
+      <tr>
+        <td style="padding:8px;">全局容器</td>
+        <td style="padding:8px;font-family:monospace;font-size:12px;">max-w: 1200px</td>
+        <td style="padding:8px;color:#dc2626;">1920px 屏幕浪费 37.5% 宽度</td>
+      </tr>
+    </tbody>
+  </table>
+</div>

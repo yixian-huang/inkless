@@ -30,8 +30,9 @@ export default function PageHero({
 
   return (
     <section
-      className={ useImage ? 
-        `relative h-[280px] sm:h-[360px] md:h-[440px] lg:h-[560px]` 
+      data-page-hero
+      className={ useImage ?
+        `relative h-[280px] sm:h-[360px] md:h-[440px] lg:h-[560px]`
       : `relative h-[200px] sm:h-[300px] md:h-[400px] lg:h-[500px] bg-[${backgroundColor}]`
     }
     >

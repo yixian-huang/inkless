@@ -3,6 +3,7 @@ package page
 import (
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
 
@@ -72,7 +73,7 @@ func (h *Handler) PublicList(c *gin.Context) {
 
 	locale := c.Query("locale")
 
-	var items []gin.H
+	items := make([]gin.H, 0, len(pages))
 	for _, p := range pages {
 		item := gin.H{
 			"id":        p.ID,
@@ -107,7 +108,7 @@ func (h *Handler) PublicListThemePages(c *gin.Context) {
 		return
 	}
 
-	var items []gin.H
+	items := make([]gin.H, 0, len(pages))
 	for _, p := range pages {
 		items = append(items, gin.H{
 			"id":          p.ID,
@@ -203,6 +204,13 @@ type createUpdateInput struct {
 	RenderMode     string        `json:"renderMode"`
 	IsThemePage    *bool         `json:"isThemePage"`
 	NavConfig      model.JSONMap `json:"navConfig"`
+	CoverImage     string        `json:"coverImage"`
+	AutoSummary    bool          `json:"autoSummary"`
+	AllowComments  *bool         `json:"allowComments"`
+	Pinned         bool          `json:"pinned"`
+	Visibility     string        `json:"visibility"`
+	PublishedAt    *string       `json:"publishedAt"`
+	Metadata       model.JSONMap `json:"metadata"`
 }
 
 // AdminCreate creates a new page
@@ -224,6 +232,16 @@ func (h *Handler) AdminCreate(c *gin.Context) {
 		isThemePage = *input.IsThemePage
 	}
 
+	allowComments := true
+	if input.AllowComments != nil {
+		allowComments = *input.AllowComments
+	}
+
+	visibility := input.Visibility
+	if visibility == "" {
+		visibility = "public"
+	}
+
 	page := &model.Page{
 		Slug:           input.Slug,
 		ParentID:       input.ParentID,
@@ -239,6 +257,18 @@ func (h *Handler) AdminCreate(c *gin.Context) {
 		RenderMode:     input.RenderMode,
 		IsThemePage:    isThemePage,
 		NavConfig:      input.NavConfig,
+		CoverImage:     input.CoverImage,
+		AutoSummary:    input.AutoSummary,
+		AllowComments:  allowComments,
+		Pinned:         input.Pinned,
+		Visibility:     visibility,
+		Metadata:       input.Metadata,
+	}
+
+	if input.PublishedAt != nil {
+		if t, err := time.Parse(time.RFC3339, *input.PublishedAt); err == nil {
+			page.PublishedAt = &t
+		}
 	}
 
 	if err := h.pageRepo.Create(c.Request.Context(), page); err != nil {
@@ -285,6 +315,23 @@ func (h *Handler) AdminUpdate(c *gin.Context) {
 	existing.SortOrder = input.SortOrder
 	existing.SeoTitle = input.SeoTitle
 	existing.SeoDescription = input.SeoDescription
+	existing.CoverImage = input.CoverImage
+	existing.AutoSummary = input.AutoSummary
+	existing.Pinned = input.Pinned
+	if input.AllowComments != nil {
+		existing.AllowComments = *input.AllowComments
+	}
+	if input.Visibility != "" {
+		existing.Visibility = input.Visibility
+	}
+	if input.Metadata != nil {
+		existing.Metadata = input.Metadata
+	}
+	if input.PublishedAt != nil {
+		if t, err := time.Parse(time.RFC3339, *input.PublishedAt); err == nil {
+			existing.PublishedAt = &t
+		}
+	}
 
 	if input.Status != "" {
 		existing.Status = model.PageStatus(input.Status)
@@ -355,6 +402,10 @@ func (h *Handler) AdminPublish(c *gin.Context) {
 	}
 
 	page.Status = model.PageStatusPublished
+	if page.PublishedAt == nil {
+		now := time.Now()
+		page.PublishedAt = &now
+	}
 	if err := h.pageRepo.Update(c.Request.Context(), page); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": gin.H{"message": "发布失败"}})
 		return

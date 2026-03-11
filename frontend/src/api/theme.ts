@@ -7,18 +7,31 @@ const authHeaders = () => ({
   headers: { Authorization: `Bearer ${token()}` },
 });
 
+interface ThemeGetResponse {
+  draftConfig: ThemeTokens;
+  draftVersion: number;
+  publishedConfig: ThemeTokens;
+  publishedVersion: number;
+}
+
+interface ThemeUpdateResponse {
+  draftConfig: ThemeTokens;
+  draftVersion: number;
+  message: string;
+}
+
 export async function getThemeSettings() {
-  const res = await http.get<{ theme: ThemeTokens; version: number }>(
-    "/admin/theme",
-    authHeaders()
-  );
+  const res = await http.get<ThemeGetResponse>("/admin/theme", authHeaders());
   return res.data;
 }
 
-export async function updateThemeSettings(theme: ThemeTokens) {
-  const res = await http.put<{ theme: ThemeTokens; version: number }>(
+export async function updateThemeSettings(
+  config: ThemeTokens,
+  draftVersion: number
+) {
+  const res = await http.put<ThemeUpdateResponse>(
     "/admin/theme",
-    { theme },
+    { config, draftVersion },
     authHeaders()
   );
   return res.data;

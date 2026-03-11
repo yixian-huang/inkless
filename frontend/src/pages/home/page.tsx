@@ -99,7 +99,7 @@ export default function HomePage() {
     <PublicLayout>
 
       {/* Hero Section - 横向占满屏幕 */}
-      <section className="relative h-[280px] sm:h-[360px] md:h-[440px] lg:h-[560px] flex items-center justify-center overflow-hidden">
+      <section data-page-hero className="relative h-[280px] sm:h-[360px] md:h-[440px] lg:h-[560px] flex items-center justify-center overflow-hidden">
         <div className="absolute inset-0">
           <img
             src={hero.backgroundImage?.url || '/images/hero-bg.png'}
@@ -179,6 +179,15 @@ export default function HomePage() {
                       alt={card.image?.alt || card.title || `Advantage ${index + 1}`}
                       className="w-full h-full object-cover object-top transition-transform duration-300 group-hover:scale-105"
                     />
+                    {/* Title always visible at bottom */}
+                    {card.title && (
+                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent px-4 pb-4 pt-10 transition-opacity duration-300 group-hover:opacity-0">
+                        <h3 className="text-white text-sm sm:text-base md:text-lg font-bold leading-snug">
+                          {card.title}
+                        </h3>
+                      </div>
+                    )}
+                    {/* Description on hover */}
                     <div className="absolute inset-0 bg-amber-50/95 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-center items-center p-4 sm:p-5 text-center">
                       {card.title && (
                         <h3 className="text-primary text-lg sm:text-xl md:text-2xl font-bold mb-3 w-full">

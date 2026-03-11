@@ -46,8 +46,11 @@ func defaultThemeConfig() model.JSONMap {
 			"heading": "system-ui, -apple-system, sans-serif",
 		},
 		"layout": map[string]interface{}{
-			"maxWidth":     "1344px",
-			"borderRadius": "0.5rem",
+			"maxWidth":        "1200px",
+			"borderRadius":    "0.5rem",
+			"contentPadding":  "1.5rem",
+			"sectionSpacing":  "5rem",
+			"contentGap":      "2rem",
 		},
 	}
 }
@@ -71,6 +74,7 @@ func (h *Handler) PublicBootstrap(c *gin.Context) {
 			"themeId":     activeTheme.ThemeID,
 			"source":      activeTheme.Source,
 			"externalUrl": activeTheme.ExternalURL,
+			"config":      activeTheme.Config,
 		}
 	}
 

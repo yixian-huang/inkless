@@ -35,8 +35,11 @@ func defaultThemeConfig() model.JSONMap {
 			"heading": "system-ui, -apple-system, sans-serif",
 		},
 		"layout": map[string]interface{}{
-			"maxWidth":     "1344px",
-			"borderRadius": "0.5rem",
+			"maxWidth":        "1200px",
+			"borderRadius":    "0.5rem",
+			"contentPadding":  "1.5rem",
+			"sectionSpacing":  "5rem",
+			"contentGap":      "2rem",
 		},
 	}
 }
@@ -114,15 +117,15 @@ func (h *Handler) AdminUpdate(c *gin.Context) {
 	}
 
 	// Try to find existing theme document
-	_, err := h.contentDocRepo.FindByPageKey(c.Request.Context(), model.PageKeyTheme)
+	existing, err := h.contentDocRepo.FindByPageKey(c.Request.Context(), model.PageKeyTheme)
 	if err != nil {
 		// Create new theme document if it doesn't exist
 		doc := &model.ContentDocument{
 			PageKey:          model.PageKeyTheme,
 			DraftConfig:      input.Config,
 			DraftVersion:     1,
-			PublishedConfig:  defaultThemeConfig(),
-			PublishedVersion: 0,
+			PublishedConfig:  input.Config,
+			PublishedVersion: 1,
 		}
 		if createErr := h.contentDocRepo.Create(c.Request.Context(), doc); createErr != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": gin.H{"message": "保存主题设置失败"}})
@@ -136,16 +139,25 @@ func (h *Handler) AdminUpdate(c *gin.Context) {
 		return
 	}
 
-	// Update draft config with optimistic locking
-	newVersion, err := h.contentDocRepo.UpdateDraft(c.Request.Context(), model.PageKeyTheme, input.DraftVersion, input.Config)
-	if err != nil {
+	// Optimistic locking: check draft version matches
+	if existing.DraftVersion != input.DraftVersion {
 		c.JSON(http.StatusConflict, gin.H{"error": gin.H{"message": "版本冲突，请刷新后重试"}})
 		return
 	}
 
+	// Theme has no separate publish step — save draft and publish in one go
+	existing.DraftConfig = input.Config
+	existing.DraftVersion = input.DraftVersion + 1
+	existing.PublishedConfig = input.Config
+	existing.PublishedVersion = input.DraftVersion + 1
+	if err := h.contentDocRepo.Update(c.Request.Context(), existing); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": gin.H{"message": "保存主题设置失败"}})
+		return
+	}
+
 	c.JSON(http.StatusOK, gin.H{
-		"draftConfig":  input.Config,
-		"draftVersion": newVersion,
+		"draftConfig":  existing.DraftConfig,
+		"draftVersion": existing.DraftVersion,
 		"message":      "主题设置已更新",
 	})
 }

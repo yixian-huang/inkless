@@ -21,7 +21,6 @@ export interface ContactFormData {
 export default function ContactFormSection({ data }: SectionProps<ContactFormData>) {
   const {
     title,
-    subtitle,
     nameLabel,
     namePlaceholder,
     emailLabel,
@@ -63,7 +62,7 @@ export default function ContactFormSection({ data }: SectionProps<ContactFormDat
     : "focus:ring-primary";
 
   return (
-    <div className="max-w-layout mx-auto px-4 md:px-6">
+    <div className="max-w-layout mx-auto px-4 md:px-content xl:px-8">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-start">
         <div>
           {title && (
@@ -73,9 +72,6 @@ export default function ContactFormSection({ data }: SectionProps<ContactFormDat
                 {title}
               </h2>
             </div>
-          )}
-          {subtitle && (
-            <p className="text-gray-500 text-sm">{subtitle}</p>
           )}
         </div>
         <div className="space-y-6">
@@ -97,7 +93,7 @@ export default function ContactFormSection({ data }: SectionProps<ContactFormDat
                 </svg>
               </span>
               <div>
-                <p className="text-gray-900 font-medium">{phone}</p>
+                <p className="text-on-surface font-medium">{phone}</p>
               </div>
             </div>
           )}
@@ -125,7 +121,7 @@ export default function ContactFormSection({ data }: SectionProps<ContactFormDat
                 </svg>
               </span>
               <div>
-                <p className="text-gray-900">{address}</p>
+                <p className="text-on-surface">{address}</p>
               </div>
             </div>
           )}
@@ -149,9 +145,9 @@ export default function ContactFormSection({ data }: SectionProps<ContactFormDat
           <div>
             <label
               htmlFor="section-contact-name"
-              className="block text-gray-900 text-sm font-medium mb-1"
+              className="block text-on-surface text-sm font-medium mb-1"
             >
-              {nameLabel || "Name"} *
+              {nameLabel || (locale === "zh" ? "姓名" : "Name")} *
             </label>
             <input
               id="section-contact-name"
@@ -167,9 +163,9 @@ export default function ContactFormSection({ data }: SectionProps<ContactFormDat
           <div>
             <label
               htmlFor="section-contact-email"
-              className="block text-gray-900 text-sm font-medium mb-1"
+              className="block text-on-surface text-sm font-medium mb-1"
             >
-              {emailLabel || "Email"} *
+              {emailLabel || (locale === "zh" ? "邮箱" : "Email")} *
             </label>
             <input
               id="section-contact-email"
@@ -185,9 +181,9 @@ export default function ContactFormSection({ data }: SectionProps<ContactFormDat
           <div>
             <label
               htmlFor="section-contact-message"
-              className="block text-gray-900 text-sm font-medium mb-1"
+              className="block text-on-surface text-sm font-medium mb-1"
             >
-              {messageLabel || "Message"}
+              {messageLabel || (locale === "zh" ? "留言" : "Message")}
             </label>
             <textarea
               id="section-contact-message"

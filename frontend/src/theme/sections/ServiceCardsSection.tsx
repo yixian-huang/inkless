@@ -16,7 +16,7 @@ export default function ServiceCardsSection({ data }: SectionProps<ServiceCardsS
   const { title, services } = data;
 
   return (
-    <div className="max-w-layout w-full h-full mx-auto px-4 sm:px-6">
+    <div className="max-w-layout w-full h-full mx-auto px-4 md:px-content xl:px-8">
       {title && (
         <div className="flex items-center mb-8 sm:mb-12">
           <div className="w-5 h-5 sm:w-[26px] sm:h-[26px] bg-accent mr-2 sm:mr-3 flex-shrink-0 rounded-sm" />
@@ -29,13 +29,13 @@ export default function ServiceCardsSection({ data }: SectionProps<ServiceCardsS
         </div>
       )}
       {services && services.length > 0 && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 sm:gap-x-8 sm:gap-y-10">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 sm:gap-x-8 sm:gap-y-10 xl:gap-x-10 xl:gap-y-12">
           {services.map((service, index) => (
             <div
               key={index}
-              className="flex flex-col sm:flex-row gap-4 sm:gap-5 p-4 sm:p-0 rounded-lg sm:rounded-none bg-gray-50/80 sm:bg-transparent"
+              className="flex flex-col sm:flex-row gap-4 sm:gap-5 p-4 sm:p-0 rounded-lg sm:rounded-none bg-surface-alt/80 sm:bg-transparent"
             >
-              <div className="w-full h-[180px] sm:w-[320px] sm:h-[240px] flex-shrink-0 rounded-md overflow-hidden bg-gray-100">
+              <div className="w-full h-[180px] sm:h-[220px] lg:h-[260px] xl:h-[280px] flex-shrink-0 rounded-md overflow-hidden bg-surface-alt">
                 <img
                   src={service.image || `/images/service-${index + 1}.png`}
                   alt={service.title || `Service ${index + 1}`}
@@ -49,7 +49,7 @@ export default function ServiceCardsSection({ data }: SectionProps<ServiceCardsS
                   </h3>
                 )}
                 {service.description && (
-                  <p className="text-sm text-gray-600 leading-relaxed mb-2 sm:mb-3 line-clamp-3 sm:line-clamp-none">
+                  <p className="text-sm text-on-surface-muted leading-relaxed mb-2 sm:mb-3 line-clamp-3 sm:line-clamp-none">
                     {service.description}
                   </p>
                 )}

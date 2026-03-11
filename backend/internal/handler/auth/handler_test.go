@@ -61,6 +61,11 @@ func (m *MockUserRepository) List(ctx context.Context, offset, limit int) ([]*mo
 	return args.Get(0).([]*model.User), args.Get(1).(int64), args.Error(2)
 }
 
+func (m *MockUserRepository) CountSuperAdmins(ctx context.Context) (int64, error) {
+	args := m.Called(ctx)
+	return args.Get(0).(int64), args.Error(1)
+}
+
 type MockRefreshTokenRepository struct {
 	mock.Mock
 }
@@ -328,7 +333,7 @@ func TestRefresh_ExpiredToken(t *testing.T) {
 }
 
 func TestMe_Success(t *testing.T) {
-	handler, _, _ := setupTestHandler()
+	handler, mockUserRepo, _ := setupTestHandler()
 	gin.SetMode(gin.TestMode)
 
 	w := httptest.NewRecorder()
@@ -343,6 +348,14 @@ func TestMe_Success(t *testing.T) {
 	}
 	c.Set(string(middleware.UserContextKey), userCtx)
 
+	// Me now queries the database for full user info
+	mockUserRepo.On("FindByID", mock.Anything, uint(1)).Return(&model.User{
+		ID:           1,
+		Username:     "testuser",
+		Role:         model.RoleAdmin,
+		IsSuperAdmin: true,
+	}, nil)
+
 	handler.Me(c)
 
 	assert.Equal(t, http.StatusOK, w.Code)
@@ -353,6 +366,8 @@ func TestMe_Success(t *testing.T) {
 	assert.Equal(t, uint(1), resp.ID)
 	assert.Equal(t, "testuser", resp.Username)
 	assert.Equal(t, "admin", resp.Role)
+	assert.True(t, resp.IsSuperAdmin)
+	mockUserRepo.AssertExpectations(t)
 }
 
 func TestMe_MissingContext(t *testing.T) {

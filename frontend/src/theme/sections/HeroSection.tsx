@@ -17,8 +17,8 @@ export default function HeroSection({ data }: SectionProps<HeroSectionData>) {
     <section
       className={
         useImage
-          ? "relative h-[280px] sm:h-[360px] md:h-[440px] lg:h-[560px]"
-          : "relative h-[200px] sm:h-[300px] md:h-[400px] lg:h-[500px]"
+          ? "relative min-h-[280px] sm:min-h-[360px] md:min-h-[40vh] lg:min-h-[45vh] max-h-[600px]"
+          : "relative min-h-[200px] sm:min-h-[300px] md:min-h-[35vh] lg:min-h-[40vh] max-h-[540px]"
       }
     >
       <div
@@ -37,12 +37,12 @@ export default function HeroSection({ data }: SectionProps<HeroSectionData>) {
         )}
       </div>
       <div className="absolute left-0 right-0 bottom-[20%] z-10">
-        <div className="max-w-layout w-full mx-auto px-4 md:px-6">
+        <div className="max-w-layout w-full mx-auto px-4 md:px-content xl:px-8">
           {label && (
             <p className="text-white text-sm sm:text-base mb-1">{label}</p>
           )}
           {title && (
-            <h1 className="text-white text-2xl md:text-3xl lg:text-4xl font-bold uppercase tracking-wide">
+            <h1 className="text-white text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-bold uppercase tracking-wide">
               {title}
               {subtitle && (
                 <span className="block mt-1 sm:mt-2 text-base sm:text-xl md:text-2xl lg:text-3xl font-normal">

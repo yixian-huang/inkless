@@ -14,11 +14,11 @@ export default function RichTextSection({ data }: SectionProps<RichTextSectionDa
   const alignClass = alignment === "center" ? "text-center" : "text-left";
 
   return (
-    <div className={`max-w-layout mx-auto px-4 md:px-6 ${alignClass}`}>
+    <div className={`max-w-layout mx-auto px-4 md:px-content xl:px-8 ${alignClass}`}>
       {paragraphs.map((para, i) => (
         <p
           key={i}
-          className="text-base text-gray-700 leading-relaxed mb-4 last:mb-0"
+          className="text-base text-on-surface-muted leading-relaxed mb-4 last:mb-0"
         >
           {para}
         </p>

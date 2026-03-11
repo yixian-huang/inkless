@@ -105,7 +105,7 @@ function attachSelectionUI(view: EditorView, pos: number, dom: HTMLElement): () 
 }
 
 /** Create a hover "替换" button for media nodes */
-function createReplaceButton(dom: HTMLElement, nodeTypeName: string): HTMLButtonElement {
+function createReplaceButton(dom: HTMLElement, nodeTypeName: string, view: EditorView, nodePos: number): HTMLButtonElement {
   const btn = document.createElement("button");
   btn.className = "media-replace-btn";
   btn.textContent = "替换";
@@ -137,6 +137,9 @@ function createReplaceButton(dom: HTMLElement, nodeTypeName: string): HTMLButton
   btn.addEventListener("mousedown", (e) => {
     e.preventDefault();
     e.stopPropagation();
+    // Select the media node so the replace handler can find it
+    const tr = view.state.tr.setSelection(NodeSelection.create(view.state.doc, nodePos));
+    view.dispatch(tr);
     document.dispatchEvent(
       new CustomEvent("editor-replace-media", { detail: { type: nodeTypeName } })
     );
@@ -214,7 +217,7 @@ export const ResizableMedia = Extension.create({
                   container.style.position = "relative";
                 }
 
-                hoverBtn = createReplaceButton(container, node.type.name);
+                hoverBtn = createReplaceButton(container, node.type.name, view, pos);
                 container.appendChild(hoverBtn);
               });
 

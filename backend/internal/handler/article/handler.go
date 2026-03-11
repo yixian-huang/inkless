@@ -1,6 +1,7 @@
 package article
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 	"time"
@@ -79,6 +80,12 @@ func (h *Handler) PublicGetBySlug(c *gin.Context) {
 		return
 	}
 
+	// Only return publicly visible articles
+	if article.Visibility != "" && article.Visibility != "public" {
+		c.JSON(http.StatusNotFound, gin.H{"error": gin.H{"message": "文章不存在"}})
+		return
+	}
+
 	c.JSON(http.StatusOK, article)
 }
 
@@ -133,20 +140,27 @@ func (h *Handler) AdminGetByID(c *gin.Context) {
 
 // createUpdateInput is the JSON body for creating/updating articles
 type createUpdateInput struct {
-	Slug              string  `json:"slug"`
-	Status            string  `json:"status"`
-	ZhTitle           string  `json:"zhTitle"`
-	EnTitle           string  `json:"enTitle"`
-	ZhBody            string  `json:"zhBody"`
-	EnBody            string  `json:"enBody"`
-	CoverImage        string  `json:"coverImage"`
-	ZhSeoTitle        string  `json:"zhSeoTitle"`
-	EnSeoTitle        string  `json:"enSeoTitle"`
-	ZhMetaDescription string  `json:"zhMetaDescription"`
-	EnMetaDescription string  `json:"enMetaDescription"`
-	OgImage           string  `json:"ogImage"`
-	CategoryID        *uint   `json:"categoryId"`
-	TagIDs            []uint  `json:"tagIds"`
+	Slug              string        `json:"slug"`
+	Status            string        `json:"status"`
+	ZhTitle           string        `json:"zhTitle"`
+	EnTitle           string        `json:"enTitle"`
+	ZhBody            string        `json:"zhBody"`
+	EnBody            string        `json:"enBody"`
+	CoverImage        string        `json:"coverImage"`
+	ZhSeoTitle        string        `json:"zhSeoTitle"`
+	EnSeoTitle        string        `json:"enSeoTitle"`
+	ZhMetaDescription string        `json:"zhMetaDescription"`
+	EnMetaDescription string        `json:"enMetaDescription"`
+	OgImage           string        `json:"ogImage"`
+	CategoryID        *uint         `json:"categoryId"`
+	CategoryIDs       []uint        `json:"categoryIds"`
+	TagIDs            []uint        `json:"tagIds"`
+	Author            string        `json:"author"`
+	AutoSummary       bool          `json:"autoSummary"`
+	AllowComments     *bool         `json:"allowComments"`
+	Pinned            bool          `json:"pinned"`
+	Visibility        string        `json:"visibility"`
+	Metadata          model.JSONMap `json:"metadata"`
 }
 
 // AdminCreate creates a new article
@@ -163,6 +177,16 @@ func (h *Handler) AdminCreate(c *gin.Context) {
 		status = model.ArticleStatusDraft
 	}
 
+	allowComments := true
+	if input.AllowComments != nil {
+		allowComments = *input.AllowComments
+	}
+
+	visibility := input.Visibility
+	if visibility == "" {
+		visibility = "public"
+	}
+
 	article := &model.Article{
 		Slug:              input.Slug,
 		Status:            status,
@@ -177,11 +201,26 @@ func (h *Handler) AdminCreate(c *gin.Context) {
 		EnMetaDescription: input.EnMetaDescription,
 		OgImage:           input.OgImage,
 		CategoryID:        input.CategoryID,
+		Author:            input.Author,
+		AutoSummary:       input.AutoSummary,
+		AllowComments:     allowComments,
+		Pinned:            input.Pinned,
+		Visibility:        visibility,
+		Metadata:          input.Metadata,
 	}
 
 	if status == model.ArticleStatusPublished {
 		now := time.Now()
 		article.PublishedAt = &now
+	}
+
+	// Resolve categories
+	if len(input.CategoryIDs) > 0 {
+		categories, err := h.resolveCategoryIDs(c, input.CategoryIDs)
+		if err != nil {
+			return
+		}
+		article.Categories = categories
 	}
 
 	// Resolve tags
@@ -242,6 +281,18 @@ func (h *Handler) AdminUpdate(c *gin.Context) {
 	existing.EnMetaDescription = input.EnMetaDescription
 	existing.OgImage = input.OgImage
 	existing.CategoryID = input.CategoryID
+	existing.Author = input.Author
+	existing.AutoSummary = input.AutoSummary
+	existing.Pinned = input.Pinned
+	if input.AllowComments != nil {
+		existing.AllowComments = *input.AllowComments
+	}
+	if input.Visibility != "" {
+		existing.Visibility = input.Visibility
+	}
+	if input.Metadata != nil {
+		existing.Metadata = input.Metadata
+	}
 
 	if input.Status != "" {
 		newStatus := model.ArticleStatus(input.Status)
@@ -251,6 +302,15 @@ func (h *Handler) AdminUpdate(c *gin.Context) {
 			existing.PublishedAt = &now
 		}
 		existing.Status = newStatus
+	}
+
+	// Resolve categories: prefer CategoryIDs, fallback to CategoryID
+	if input.CategoryIDs != nil {
+		categories, err := h.resolveCategoryIDs(c, input.CategoryIDs)
+		if err != nil {
+			return
+		}
+		existing.Categories = categories
 	}
 
 	// Resolve tags
@@ -294,16 +354,46 @@ func (h *Handler) AdminDelete(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "已删除"})
 }
 
+// resolveCategoryIDs looks up categories by their IDs and returns them
+func (h *Handler) resolveCategoryIDs(c *gin.Context, categoryIDs []uint) ([]model.Category, error) {
+	categories, err := h.categoryRepo.FindByIDs(c.Request.Context(), categoryIDs)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": gin.H{"message": "查询分类失败"}})
+		return nil, err
+	}
+	if len(categories) != len(categoryIDs) {
+		found := make(map[uint]bool, len(categories))
+		for _, cat := range categories {
+			found[cat.ID] = true
+		}
+		for _, id := range categoryIDs {
+			if !found[id] {
+				c.JSON(http.StatusBadRequest, gin.H{"error": gin.H{"message": "分类 ID " + strconv.FormatUint(uint64(id), 10) + " 不存在"}})
+				return nil, fmt.Errorf("category %d not found", id)
+			}
+		}
+	}
+	return categories, nil
+}
+
 // resolveTagIDs looks up tags by their IDs and returns them
 func (h *Handler) resolveTagIDs(c *gin.Context, tagIDs []uint) ([]model.Tag, error) {
-	var tags []model.Tag
-	for _, tagID := range tagIDs {
-		t, err := h.tagRepo.FindByID(c.Request.Context(), tagID)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": gin.H{"message": "标签 ID " + strconv.FormatUint(uint64(tagID), 10) + " 不存在"}})
-			return nil, err
+	tags, err := h.tagRepo.FindByIDs(c.Request.Context(), tagIDs)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": gin.H{"message": "查询标签失败"}})
+		return nil, err
+	}
+	if len(tags) != len(tagIDs) {
+		found := make(map[uint]bool, len(tags))
+		for _, tag := range tags {
+			found[tag.ID] = true
 		}
-		tags = append(tags, *t)
+		for _, id := range tagIDs {
+			if !found[id] {
+				c.JSON(http.StatusBadRequest, gin.H{"error": gin.H{"message": "标签 ID " + strconv.FormatUint(uint64(id), 10) + " 不存在"}})
+				return nil, fmt.Errorf("tag %d not found", id)
+			}
+		}
 	}
 	return tags, nil
 }

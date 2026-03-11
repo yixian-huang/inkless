@@ -17,8 +17,16 @@ export interface Article {
   enMetaDescription: string;
   ogImage: string;
   categoryId: number | null;
+  categoryIds?: number[];
   category?: Category;
+  categories?: Category[];
   tags?: Tag[];
+  author: string;
+  autoSummary: boolean;
+  allowComments: boolean;
+  pinned: boolean;
+  visibility: string;
+  metadata: Record<string, unknown>;
   publishedAt: string | null;
   createdAt: string;
   updatedAt: string;
@@ -29,6 +37,16 @@ export interface Category {
   slug: string;
   zhName: string;
   enName: string;
+  parentId?: number | null;
+  parent?: Category;
+  children?: Category[];
+  coverImage: string;
+  zhDescription: string;
+  enDescription: string;
+  hideFromList: boolean;
+  preventCascade: boolean;
+  metadata: Record<string, unknown>;
+  sortOrder: number;
 }
 
 export interface Tag {
@@ -36,6 +54,9 @@ export interface Tag {
   slug: string;
   zhName: string;
   enName: string;
+  color: string;
+  coverImage: string;
+  metadata: Record<string, unknown>;
 }
 
 interface ArticleListResponse {
@@ -79,6 +100,30 @@ export async function getPublicArticles(
 
 export async function getPublicArticle(slug: string): Promise<Article> {
   const response = await http.get<Article>(`/public/articles/${slug}`);
+  return response.data;
+}
+
+export async function getPublicCategories(): Promise<Category[]> {
+  const response = await http.get<{ items: Category[] }>("/public/categories");
+  return response.data.items || [];
+}
+
+export async function getPublicCategoryBySlug(slug: string, page: number = 1, pageSize: number = 10) {
+  const response = await http.get(`/public/categories/${slug}`, {
+    params: { page, pageSize },
+  });
+  return response.data;
+}
+
+export async function getPublicTags(): Promise<Tag[]> {
+  const response = await http.get<{ items: Tag[] }>("/public/tags");
+  return response.data.items || [];
+}
+
+export async function getPublicTagBySlug(slug: string, page: number = 1, pageSize: number = 10) {
+  const response = await http.get(`/public/tags/${slug}`, {
+    params: { page, pageSize },
+  });
   return response.data;
 }
 
@@ -129,28 +174,35 @@ export async function deleteArticle(id: number): Promise<void> {
 // ---------- Category APIs ----------
 
 export async function getCategories(): Promise<Category[]> {
-  const response = await http.get<Category[]>("/admin/articles/categories", {
+  const response = await http.get<{ items: Category[] }>("/admin/categories", {
     headers: getAuthHeaders(),
   });
-  return response.data;
+  return response.data.items || [];
+}
+
+export async function getCategoryTree(): Promise<Category[]> {
+  const response = await http.get<{ items: Category[] }>("/admin/categories/tree", {
+    headers: getAuthHeaders(),
+  });
+  return response.data.items || [];
 }
 
 export async function createCategory(data: Partial<Category>): Promise<Category> {
-  const response = await http.post<Category>("/admin/articles/categories", data, {
+  const response = await http.post<Category>("/admin/categories", data, {
     headers: getAuthHeaders(),
   });
   return response.data;
 }
 
 export async function updateCategory(id: number, data: Partial<Category>): Promise<Category> {
-  const response = await http.put<Category>(`/admin/articles/categories/${id}`, data, {
+  const response = await http.put<Category>(`/admin/categories/${id}`, data, {
     headers: getAuthHeaders(),
   });
   return response.data;
 }
 
 export async function deleteCategory(id: number): Promise<void> {
-  await http.delete(`/admin/articles/categories/${id}`, {
+  await http.delete(`/admin/categories/${id}`, {
     headers: getAuthHeaders(),
   });
 }
@@ -158,21 +210,28 @@ export async function deleteCategory(id: number): Promise<void> {
 // ---------- Tag APIs ----------
 
 export async function getTags(): Promise<Tag[]> {
-  const response = await http.get<Tag[]>("/admin/articles/tags", {
+  const response = await http.get<{ items: Tag[] }>("/admin/tags", {
+    headers: getAuthHeaders(),
+  });
+  return response.data.items || [];
+}
+
+export async function createTag(data: Partial<Tag>): Promise<Tag> {
+  const response = await http.post<Tag>("/admin/tags", data, {
     headers: getAuthHeaders(),
   });
   return response.data;
 }
 
-export async function createTag(data: Partial<Tag>): Promise<Tag> {
-  const response = await http.post<Tag>("/admin/articles/tags", data, {
+export async function updateTag(id: number, data: Partial<Tag>): Promise<Tag> {
+  const response = await http.put<Tag>(`/admin/tags/${id}`, data, {
     headers: getAuthHeaders(),
   });
   return response.data;
 }
 
 export async function deleteTag(id: number): Promise<void> {
-  await http.delete(`/admin/articles/tags/${id}`, {
+  await http.delete(`/admin/tags/${id}`, {
     headers: getAuthHeaders(),
   });
 }

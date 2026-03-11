@@ -37,6 +37,15 @@ export default {
           card: "var(--radius-card)",
           button: "var(--radius-button)",
         },
+        padding: {
+          content: "var(--layout-content-padding)",
+          section: "var(--layout-section-spacing)",
+          "section-sm": "calc(var(--layout-section-spacing) * 0.4)",
+          "section-lg": "calc(var(--layout-section-spacing) * 1.2)",
+        },
+        gap: {
+          content: "var(--layout-content-gap)",
+        },
       },
     },
     plugins: [],

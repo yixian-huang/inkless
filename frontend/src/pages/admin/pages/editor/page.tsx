@@ -6,9 +6,11 @@ import {
   updatePage,
   type CreatePageRequest,
 } from "@/api/pages";
-import { sectionMetas, SectionRenderer } from "@/theme/sections";
+import { SectionRenderer } from "@/theme/sections";
 import { getSectionSchema } from "@/theme/schemas";
+import { useSectionRegistry } from "@/plugins/hooks";
 import FieldRenderer from "@/components/admin/form-fields/FieldRenderer";
+import MetadataEditor from "@/components/admin/MetadataEditor";
 import type { SectionData } from "@/theme/types";
 
 // ---------------------------------------------------------------------------
@@ -21,6 +23,8 @@ function SectionPicker({
   onSelect: (type: string) => void;
   onClose: () => void;
 }) {
+  const { metas: sectionMetas } = useSectionRegistry();
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
       <div className="bg-white rounded-lg shadow-xl w-full max-w-lg mx-4 p-6">
@@ -83,6 +87,7 @@ function SectionListItem({
     onDragEnd: () => void;
   };
 }) {
+  const { metas: sectionMetas } = useSectionRegistry();
   const meta = sectionMetas.find((m) => m.type === section.type);
   const label = meta?.labelZh || section.type;
 
@@ -231,7 +236,8 @@ function SectionEditorPanel({
   section: SectionData;
   onChange: (data: Record<string, unknown>) => void;
 }) {
-  const schema = getSectionSchema(section.type);
+  const { metas } = useSectionRegistry();
+  const schema = getSectionSchema(section.type, metas);
   const entries = Object.entries(schema);
 
   if (entries.length === 0) {
@@ -292,6 +298,7 @@ export default function PageEditorPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const isNew = !id;
+  const { metas: sectionMetas } = useSectionRegistry();
 
   // -- basic page fields --
   const [slug, setSlug] = useState("");
@@ -300,6 +307,14 @@ export default function PageEditorPage() {
   const [template, setTemplate] = useState("default");
   const [seoTitleZh, setSeoTitleZh] = useState("");
   const [seoDescZh, setSeoDescZh] = useState("");
+
+  // -- new page fields --
+  const [coverImage, setCoverImage] = useState("");
+  const [pageVisibility, setPageVisibility] = useState("public");
+  const [pagePinned, setPagePinned] = useState(false);
+  const [pageAllowComments, setPageAllowComments] = useState(false);
+  const [pageAutoSummary, setPageAutoSummary] = useState(false);
+  const [pageMetadata, setPageMetadata] = useState<Record<string, unknown>>({});
 
   // -- section visual editor state --
   const [sections, setSections] = useState<SectionData[]>([]);
@@ -325,6 +340,12 @@ export default function PageEditorPage() {
       setTemplate(page.template || "default");
       setSeoTitleZh(page.seoTitle?.zh || "");
       setSeoDescZh(page.seoDescription?.zh || "");
+      setCoverImage(page.coverImage || "");
+      setPageVisibility(page.visibility || "public");
+      setPagePinned(page.pinned || false);
+      setPageAllowComments(page.allowComments || false);
+      setPageAutoSummary(page.autoSummary || false);
+      setPageMetadata(page.metadata || {});
 
       const config = page.config as { sections?: SectionData[] } | null;
       const loadedSections = config?.sections || [];
@@ -436,6 +457,12 @@ export default function PageEditorPage() {
         config,
         seoTitle: { zh: seoTitleZh },
         seoDescription: { zh: seoDescZh },
+        coverImage,
+        visibility: pageVisibility,
+        pinned: pagePinned,
+        allowComments: pageAllowComments,
+        autoSummary: pageAutoSummary,
+        metadata: pageMetadata,
       };
 
       if (isNew) {
@@ -568,6 +595,80 @@ export default function PageEditorPage() {
               className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
             />
           </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              封面图片 URL
+            </label>
+            <input
+              type="text"
+              value={coverImage}
+              onChange={(e) => setCoverImage(e.target.value)}
+              placeholder="https://..."
+              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+            />
+            {coverImage && (
+              <img
+                src={coverImage}
+                alt="Cover preview"
+                className="mt-2 max-h-32 rounded border border-gray-200"
+                onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+              />
+            )}
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              可见性 (Visibility)
+            </label>
+            <select
+              value={pageVisibility}
+              onChange={(e) => setPageVisibility(e.target.value)}
+              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+            >
+              <option value="public">公开 (Public)</option>
+              <option value="private">私密 (Private)</option>
+              <option value="password_protected">密码保护 (Password Protected)</option>
+            </select>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-6">
+          <label className="flex items-center gap-2 text-sm text-gray-700">
+            <input
+              type="checkbox"
+              checked={pagePinned}
+              onChange={(e) => setPagePinned(e.target.checked)}
+              className="rounded border-gray-300"
+            />
+            置顶 (Pinned)
+          </label>
+          <label className="flex items-center gap-2 text-sm text-gray-700">
+            <input
+              type="checkbox"
+              checked={pageAllowComments}
+              onChange={(e) => setPageAllowComments(e.target.checked)}
+              className="rounded border-gray-300"
+            />
+            允许评论 (Allow Comments)
+          </label>
+          <label className="flex items-center gap-2 text-sm text-gray-700">
+            <input
+              type="checkbox"
+              checked={pageAutoSummary}
+              onChange={(e) => setPageAutoSummary(e.target.checked)}
+              className="rounded border-gray-300"
+            />
+            自动摘要 (Auto Summary)
+          </label>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            元数据 (Metadata)
+          </label>
+          <MetadataEditor value={pageMetadata} onChange={setPageMetadata} />
         </div>
       </div>
 

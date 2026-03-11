@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"blotting-consultancy/internal/middleware"
+	"blotting-consultancy/internal/model"
 	"blotting-consultancy/pkg/apierror"
 
 	"github.com/gin-gonic/gin"
@@ -11,9 +12,11 @@ import (
 
 // MeResponse represents the current user response payload
 type MeResponse struct {
-	ID       uint   `json:"id"`
-	Username string `json:"username"`
-	Role     string `json:"role"`
+	ID           uint     `json:"id"`
+	Username     string   `json:"username"`
+	Role         string   `json:"role"`
+	IsSuperAdmin bool     `json:"isSuperAdmin"`
+	Permissions  []string `json:"permissions"`
 }
 
 // Me handles GET /auth/me
@@ -32,10 +35,27 @@ func (h *Handler) Me(c *gin.Context) {
 		return
 	}
 
-	// Return user information
+	// Fetch full user from database to get permissions
+	fullUser, err := h.userRepo.FindByID(c.Request.Context(), user.UserID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, apierror.InternalServerError("Failed to fetch user info"))
+		return
+	}
+
+	// Build permissions list
+	permissions := fullUser.Permissions
+	if fullUser.IsSuperAdmin {
+		permissions = model.ValidPermissions
+	}
+	if permissions == nil {
+		permissions = []string{}
+	}
+
 	c.JSON(http.StatusOK, MeResponse{
-		ID:       user.UserID,
-		Username: user.Username,
-		Role:     string(user.Role),
+		ID:           fullUser.ID,
+		Username:     fullUser.Username,
+		Role:         string(fullUser.Role),
+		IsSuperAdmin: fullUser.IsSuperAdmin,
+		Permissions:  permissions,
 	})
 }

@@ -1,5 +1,12 @@
 .PHONY: dev dev-backend dev-frontend build-backend stop help
 
+# ── 版本信息 ─────────────────────────────────────────────
+GIT_COMMIT  := $(shell git rev-parse --short HEAD 2>/dev/null || echo "unknown")
+GIT_BRANCH  := $(shell git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "unknown")
+BUILD_TIME  := $(shell date -u '+%Y-%m-%dT%H:%M:%SZ')
+VERSION     := $(GIT_COMMIT)
+LDFLAGS     := -X main.Version=$(VERSION) -X main.BuildTime=$(BUILD_TIME) -X main.GitCommit=$(GIT_COMMIT) -X main.GitBranch=$(GIT_BRANCH)
+
 # ── 一键启动 ──────────────────────────────────────────────
 dev: ## 启动前后端（后端 :8088 + 前端 :3000）
 	@$(MAKE) -j2 dev-backend dev-frontend
@@ -18,8 +25,11 @@ dev-frontend: ## 启动前端 dev server
 	@cd frontend && pnpm dev
 
 # ── 构建 ──────────────────────────────────────────────────
-build-backend: ## 编译后端
-	@cd backend && go build -o server ./cmd/server/
+build-backend: ## 编译后端（自动注入版本信息）
+	@cd backend && go build -ldflags '$(LDFLAGS)' -o server ./cmd/server/
+	@printf '{"version":"%s","buildTime":"%s","gitCommit":"%s","gitBranch":"%s"}\n' \
+		"$(VERSION)" "$(BUILD_TIME)" "$(GIT_COMMIT)" "$(GIT_BRANCH)" > backend/version.json
+	@echo "Built backend $(VERSION) ($(GIT_BRANCH)@$(GIT_COMMIT)) at $(BUILD_TIME)"
 
 build: build-backend ## 编译前后端
 	@cd frontend && pnpm build

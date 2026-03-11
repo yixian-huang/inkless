@@ -7,6 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"blotting-consultancy/internal/model"
+	"blotting-consultancy/internal/repository"
 	"blotting-consultancy/pkg/apierror"
 	"blotting-consultancy/pkg/auth"
 )
@@ -113,6 +114,31 @@ func RequireAdminOrEditor() gin.HandlerFunc {
 
 		if userCtx.Role != model.RoleAdmin && userCtx.Role != model.RoleEditor {
 			respondWithError(c, apierror.Forbidden("Admin or editor access required"))
+			return
+		}
+
+		c.Next()
+	}
+}
+
+// RequireSuperAdmin returns a middleware that requires super admin status
+func RequireSuperAdmin(userRepo repository.UserRepository) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		userCtx := GetUserContext(c)
+		if userCtx == nil {
+			respondWithError(c, apierror.Unauthorized("Authentication required"))
+			return
+		}
+
+		// Look up full user from database to check IsSuperAdmin
+		user, err := userRepo.FindByID(c.Request.Context(), userCtx.UserID)
+		if err != nil {
+			respondWithError(c, apierror.Forbidden("User not found"))
+			return
+		}
+
+		if !user.IsSuperAdmin {
+			respondWithError(c, apierror.Forbidden("Super admin access required"))
 			return
 		}
 

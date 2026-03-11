@@ -1,5 +1,6 @@
 import type { ThemePlugin } from "@/plugins/types";
 import { defaultTokens } from "@/theme/tokens";
+import StatsCounterSection from "./StatsCounterSection";
 
 export const corporateClassicTheme: ThemePlugin = {
   manifest: {
@@ -15,6 +16,35 @@ export const corporateClassicTheme: ThemePlugin = {
     tags: ["corporate", "bilingual"],
   },
   defaultTokens,
+  settingSchema: [
+    {
+      group: "homepage",
+      label: "Homepage",
+      labelZh: "首页设置",
+      fields: [
+        { name: "heroStyle", type: "select", label: "Hero Style", labelZh: "主视觉样式",
+          defaultValue: "image", options: [
+            { label: "背景图", value: "image" },
+            { label: "纯色渐变", value: "gradient" },
+          ] },
+        { name: "showLatestArticles", type: "boolean", label: "Show Latest Articles", labelZh: "显示最新文章",
+          defaultValue: true },
+        { name: "latestArticlesCount", type: "number", label: "Article Count", labelZh: "文章数量",
+          defaultValue: 3 },
+      ],
+    },
+    {
+      group: "footer",
+      label: "Footer",
+      labelZh: "页脚设置",
+      fields: [
+        { name: "showSocialLinks", type: "boolean", label: "Show Social Links", labelZh: "显示社交链接",
+          defaultValue: false },
+        { name: "icp", type: "text", label: "ICP Number", labelZh: "ICP 备案号",
+          defaultValue: "" },
+      ],
+    },
+  ],
   tokenPresets: [
     {
       id: "default",
@@ -45,7 +75,7 @@ export const corporateClassicTheme: ThemePlugin = {
           sans: "Inter, system-ui, -apple-system, sans-serif",
           heading: "Inter, system-ui, -apple-system, sans-serif",
         },
-        layout: { maxWidth: "1344px", borderRadius: "0.75rem" },
+        layout: { maxWidth: "1200px", borderRadius: "0.75rem", contentPadding: "2rem", sectionSpacing: "5rem", contentGap: "2rem" },
       },
     },
     {
@@ -70,9 +100,15 @@ export const corporateClassicTheme: ThemePlugin = {
           sans: "Georgia, 'Times New Roman', serif",
           heading: "Georgia, 'Times New Roman', serif",
         },
-        layout: { maxWidth: "1200px", borderRadius: "0.25rem" },
+        layout: { maxWidth: "1200px", borderRadius: "0.25rem", contentPadding: "1.25rem", sectionSpacing: "4rem", contentGap: "1.5rem" },
       },
     },
+  ],
+  sections: {
+    "stats-counter": StatsCounterSection,
+  },
+  sectionMetas: [
+    { type: "stats-counter", label: "Stats Counter", labelZh: "数据统计" },
   ],
   pages: [
     {

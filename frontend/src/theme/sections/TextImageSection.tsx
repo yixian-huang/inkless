@@ -12,7 +12,7 @@ export default function TextImageSection({ data }: SectionProps<TextImageSection
   const isImageLeft = imagePosition === "left";
 
   return (
-    <div className="max-w-layout mx-auto px-4 md:px-6 mb-12">
+    <div className="max-w-layout mx-auto px-4 md:px-content xl:px-8 mb-12">
       <div className="grid grid-cols-1 lg:grid-cols-2 items-center">
         {isImageLeft ? (
           <>
@@ -23,7 +23,7 @@ export default function TextImageSection({ data }: SectionProps<TextImageSection
                 className="w-full h-full object-cover object-center"
               />
             </div>
-            <div className="w-full h-full py-12 px-10 md:px-16 order-1 lg:order-2">
+            <div className="w-full h-full py-12 px-10 md:px-16 xl:px-20 order-1 lg:order-2">
               {title && (
                 <h2 className="text-3xl md:text-4xl font-bold text-primary mb-4">
                   {title}
@@ -38,7 +38,7 @@ export default function TextImageSection({ data }: SectionProps<TextImageSection
           </>
         ) : (
           <>
-            <div className="w-full h-full py-12 px-10 md:px-16">
+            <div className="w-full h-full py-12 px-10 md:px-16 xl:px-20">
               {title && (
                 <h2 className="text-3xl md:text-4xl font-bold text-primary mb-4">
                   {title}

@@ -1,4 +1,5 @@
 import type { FieldDescriptor } from "@/types/schema";
+import type { SectionMeta } from "@/theme/types";
 
 // ---------------------------------------------------------------------------
 // 1. hero
@@ -189,11 +190,55 @@ export const sectionSchemas: Record<string, Record<string, FieldDescriptor>> = {
 };
 
 /**
+ * Convert theme sectionMeta fields to a basic FieldDescriptor schema.
+ * This allows the admin editor to show fields for theme-registered sections.
+ */
+function sectionMetaToSchema(
+  meta: SectionMeta & { fields?: Array<{ name: string; type: string; label: string }> },
+): Record<string, FieldDescriptor> {
+  if (!meta.fields) return {};
+  const schema: Record<string, FieldDescriptor> = {};
+  for (const f of meta.fields) {
+    schema[f.name] = {
+      type: (f.type === "number" ? "string" : f.type),
+      label: f.label,
+    } as FieldDescriptor;
+  }
+  return schema;
+}
+
+/**
  * Look up the FieldDescriptor schema for a given section type.
- * Returns an empty object if the section type is unknown.
+ * Falls back to converting theme sectionMetas if available.
  */
 export function getSectionSchema(
   sectionType: string,
+  themeMetas?: SectionMeta[],
 ): Record<string, FieldDescriptor> {
-  return sectionSchemas[sectionType] || {};
+  if (sectionSchemas[sectionType]) return sectionSchemas[sectionType];
+
+  if (themeMetas) {
+    const meta = themeMetas.find((m) => m.type === sectionType) as
+      SectionMeta & { fields?: Array<{ name: string; type: string; label: string }> } | undefined;
+    if (meta) return sectionMetaToSchema(meta);
+  }
+
+  return {};
+}
+
+/**
+ * Returns all available section types (base + theme).
+ */
+export function getAllSectionTypes(
+  themeMetas?: SectionMeta[],
+): string[] {
+  const types = Object.keys(sectionSchemas);
+  if (themeMetas) {
+    for (const meta of themeMetas) {
+      if (!types.includes(meta.type)) {
+        types.push(meta.type);
+      }
+    }
+  }
+  return types;
 }

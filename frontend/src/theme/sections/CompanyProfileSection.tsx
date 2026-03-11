@@ -13,8 +13,8 @@ export default function CompanyProfileSection({
   if (!title) return null;
 
   return (
-    <div className="max-w-layout mx-auto px-4 md:px-6">
-      <div className="grid grid-cols-1 lg:grid-cols-12 items-center gap-8 lg:gap-12">
+    <div className="max-w-layout mx-auto px-4 md:px-content xl:px-8">
+      <div className="grid grid-cols-1 lg:grid-cols-12 items-center gap-8 lg:gap-12 xl:gap-16">
         <div className="lg:col-span-3 text-center">
           <h2 className="text-3xl md:text-4xl font-bold text-primary uppercase">
             {title}

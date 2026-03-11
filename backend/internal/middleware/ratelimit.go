@@ -37,9 +37,9 @@ func newRateLimiterStore(rps float64, burst int) *rateLimiterStore {
 }
 
 func (s *rateLimiterStore) getLimiter(ip string) *rate.Limiter {
-	s.RLock()
+	s.mu.RLock()
 	entry, exists := s.limiters[ip]
-	s.RUnlock()
+	s.mu.RUnlock()
 
 	if exists {
 		s.mu.Lock()
@@ -77,16 +77,6 @@ func (s *rateLimiterStore) cleanup() {
 		}
 		s.mu.Unlock()
 	}
-}
-
-// RLock acquires a read lock
-func (s *rateLimiterStore) RLock() {
-	s.mu.RLock()
-}
-
-// RUnlock releases a read lock
-func (s *rateLimiterStore) RUnlock() {
-	s.mu.RUnlock()
 }
 
 // RateLimit returns a Gin middleware that rate-limits requests per IP

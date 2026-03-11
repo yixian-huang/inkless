@@ -49,6 +49,11 @@ function AdvantageBlockImage({
   );
 }
 
+/** Strip leading emoji/symbol characters from a string */
+function stripLeadingEmoji(text: string): string {
+  return text.replace(/^[\p{Emoji_Presentation}\p{Extended_Pictographic}\s]+/u, '').trim();
+}
+
 /** 优势区块 - 标题与描述 */
 function AdvantageBlockText({
   title,
@@ -61,10 +66,10 @@ function AdvantageBlockText({
 }) {
   return (
     <div className={`w-full h-full py-12 px-10 md:px-16 ${className}`.trim()}>
-      <h2 className="text-3xl md:text-4xl font-bold text-primary mb-4">
-        {title}
+      <h2 className="text-xl md:text-2xl font-bold text-primary mb-4">
+        {stripLeadingEmoji(title)}
       </h2>
-      <p className="text-2xl md:text-3xl leading-relaxed text-primary-dark">
+      <p className="text-base text-gray-700 leading-relaxed">
         {description}
       </p>
     </div>

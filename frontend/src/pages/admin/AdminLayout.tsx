@@ -3,10 +3,34 @@ import { Outlet, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import AdminSidebar from "./components/AdminSidebar";
 
+// Map admin route prefixes to permission keys
+const routePermissions: Record<string, string> = {
+  "/admin/content": "content",
+  "/admin/pages": "pages",
+  "/admin/articles": "articles",
+  "/admin/media": "media",
+  "/admin/form-submissions": "form-submissions",
+  "/admin/menus": "menus",
+  "/admin/theme": "theme",
+  "/admin/analytics": "analytics",
+  "/admin/audit-logs": "audit-logs",
+  "/admin/backups": "backups",
+  "/admin/users": "users",
+};
+
+function getRequiredPermission(pathname: string): string | null {
+  for (const [prefix, perm] of Object.entries(routePermissions)) {
+    if (pathname === prefix || pathname.startsWith(prefix + "/")) {
+      return perm;
+    }
+  }
+  return null; // No permission required (e.g. /admin dashboard, /admin/login)
+}
+
 export default function AdminLayout() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, isAuthenticated, isLoading, logout } = useAuth();
+  const { user, isAuthenticated, isLoading, logout, hasPermission } = useAuth();
 
   const [collapsed, setCollapsed] = useState(() =>
     localStorage.getItem("admin_sidebar_collapsed") === "true"
@@ -40,10 +64,22 @@ export default function AdminLayout() {
     return <Outlet />;
   }
 
+  // Check route-level permission
+  const requiredPerm = getRequiredPermission(location.pathname);
+  if (requiredPerm && !hasPermission(requiredPerm)) {
+    return <Navigate to="/admin" replace />;
+  }
+
   const handleLogout = async () => {
     await logout();
     navigate("/admin/login");
   };
+
+  const roleBadge = user?.isSuperAdmin
+    ? "超级管理员"
+    : user?.role === "admin"
+      ? "管理员"
+      : "编辑";
 
   return (
     <div className="min-h-screen bg-gray-100 flex">
@@ -83,8 +119,12 @@ export default function AdminLayout() {
             <span className="text-sm text-gray-600">
               {user?.username || "管理员"}
             </span>
-            <span className="text-xs text-gray-500 px-2 py-0.5 bg-gray-100 rounded">
-              {user?.role === "admin" ? "管理员" : "编辑"}
+            <span className={`text-xs px-2 py-0.5 rounded ${
+              user?.isSuperAdmin
+                ? "text-amber-700 bg-amber-100"
+                : "text-gray-500 bg-gray-100"
+            }`}>
+              {roleBadge}
             </span>
             <button
               onClick={handleLogout}

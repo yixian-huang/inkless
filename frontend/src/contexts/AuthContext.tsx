@@ -6,6 +6,8 @@ interface User {
   id: string;
   username: string;
   role: "admin" | "editor";
+  isSuperAdmin: boolean;
+  permissions: string[];
 }
 
 interface AuthContextValue {
@@ -15,6 +17,7 @@ interface AuthContextValue {
   login: (username: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   refreshToken: () => Promise<void>;
+  hasPermission: (perm: string) => boolean;
 }
 
 interface LoginResponse {
@@ -152,6 +155,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
     clearTokens();
   };
 
+  const hasPermission = useCallback(
+    (perm: string): boolean => {
+      if (!user) return false;
+      if (user.isSuperAdmin) return true;
+      return user.permissions?.includes(perm) ?? false;
+    },
+    [user]
+  );
+
   const value: AuthContextValue = {
     user,
     isAuthenticated: !!user,
@@ -159,6 +171,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     login,
     logout,
     refreshToken,
+    hasPermission,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -33,6 +33,13 @@ type Page struct {
 	RenderMode     string         `gorm:"size:20;default:'dynamic'" json:"renderMode"`
 	IsThemePage    bool           `gorm:"default:false" json:"isThemePage"`
 	NavConfig      JSONMap        `gorm:"type:jsonb" json:"navConfig"`
+	CoverImage     string         `gorm:"size:500" json:"coverImage"`
+	AutoSummary    bool           `gorm:"default:false" json:"autoSummary"`
+	AllowComments  bool           `gorm:"default:true" json:"allowComments"`
+	Pinned         bool           `gorm:"default:false" json:"pinned"`
+	Visibility     string         `gorm:"size:30;default:'public'" json:"visibility"`
+	PublishedAt    *time.Time     `json:"publishedAt"`
+	Metadata       JSONMap        `gorm:"type:jsonb" json:"metadata"`
 	CreatedAt      time.Time      `gorm:"autoCreateTime" json:"createdAt"`
 	UpdatedAt      time.Time      `gorm:"autoUpdateTime" json:"updatedAt"`
 	DeletedAt      gorm.DeletedAt `gorm:"index" json:"-"`

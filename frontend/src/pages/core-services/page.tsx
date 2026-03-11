@@ -61,9 +61,11 @@ function ServiceBlockText({
 }) {
   return (
     <div className={`w-full h-full py-12 px-10 md:px-16 ${className}`.trim()}>
-      <h2 className="text-xl md:text-2xl font-bold text-primary mb-4">
-        {title}
-      </h2>
+      <div className="mb-4">
+        <h2 className="text-xl md:text-2xl font-bold text-primary">
+          {title}
+        </h2>
+      </div>
       <p className="text-base text-gray-700 leading-relaxed">
         {description}
       </p>

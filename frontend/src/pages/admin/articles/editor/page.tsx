@@ -18,6 +18,9 @@ import {
   EditorModals,
   useModalState,
 } from "@/components/admin/RichTextEditor";
+import EditorBubbleMenu from "@/components/admin/editor/EditorBubbleMenu";
+import TableBubbleMenu from "@/components/admin/editor/TableBubbleMenu";
+import EditorFloatingMenu from "@/components/admin/editor/EditorFloatingMenu";
 
 export default function ArticleEditorPage() {
   const { id } = useParams<{ id: string }>();
@@ -501,6 +504,9 @@ export default function ArticleEditorPage() {
               if (!entry?.editor) return null;
               return (
                 <div key={lang} className={idx === activeLangIdx ? "h-full" : "hidden"}>
+                  <EditorBubbleMenu editor={entry.editor} />
+                  <TableBubbleMenu editor={entry.editor} />
+                  <EditorFloatingMenu editor={entry.editor} />
                   <EditorContent editor={entry.editor} className="h-full article-editor-content" />
                 </div>
               );

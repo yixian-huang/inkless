@@ -53,6 +53,15 @@ func (r *GormTagRepository) FindBySlug(ctx context.Context, slug string) (*model
 	return &tag, nil
 }
 
+// Update updates a tag
+func (r *GormTagRepository) Update(ctx context.Context, tag *model.Tag) error {
+	if err := tag.Validate(); err != nil {
+		return err
+	}
+	result := r.db.WithContext(ctx).Save(tag)
+	return result.Error
+}
+
 // Delete deletes a tag by ID
 func (r *GormTagRepository) Delete(ctx context.Context, id uint) error {
 	result := r.db.WithContext(ctx).Delete(&model.Tag{}, id)
@@ -63,6 +72,18 @@ func (r *GormTagRepository) Delete(ctx context.Context, id uint) error {
 		return errors.New("tag not found")
 	}
 	return nil
+}
+
+// FindByIDs returns tags matching the given IDs
+func (r *GormTagRepository) FindByIDs(ctx context.Context, ids []uint) ([]model.Tag, error) {
+	var items []model.Tag
+	if len(ids) == 0 {
+		return items, nil
+	}
+	if err := r.db.WithContext(ctx).Where("id IN (?)", ids).Find(&items).Error; err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 // List returns all tags

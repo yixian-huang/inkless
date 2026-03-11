@@ -19,7 +19,7 @@ export default function PublicLayout({ layout, children }: PublicLayoutProps) {
 
       {/* Main content area -- varies by layout type */}
       {layoutType === "sidebar" ? (
-        <div className="max-w-layout mx-auto px-4 md:px-6 py-8 flex gap-8">
+        <div className="max-w-layout mx-auto px-4 md:px-content xl:px-8 py-8 flex gap-8">
           {layout?.sidebar?.position === "left" && (
             <Sidebar config={layout.sidebar} />
           )}

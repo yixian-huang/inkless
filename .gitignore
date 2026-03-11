@@ -47,6 +47,7 @@ backend/uploads/
 
 # Generated files
 frontend/auto-imports.d.ts
+backend/version.json
 
 # OS files
 .DS_Store

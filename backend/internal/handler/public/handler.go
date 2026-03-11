@@ -2,6 +2,7 @@ package public
 
 import (
 	"context"
+	"log/slog"
 	"time"
 
 	"blotting-consultancy/internal/model"
@@ -65,10 +66,14 @@ func (h *Handler) GetPublicContent(c *gin.Context) {
 
 	// Asynchronously record page view
 	go func() {
-		_ = h.pvRepo.Create(context.Background(), &model.PageView{
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		if err := h.pvRepo.Create(ctx, &model.PageView{
 			PageKey: pageKeyStr,
 			Locale:  locale,
-		})
+		}); err != nil {
+			slog.Error("failed to record page view", "pageKey", pageKeyStr, "error", err)
+		}
 	}()
 
 	// Return published-only data (never expose draft fields)

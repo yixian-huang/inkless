@@ -13,6 +13,13 @@ export interface PageItem {
   renderMode?: string;
   isThemePage?: boolean;
   navConfig?: { showInHeader?: boolean; showInFooter?: boolean };
+  coverImage?: string;
+  autoSummary?: boolean;
+  allowComments?: boolean;
+  pinned?: boolean;
+  visibility?: string;
+  publishedAt?: string | null;
+  metadata?: Record<string, unknown>;
   createdAt: string;
   updatedAt: string;
 }
@@ -36,6 +43,13 @@ export interface CreatePageRequest {
   renderMode?: string;
   isThemePage?: boolean;
   navConfig?: { showInHeader?: boolean; showInFooter?: boolean };
+  coverImage?: string;
+  autoSummary?: boolean;
+  allowComments?: boolean;
+  pinned?: boolean;
+  visibility?: string;
+  publishedAt?: string;
+  metadata?: Record<string, unknown>;
 }
 
 export type UpdatePageRequest = Partial<CreatePageRequest>;
