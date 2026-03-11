@@ -1,6 +1,7 @@
 package article
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -10,13 +11,15 @@ import (
 
 	"blotting-consultancy/internal/model"
 	"blotting-consultancy/internal/repository"
+	"blotting-consultancy/internal/service"
 )
 
 // Handler handles article-related HTTP requests
 type Handler struct {
-	articleRepo  repository.ArticleRepository
-	categoryRepo repository.CategoryRepository
-	tagRepo      repository.TagRepository
+	articleRepo   repository.ArticleRepository
+	categoryRepo  repository.CategoryRepository
+	tagRepo       repository.TagRepository
+	searchService *service.SearchService
 }
 
 // NewHandler creates a new article handler
@@ -24,11 +27,13 @@ func NewHandler(
 	articleRepo repository.ArticleRepository,
 	categoryRepo repository.CategoryRepository,
 	tagRepo repository.TagRepository,
+	searchService *service.SearchService,
 ) *Handler {
 	return &Handler{
-		articleRepo:  articleRepo,
-		categoryRepo: categoryRepo,
-		tagRepo:      tagRepo,
+		articleRepo:   articleRepo,
+		categoryRepo:  categoryRepo,
+		tagRepo:       tagRepo,
+		searchService: searchService,
 	}
 }
 
@@ -244,6 +249,19 @@ func (h *Handler) AdminCreate(c *gin.Context) {
 		return
 	}
 
+	// Auto-index on publish
+	if article.Status == model.ArticleStatusPublished && h.searchService != nil {
+		go func() {
+			ctx := context.Background()
+			if article.ZhTitle != "" {
+				h.searchService.IndexArticle(ctx, article.ID, "zh", article.ZhTitle, article.ZhBody, article.Slug)
+			}
+			if article.EnTitle != "" {
+				h.searchService.IndexArticle(ctx, article.ID, "en", article.EnTitle, article.EnBody, article.Slug)
+			}
+		}()
+	}
+
 	c.JSON(http.StatusCreated, created)
 }
 
@@ -334,6 +352,25 @@ func (h *Handler) AdminUpdate(c *gin.Context) {
 		return
 	}
 
+	// Auto-index on publish, remove from index otherwise
+	if h.searchService != nil {
+		if existing.Status == model.ArticleStatusPublished {
+			go func() {
+				ctx := context.Background()
+				if existing.ZhTitle != "" {
+					h.searchService.IndexArticle(ctx, existing.ID, "zh", existing.ZhTitle, existing.ZhBody, existing.Slug)
+				}
+				if existing.EnTitle != "" {
+					h.searchService.IndexArticle(ctx, existing.ID, "en", existing.EnTitle, existing.EnBody, existing.Slug)
+				}
+			}()
+		} else {
+			go func() {
+				h.searchService.RemoveFromIndex(context.Background(), "article", existing.ID)
+			}()
+		}
+	}
+
 	c.JSON(http.StatusOK, updated)
 }
 
@@ -349,6 +386,13 @@ func (h *Handler) AdminDelete(c *gin.Context) {
 	if err := h.articleRepo.Delete(c.Request.Context(), uint(id)); err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": gin.H{"message": "文章不存在"}})
 		return
+	}
+
+	// Remove from search index
+	if h.searchService != nil {
+		go func() {
+			h.searchService.RemoveFromIndex(context.Background(), "article", uint(id))
+		}()
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "已删除"})

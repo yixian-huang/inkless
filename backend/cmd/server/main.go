@@ -233,6 +233,9 @@ func main() {
 	backupSvc := backup.NewService(database.DB, "./backups", 10, cfg.UploadDir, Version)
 	log.Info("Audit logger and backup service initialized")
 
+	// Initialize search service (needed by article handler)
+	searchService := service.NewSearchService(database.DB, db.IsPostgresDSN(cfg.DBDSN))
+
 	// Initialize handlers
 	authHandlerInst := authHandler.NewHandler(userRepo, refreshTokenRepo, cfg)
 	contentHandlerInst := contentHandler.NewHandler(
@@ -249,7 +252,8 @@ func main() {
 	categoryHandlerInst := categoryHandler.NewHandler(categoryRepo, articleRepo)
 	tagHandlerInst := tagHandler.NewHandler(tagRepo, articleRepo)
 	menuHandlerInst := menuHandler.NewHandler(menuRepo)
-	articleHandlerInst := articleHandler.NewHandler(articleRepo, categoryRepo, tagRepo)
+	searchService := service.NewSearchService(database.DB, db.IsPostgresDSN(cfg.DBDSN))
+	articleHandlerInst := articleHandler.NewHandler(articleRepo, categoryRepo, tagRepo, searchService)
 	backupHandlerInst := backupHandler.NewHandler(backupSvc)
 	auditlogHandlerInst := auditlogHandler.NewHandler(auditEventRepo)
 	sitemapHandlerInst := sitemapHandler.NewHandler(contentDocRepo, articleRepo, cfg.BaseURL)
@@ -263,7 +267,6 @@ func main() {
 	captchaProvider := &provider.NoopCaptchaProvider{}
 	antispamService := service.NewAntiSpamService(captchaProvider)
 	commentHandlerInst := commentHandler.NewHandler(commentRepo, antispamService)
-	searchService := service.NewSearchService(database.DB, db.IsPostgresDSN(cfg.DBDSN))
 	searchHandlerInst := searchhandler.NewHandler(searchService)
 	log.Info("Handlers initialized")
 
@@ -485,6 +488,8 @@ func main() {
 		adminGroup.POST("/articles", articleHandlerInst.AdminCreate)
 		adminGroup.PUT("/articles/:id", articleHandlerInst.AdminUpdate)
 		adminGroup.DELETE("/articles/:id", articleHandlerInst.AdminDelete)
+		adminGroup.GET("/articles/:id/export", articleHandlerInst.AdminExportMarkdown)
+		adminGroup.POST("/articles/import", articleHandlerInst.AdminImportMarkdown)
 
 		// Category management
 		adminGroup.GET("/categories", categoryHandlerInst.List)
