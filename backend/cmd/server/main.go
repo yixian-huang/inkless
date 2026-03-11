@@ -27,6 +27,7 @@ import (
 	authHandler "blotting-consultancy/internal/handler/auth"
 	backupHandler "blotting-consultancy/internal/handler/backup"
 	categoryHandler "blotting-consultancy/internal/handler/category"
+	commentHandler "blotting-consultancy/internal/handler/comment"
 	contentHandler "blotting-consultancy/internal/handler/content"
 	mediaHandler "blotting-consultancy/internal/handler/media"
 	pageHandler "blotting-consultancy/internal/handler/page"
@@ -41,6 +42,7 @@ import (
 	seoHandler "blotting-consultancy/internal/handler/seo"
 	userHandler "blotting-consultancy/internal/handler/user"
 	"blotting-consultancy/internal/middleware"
+	"blotting-consultancy/internal/provider"
 	"blotting-consultancy/internal/model"
 	"blotting-consultancy/internal/repository"
 	"blotting-consultancy/internal/seed"
@@ -191,6 +193,7 @@ func main() {
 	installedThemeRepo := repository.NewGormInstalledThemeRepository(database.DB)
 	formSubmissionRepo := repository.NewGormFormSubmissionRepository(database.DB)
 	menuRepo := repository.NewGormMenuRepository(database.DB)
+	commentRepo := repository.NewGormCommentRepository(database.DB)
 	log.Info("Repositories initialized")
 
 	// Initialize theme page service early (needed for seeding)
@@ -252,6 +255,9 @@ func main() {
 	formSubmissionHandlerInst := formSubmissionHandler.NewHandler(formSubmissionRepo)
 	userHandlerInst := userHandler.NewHandler(userRepo)
 	seoHandlerInst := seoHandler.NewHandler()
+	captchaProvider := &provider.NoopCaptchaProvider{}
+	antispamService := service.NewAntiSpamService(captchaProvider)
+	commentHandlerInst := commentHandler.NewHandler(commentRepo, antispamService)
 	log.Info("Handlers initialized")
 
 	// Setup Gin router
@@ -559,6 +565,9 @@ func main() {
 
 	// SEO routes (public + admin)
 	seoHandlerInst.RegisterRoutes(publicGroup, adminGroup)
+
+	// Comment routes (public + admin)
+	commentHandlerInst.RegisterRoutes(publicGroup, adminGroup)
 
 	// Serve uploaded files statically
 	router.Static("/uploads", cfg.UploadDir)
