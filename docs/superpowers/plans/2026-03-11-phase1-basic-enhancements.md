@@ -138,7 +138,7 @@ package seo_test
 import (
 	"testing"
 
-	"impress-server/internal/seo"
+	"blotting-consultancy/internal/seo"
 )
 
 func TestResolveHomePage(t *testing.T) {
@@ -261,7 +261,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	"impress-server/internal/seo"
+	"blotting-consultancy/internal/seo"
 )
 
 func TestOrganizationJSONLD(t *testing.T) {
@@ -856,8 +856,8 @@ import (
 
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
-	"impress-server/internal/model"
-	"impress-server/internal/service"
+	"blotting-consultancy/internal/model"
+	"blotting-consultancy/internal/service"
 )
 
 func setupSearchTestDB(t *testing.T) *gorm.DB {
@@ -935,7 +935,7 @@ import (
 	"strings"
 
 	"gorm.io/gorm"
-	"impress-server/internal/provider"
+	"blotting-consultancy/internal/provider"
 )
 
 // SearchService implements provider.SearchProvider using SQLite FTS5 or PostgreSQL tsvector.
@@ -1121,7 +1121,7 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
-	"impress-server/internal/provider"
+	"blotting-consultancy/internal/provider"
 )
 
 type Handler struct {
@@ -1200,7 +1200,7 @@ func (h *Handler) RegisterRoutes(public, admin *gin.RouterGroup) {
 - [ ] **Step 2: Wire into main.go**
 
 ```go
-searchService := service.NewSearchService(database.DB, config.IsPostgresDSN(cfg.DBDSN))
+searchService := service.NewSearchService(database.DB, db.IsPostgresDSN(cfg.DBDSN))
 searchHandler := searchhandler.NewHandler(searchService)
 searchHandler.RegisterRoutes(publicGroup, adminGroup)
 ```
@@ -1678,7 +1678,7 @@ package repository
 import (
 	"context"
 
-	"impress-server/internal/model"
+	"blotting-consultancy/internal/model"
 )
 
 type CommentRepository interface {
@@ -1715,7 +1715,7 @@ import (
 	"context"
 
 	"gorm.io/gorm"
-	"impress-server/internal/model"
+	"blotting-consultancy/internal/model"
 )
 
 type GormCommentRepositoryImpl struct {
@@ -1879,7 +1879,7 @@ import (
 	"sync"
 	"time"
 
-	"impress-server/internal/provider"
+	"blotting-consultancy/internal/provider"
 )
 
 type AntiSpamService struct {
@@ -2017,9 +2017,9 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
-	"impress-server/internal/model"
-	"impress-server/internal/repository"
-	"impress-server/internal/service"
+	"blotting-consultancy/internal/model"
+	"blotting-consultancy/internal/repository"
+	"blotting-consultancy/internal/service"
 )
 
 type Handler struct {
@@ -2522,8 +2522,8 @@ import (
 
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
-	"impress-server/internal/model"
-	"impress-server/internal/service"
+	"blotting-consultancy/internal/model"
+	"blotting-consultancy/internal/service"
 )
 
 func TestSchedulerPublishesOverdueArticles(t *testing.T) {

@@ -91,7 +91,7 @@ import (
 	"testing"
 
 	"github.com/pressly/goose/v3"
-	"impress-server/internal/db/migrations"
+	"blotting-consultancy/internal/db/migrations"
 	_ "github.com/mattn/go-sqlite3"
 )
 
@@ -144,7 +144,7 @@ In `backend/cmd/server/main.go`, after the existing `migrator.AutoMigrate(...)` 
 	}
 	goose.SetBaseFS(migrations.EmbedMigrations)
 	dialect := "sqlite3"
-	if config.IsPostgresDSN(cfg.DBDSN) {
+	if db.IsPostgresDSN(cfg.DBDSN) {
 		dialect = "postgres"
 	}
 	if err := goose.SetDialect(dialect); err != nil {
@@ -157,7 +157,7 @@ In `backend/cmd/server/main.go`, after the existing `migrator.AutoMigrate(...)` 
 }
 ```
 
-Add imports: `"github.com/pressly/goose/v3"`, `"impress-server/internal/db/migrations"`.
+Add imports: `"github.com/pressly/goose/v3"`, `"blotting-consultancy/internal/db/migrations"`, `"blotting-consultancy/internal/db"` (for `db.IsPostgresDSN`).
 
 - [ ] **Step 7: Verify backend compiles and starts**
 
@@ -194,7 +194,7 @@ package seo_test
 import (
 	"testing"
 
-	"impress-server/internal/seo"
+	"blotting-consultancy/internal/seo"
 )
 
 func TestDefaultPageMeta(t *testing.T) {
@@ -310,7 +310,7 @@ import (
 	"strings"
 	"testing"
 
-	"impress-server/internal/seo"
+	"blotting-consultancy/internal/seo"
 )
 
 const testTemplate = `<!DOCTYPE html>
@@ -617,7 +617,7 @@ git commit -m "docs(0.4): define API versioning strategy"
 - [ ] **Step 3: Run full verification**
 
 ```bash
-cd /home/dev/impress && pnpm lint && pnpm type-check
+cd /home/dev/impress && pnpm lint && pnpm type-check && pnpm test
 cd /home/dev/impress/backend && go vet ./... && go test -v -race ./...
 ```
 
