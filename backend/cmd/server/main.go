@@ -132,6 +132,7 @@ func main() {
 		&model.FormSubmission{},
 		&model.MenuGroup{},
 		&model.MenuItem{},
+		&model.Comment{},
 	); err != nil {
 		log.Error("Failed to run migrations", "error", err)
 		os.Exit(1)
@@ -243,7 +244,7 @@ func main() {
 	articleHandlerInst := articleHandler.NewHandler(articleRepo, categoryRepo, tagRepo)
 	backupHandlerInst := backupHandler.NewHandler(backupSvc)
 	auditlogHandlerInst := auditlogHandler.NewHandler(auditEventRepo)
-	sitemapHandlerInst := sitemapHandler.NewHandler(contentDocRepo, cfg.BaseURL)
+	sitemapHandlerInst := sitemapHandler.NewHandler(contentDocRepo, articleRepo, cfg.BaseURL)
 	pageHandlerInst := pageHandler.NewHandler(pageRepo, installedThemeRepo)
 	themeHandlerInst := themeHandler.NewHandler(contentDocRepo)
 	installedThemeHandlerInst := installedThemeHandler.NewHandler(installedThemeRepo, themePageService)

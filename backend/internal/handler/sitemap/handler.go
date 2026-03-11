@@ -3,7 +3,6 @@ package sitemap
 import (
 	"encoding/xml"
 	"net/http"
-	"time"
 
 	"github.com/gin-gonic/gin"
 
@@ -14,13 +13,15 @@ import (
 // Handler handles sitemap generation
 type Handler struct {
 	contentDocRepo repository.ContentDocumentRepository
+	articleRepo    repository.ArticleRepository
 	baseURL        string
 }
 
 // NewHandler creates a new sitemap handler
-func NewHandler(contentDocRepo repository.ContentDocumentRepository, baseURL string) *Handler {
+func NewHandler(contentDocRepo repository.ContentDocumentRepository, articleRepo repository.ArticleRepository, baseURL string) *Handler {
 	return &Handler{
 		contentDocRepo: contentDocRepo,
+		articleRepo:    articleRepo,
 		baseURL:        baseURL,
 	}
 }
@@ -34,9 +35,11 @@ type urlset struct {
 }
 
 type siteURL struct {
-	Loc     string     `xml:"loc"`
-	LastMod string     `xml:"lastmod,omitempty"`
-	Links   []xhtmlLink `xml:"xhtml:link"`
+	Loc        string      `xml:"loc"`
+	LastMod    string      `xml:"lastmod,omitempty"`
+	ChangeFreq string      `xml:"changefreq,omitempty"`
+	Priority   string      `xml:"priority,omitempty"`
+	Links      []xhtmlLink `xml:"xhtml:link"`
 }
 
 type xhtmlLink struct {
@@ -55,6 +58,21 @@ var pageKeyToPath = map[model.PageKey]string{
 	model.PageKeyExperts:      "/experts",
 	model.PageKeyContact:      "/contact",
 }
+
+// pageKeyPriority maps page keys to sitemap priority values
+var pageKeyPriority = map[model.PageKey]string{
+	model.PageKeyHome: "1.0",
+}
+
+// pageKeyChangeFreq maps page keys to sitemap changefreq values
+var pageKeyChangeFreq = map[model.PageKey]string{
+	model.PageKeyHome: "daily",
+}
+
+const defaultPagePriority = "0.6"
+const defaultPageChangeFreq = "monthly"
+const articlePriority = "0.8"
+const articleChangeFreq = "weekly"
 
 // GetSitemap generates and returns an XML sitemap
 // GET /sitemap.xml
@@ -84,9 +102,21 @@ func (h *Handler) GetSitemap(c *gin.Context) {
 
 		loc := h.baseURL + path
 
+		priority := defaultPagePriority
+		if p, ok := pageKeyPriority[doc.PageKey]; ok {
+			priority = p
+		}
+
+		changeFreq := defaultPageChangeFreq
+		if cf, ok := pageKeyChangeFreq[doc.PageKey]; ok {
+			changeFreq = cf
+		}
+
 		u := siteURL{
-			Loc:     loc,
-			LastMod: doc.UpdatedAt.Format(time.RFC3339),
+			Loc:        loc,
+			LastMod:    doc.UpdatedAt.Format("2006-01-02"),
+			ChangeFreq: changeFreq,
+			Priority:   priority,
 			Links: []xhtmlLink{
 				{
 					Rel:      "alternate",
@@ -102,6 +132,38 @@ func (h *Handler) GetSitemap(c *gin.Context) {
 		}
 
 		set.URLs = append(set.URLs, u)
+	}
+
+	// Add published articles to sitemap
+	if h.articleRepo != nil {
+		articles, _, err := h.articleRepo.ListPublished(c.Request.Context(), 0, 1000, "", "")
+		if err == nil {
+			for _, article := range articles {
+				path := "/articles/" + article.Slug
+				loc := h.baseURL + path
+
+				u := siteURL{
+					Loc:        loc,
+					LastMod:    article.UpdatedAt.Format("2006-01-02"),
+					ChangeFreq: articleChangeFreq,
+					Priority:   articlePriority,
+					Links: []xhtmlLink{
+						{
+							Rel:      "alternate",
+							Hreflang: "zh",
+							Href:     h.baseURL + path + "?locale=zh",
+						},
+						{
+							Rel:      "alternate",
+							Hreflang: "en",
+							Href:     h.baseURL + path + "?locale=en",
+						},
+					},
+				}
+
+				set.URLs = append(set.URLs, u)
+			}
+		}
 	}
 
 	c.Header("Content-Type", "application/xml; charset=utf-8")
