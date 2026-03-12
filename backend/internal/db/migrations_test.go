@@ -21,9 +21,9 @@ func TestGooseMigrationsEmbed(t *testing.T) {
 		t.Fatalf("set dialect: %v", err)
 	}
 
-	// Should run baseline without error
-	if err := goose.Up(sqlDB, "."); err != nil {
-		t.Fatalf("goose up: %v", err)
+	// Apply only the baseline migration (later migrations depend on tables created by AutoMigrate)
+	if err := goose.UpTo(sqlDB, ".", 1); err != nil {
+		t.Fatalf("goose up to 1: %v", err)
 	}
 
 	// Verify version is 1

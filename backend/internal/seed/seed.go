@@ -345,6 +345,10 @@ func getInitialConfig(pageKey model.PageKey) model.JSONMap {
 				"links": []interface{}{},
 			},
 		}
+	case model.PageKeyTheme:
+		return model.JSONMap{
+			"activeTheme": "corporate-classic",
+		}
 	default:
 		return model.JSONMap{}
 	}

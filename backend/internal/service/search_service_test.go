@@ -23,7 +23,7 @@ func setupSearchTestDB(t *testing.T) *gorm.DB {
 		content_type, content_id UNINDEXED, locale, title, body, slug UNINDEXED, tokenize='unicode61'
 	)`)
 	if err != nil {
-		t.Fatalf("create fts table: %v", err)
+		t.Skipf("FTS5 not available in this SQLite build, skipping search tests: %v", err)
 	}
 	if err := db.AutoMigrate(&model.Article{}, &model.Page{}); err != nil {
 		t.Fatalf("auto migrate: %v", err)

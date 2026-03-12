@@ -139,7 +139,7 @@ func (s *Service) backupPostgres(ctx context.Context, timestamp string) (*model.
 
 	// Build pg_dump command. We rely on DATABASE_URL or PG* env vars being set.
 	cmd := exec.CommandContext(ctx, "pg_dump", "--no-owner", "--no-acl", "-f", dumpPath)
-	cmd.Env = append(os.Environ())
+	cmd.Env = os.Environ()
 	cmd.Stderr = os.Stderr
 
 	// Verify the sql.DB is alive before running pg_dump

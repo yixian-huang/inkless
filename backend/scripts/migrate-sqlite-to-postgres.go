@@ -12,7 +12,7 @@ import (
 )
 
 func main() {
-	fmt.Println("=== SQLite to PostgreSQL Migration Tool ===\n")
+	fmt.Println("=== SQLite to PostgreSQL Migration Tool ===")
 
 	// Source: SQLite
 	srcDSN := os.Getenv("SOURCE_DB_DSN")
@@ -47,7 +47,7 @@ func main() {
 		log.Fatalf("Failed to connect to target database: %v", err)
 	}
 	defer targetDB.Close()
-	fmt.Println("✓ Connected to target database\n")
+	fmt.Println("✓ Connected to target database")
 
 	// Verify target database is empty or prompt for confirmation
 	var userCount, docCount, versionCount int64
@@ -92,7 +92,7 @@ func main() {
 
 	// Migrate Users
 	fmt.Println("=== Migrating Users ===")
-	users, err := srcUserRepo.ListAll(ctx)
+	users, _, err := srcUserRepo.List(ctx, 0, 10000)
 	if err != nil {
 		log.Fatalf("Failed to fetch users from source: %v", err)
 	}
@@ -111,13 +111,13 @@ func main() {
 	// Migrate Content Documents
 	fmt.Println("\n=== Migrating Content Documents ===")
 	for _, pageKey := range model.ValidPageKeys {
-		doc, err := srcDocRepo.GetByPageKey(ctx, pageKey)
+		doc, err := srcDocRepo.FindByPageKey(ctx, pageKey)
 		if err != nil {
 			// Document may not exist in source, skip silently
 			continue
 		}
 
-		if err := targetDocRepo.Upsert(ctx, doc); err != nil {
+		if err := targetDocRepo.Create(ctx, doc); err != nil {
 			log.Printf("  ✗ Failed to migrate document %s: %v", pageKey, err)
 			stats.DocsFailed++
 		} else {
@@ -130,7 +130,7 @@ func main() {
 	// Migrate Content Versions
 	fmt.Println("\n=== Migrating Content Versions ===")
 	for _, pageKey := range model.ValidPageKeys {
-		versions, err := srcVersionRepo.ListByPageKey(ctx, pageKey, 1000, 0)
+		versions, _, err := srcVersionRepo.ListByPageKey(ctx, pageKey, 0, 10000)
 		if err != nil {
 			// Page may not have versions, skip silently
 			continue

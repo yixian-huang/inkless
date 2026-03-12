@@ -18,6 +18,8 @@ import (
 	"blotting-consultancy/internal/middleware"
 	"blotting-consultancy/internal/model"
 	"blotting-consultancy/internal/service"
+	"blotting-consultancy/pkg/audit"
+	appLogger "blotting-consultancy/pkg/logger"
 )
 
 // Mock repositories and services
@@ -149,11 +151,15 @@ func setupTestHandler() (*Handler, *MockContentDocumentRepository, *MockContentV
 	validationSvc := new(MockValidationService)
 	contentSvc := new(MockContentService)
 
+	log := appLogger.New("test", nil)
+	auditLog := audit.NewLogger(log)
+
 	handler := &Handler{
 		docRepo:       docRepo,
 		versionRepo:   versionRepo,
 		validationSvc: validationSvc,
 		contentSvc:    contentSvc,
+		auditLog:      auditLog,
 	}
 
 	return handler, docRepo, versionRepo, validationSvc, contentSvc
@@ -323,7 +329,7 @@ func TestPublish_Success(t *testing.T) {
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
 	c.Params = gin.Params{{Key: "pageKey", Value: "home"}}
-	c.Set(string(middleware.UserContextKey), middleware.UserContext{
+	c.Set(string(middleware.UserContextKey), &middleware.UserContext{
 		UserID:   1,
 		Username: "admin",
 		Role:     model.RoleAdmin,
@@ -369,7 +375,7 @@ func TestPublish_VersionMismatch(t *testing.T) {
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
 	c.Params = gin.Params{{Key: "pageKey", Value: "home"}}
-	c.Set(string(middleware.UserContextKey), middleware.UserContext{
+	c.Set(string(middleware.UserContextKey), &middleware.UserContext{
 		UserID:   1,
 		Username: "admin",
 		Role:     model.RoleAdmin,
@@ -478,7 +484,7 @@ func TestRollback_Success(t *testing.T) {
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
 	c.Params = gin.Params{{Key: "pageKey", Value: "home"}, {Key: "version", Value: "9"}}
-	c.Set(string(middleware.UserContextKey), middleware.UserContext{
+	c.Set(string(middleware.UserContextKey), &middleware.UserContext{
 		UserID:   1,
 		Username: "admin",
 		Role:     model.RoleAdmin,
@@ -525,7 +531,7 @@ func TestRollback_VersionNotFound(t *testing.T) {
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
 	c.Params = gin.Params{{Key: "pageKey", Value: "home"}, {Key: "version", Value: "9"}}
-	c.Set(string(middleware.UserContextKey), middleware.UserContext{
+	c.Set(string(middleware.UserContextKey), &middleware.UserContext{
 		UserID:   1,
 		Username: "admin",
 		Role:     model.RoleAdmin,
@@ -583,7 +589,7 @@ func TestPublish_CannotPublish(t *testing.T) {
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
 	c.Params = gin.Params{{Key: "pageKey", Value: "home"}}
-	c.Set(string(middleware.UserContextKey), middleware.UserContext{
+	c.Set(string(middleware.UserContextKey), &middleware.UserContext{
 		UserID:   1,
 		Username: "admin",
 		Role:     model.RoleAdmin,

@@ -47,6 +47,12 @@ func setupTestRouter(t *testing.T) (*gin.Engine, *db.DB) {
 		&model.ContentVersion{},
 		&model.InstalledTheme{},
 		&model.PageView{},
+		&model.Page{},
+		&model.Article{},
+		&model.Category{},
+		&model.Tag{},
+		&model.Comment{},
+		&model.Media{},
 	)
 	require.NoError(t, err)
 
