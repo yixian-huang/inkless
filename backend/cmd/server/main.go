@@ -17,6 +17,7 @@ import (
 
 	"blotting-consultancy/internal/backup"
 	"blotting-consultancy/internal/db"
+	_ "blotting-consultancy/docs/swagger" // swagger docs
 	"blotting-consultancy/internal/eventbus"
 	analyticsHandler "blotting-consultancy/internal/handler/analytics"
 	articleHandler "blotting-consultancy/internal/handler/article"
@@ -36,6 +37,7 @@ import (
 	themeHandler "blotting-consultancy/internal/handler/theme"
 	"blotting-consultancy/internal/middleware"
 	"blotting-consultancy/internal/model"
+	"blotting-consultancy/internal/provider"
 	"blotting-consultancy/internal/repository"
 	"blotting-consultancy/internal/seed"
 	"blotting-consultancy/internal/service"
@@ -44,6 +46,9 @@ import (
 	"blotting-consultancy/pkg/config"
 	appLogger "blotting-consultancy/pkg/logger"
 	"blotting-consultancy/pkg/metrics"
+
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
 // Build-time variables (set via ldflags)
@@ -209,6 +214,13 @@ func main() {
 	}))
 	log.Info("Event bus initialized")
 
+	// Initialize provider registry with defaults
+	registry := provider.NewRegistry()
+	registry.Register("notifier", service.NewLogNotifier())
+	registry.Register("captcha", &provider.NoopCaptchaProvider{})
+	registry.Register("storage", service.NewLocalStorage(cfg.UploadDir))
+	log.Info("Provider registry initialized", "providers", registry.List())
+
 	// Initialize handlers
 	authHandlerInst := authHandler.NewHandler(userRepo, refreshTokenRepo, cfg)
 	contentHandlerInst := contentHandler.NewHandler(
@@ -314,6 +326,9 @@ func main() {
 			},
 		})
 	})
+
+	// Swagger API documentation (no auth required)
+	router.GET("/api-docs/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	// Sitemap (no auth required)
 	router.GET("/sitemap.xml", sitemapHandlerInst.GetSitemap)
