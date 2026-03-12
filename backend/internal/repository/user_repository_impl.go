@@ -107,3 +107,20 @@ func (r *GormUserRepository) CountSuperAdmins(ctx context.Context) (int64, error
 	err := r.db.WithContext(ctx).Model(&model.User{}).Where("is_super_admin = ?", true).Count(&count).Error
 	return count, err
 }
+
+// FindByIDWithRoles finds a user by ID with RBAC roles and permissions preloaded
+func (r *GormUserRepository) FindByIDWithRoles(ctx context.Context, id uint) (*model.User, error) {
+	var user model.User
+	err := r.db.WithContext(ctx).
+		Preload("UserRoles").
+		Preload("UserRoles.Role").
+		Preload("UserRoles.Role.Permissions").
+		First(&user, id).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, errors.New("user not found")
+		}
+		return nil, err
+	}
+	return &user, nil
+}

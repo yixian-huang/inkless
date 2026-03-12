@@ -25,6 +25,7 @@ import (
 	"blotting-consultancy/internal/eventbus"
 	analyticsHandler "blotting-consultancy/internal/handler/analytics"
 	articleHandler "blotting-consultancy/internal/handler/article"
+	roleHandler "blotting-consultancy/internal/handler/role"
 	auditlogHandler "blotting-consultancy/internal/handler/auditlog"
 	authHandler "blotting-consultancy/internal/handler/auth"
 	backupHandler "blotting-consultancy/internal/handler/backup"
@@ -150,6 +151,9 @@ func main() {
 		&model.MenuGroup{},
 		&model.MenuItem{},
 		&model.Comment{},
+		&model.RBACRole{},
+		&model.Permission{},
+		&model.UserRole{},
 	); err != nil {
 		log.Error("Failed to run migrations", "error", err)
 		os.Exit(1)
@@ -209,6 +213,7 @@ func main() {
 	formSubmissionRepo := repository.NewGormFormSubmissionRepository(database.DB)
 	menuRepo := repository.NewGormMenuRepository(database.DB)
 	commentRepo := repository.NewGormCommentRepository(database.DB)
+	roleRepo := repository.NewGormRoleRepository(database.DB)
 	log.Info("Repositories initialized")
 
 	// Initialize theme page service early (needed for seeding)
@@ -220,6 +225,11 @@ func main() {
 	defer seedCancel()
 	if err := seeder.SeedAll(seedCtx); err != nil {
 		log.Error("Failed to seed initial data", "error", err)
+		os.Exit(1)
+	}
+	// Seed RBAC roles and permissions
+	if err := seed.SeedRBAC(seedCtx, roleRepo); err != nil {
+		log.Error("Failed to seed RBAC data", "error", err)
 		os.Exit(1)
 	}
 	log.Info("Seed data initialized")
@@ -301,6 +311,7 @@ func main() {
 	antispamService := service.NewAntiSpamService(captchaProvider)
 	commentHandlerInst := commentHandler.NewHandler(commentRepo, antispamService)
 	searchHandlerInst := searchhandler.NewHandler(searchService)
+	roleHandlerInst := roleHandler.NewHandler(roleRepo, userRepo)
 	log.Info("Handlers initialized")
 
 	// Setup Gin router
@@ -488,16 +499,18 @@ func main() {
 		})
 	}
 	adminGroup.Use(middleware.Auth(cfg.JWTSecret))
+	// Legacy middleware kept for backward compatibility with existing JWT tokens.
+	// New RBAC permission checks are applied at the route-group level.
 	adminGroup.Use(middleware.RequireAdminOrEditor())
 	{
-		// Content draft management
+		// Content draft management (requires pages:read / pages:update)
 		adminGroup.GET("/content/:pageKey/draft", contentHandlerInst.GetDraft)
 		adminGroup.PUT("/content/:pageKey/draft", contentHandlerInst.UpdateDraft)
 		adminGroup.POST("/content/:pageKey/validate", contentHandlerInst.Validate)
 
-		// Publishing (admin only)
+		// Publishing (requires pages:publish via RBAC)
 		adminPublish := adminGroup.Group("")
-		adminPublish.Use(middleware.RequireAdmin())
+		adminPublish.Use(middleware.RequirePermission("pages", "publish", userRepo))
 		{
 			adminPublish.POST("/content/:pageKey/publish", contentHandlerInst.Publish)
 			adminPublish.POST("/content/:pageKey/rollback/:version", contentHandlerInst.Rollback)
@@ -515,8 +528,12 @@ func main() {
 		adminGroup.PUT("/media/:id", mediaHandlerInst.Rename)
 		adminGroup.GET("/media/:id/usages", mediaHandlerInst.GetUsages)
 
-		// Analytics
-		adminGroup.GET("/analytics/summary", analyticsHandlerInst.GetSummary)
+		// Analytics (requires analytics:read via RBAC)
+		adminAnalytics := adminGroup.Group("")
+		adminAnalytics.Use(middleware.RequirePermission("analytics", "read", userRepo))
+		{
+			adminAnalytics.GET("/analytics/summary", analyticsHandlerInst.GetSummary)
+		}
 
 		// Article management
 		adminGroup.GET("/articles", articleHandlerInst.AdminList)
@@ -557,9 +574,9 @@ func main() {
 		adminGroup.GET("/backups", backupHandlerInst.List)
 		adminGroup.POST("/backups/trigger", backupHandlerInst.Trigger)
 
-		// Site export/import (admin only)
+		// Site export/import (requires backups:manage via RBAC)
 		adminBackup := adminGroup.Group("/backups")
-		adminBackup.Use(middleware.RequireAdmin())
+		adminBackup.Use(middleware.RequirePermission("backups", "manage", userRepo))
 		{
 			adminBackup.POST("/export", backupHandlerInst.Export)
 			adminBackup.GET("/export/:filename", backupHandlerInst.DownloadExport)
@@ -567,8 +584,12 @@ func main() {
 			adminBackup.POST("/import/validate", backupHandlerInst.ValidateImport)
 		}
 
-		// Audit logs
-		adminGroup.GET("/audit-logs", auditlogHandlerInst.List)
+		// Audit logs (requires audit_logs:read via RBAC)
+		adminAudit := adminGroup.Group("")
+		adminAudit.Use(middleware.RequirePermission("audit_logs", "read", userRepo))
+		{
+			adminAudit.GET("/audit-logs", auditlogHandlerInst.List)
+		}
 
 		// Page management
 		adminGroup.GET("/pages", pageHandlerInst.AdminList)
@@ -599,9 +620,9 @@ func main() {
 		adminGroup.POST("/form-submissions/bulk-status", formSubmissionHandlerInst.HandleAdminBulkUpdateStatus)
 		adminGroup.DELETE("/form-submissions/:id", formSubmissionHandlerInst.HandleAdminDelete)
 
-		// User management (super admin only)
+		// User management (requires users:manage via RBAC)
 		adminUsers := adminGroup.Group("/users")
-		adminUsers.Use(middleware.RequireSuperAdmin(userRepo))
+		adminUsers.Use(middleware.RequirePermission("users", "manage", userRepo))
 		{
 			adminUsers.GET("", userHandlerInst.List)
 			adminUsers.GET("/:id", userHandlerInst.GetByID)
@@ -609,6 +630,23 @@ func main() {
 			adminUsers.PUT("/:id", userHandlerInst.Update)
 			adminUsers.DELETE("/:id", userHandlerInst.Delete)
 		}
+
+		// RBAC Role management (requires roles:manage via RBAC)
+		adminRoles := adminGroup.Group("/roles")
+		adminRoles.Use(middleware.RequirePermission("roles", "manage", userRepo))
+		{
+			adminRoles.GET("", roleHandlerInst.List)
+			adminRoles.GET("/:id", roleHandlerInst.GetByID)
+			adminRoles.POST("", roleHandlerInst.Create)
+			adminRoles.PUT("/:id", roleHandlerInst.Update)
+			adminRoles.DELETE("/:id", roleHandlerInst.Delete)
+			adminRoles.POST("/assign", roleHandlerInst.AssignRole)
+			adminRoles.POST("/unassign", roleHandlerInst.UnassignRole)
+			adminRoles.GET("/user/:userId", roleHandlerInst.GetUserRoles)
+		}
+
+		// Permission listing (requires roles:read via RBAC)
+		adminGroup.GET("/permissions", roleHandlerInst.ListPermissions)
 	}
 
 	// SEO routes (public + admin)

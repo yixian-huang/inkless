@@ -66,6 +66,14 @@ func (m *MockUserRepository) CountSuperAdmins(ctx context.Context) (int64, error
 	return args.Get(0).(int64), args.Error(1)
 }
 
+func (m *MockUserRepository) FindByIDWithRoles(ctx context.Context, id uint) (*model.User, error) {
+	args := m.Called(ctx, id)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*model.User), args.Error(1)
+}
+
 type MockRefreshTokenRepository struct {
 	mock.Mock
 }

@@ -28,4 +28,7 @@ type UserRepository interface {
 
 	// CountSuperAdmins returns the number of super admin users
 	CountSuperAdmins(ctx context.Context) (int64, error)
+
+	// FindByIDWithRoles finds a user by ID with RBAC roles and permissions preloaded
+	FindByIDWithRoles(ctx context.Context, id uint) (*model.User, error)
 }

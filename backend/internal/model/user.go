@@ -90,6 +90,8 @@ type User struct {
 	Role         Role        `gorm:"not null;size:20"`
 	IsSuperAdmin bool        `gorm:"not null;default:false"`
 	Permissions  StringSlice `gorm:"type:text"`
+	// RBAC: user roles (loaded via Preload)
+	UserRoles    []UserRole  `gorm:"foreignKey:UserID" json:"userRoles,omitempty"`
 	CreatedAt    time.Time   `gorm:"autoCreateTime"`
 	UpdatedAt    time.Time   `gorm:"autoUpdateTime"`
 }
@@ -113,7 +115,7 @@ func (u *User) Validate() error {
 	return nil
 }
 
-// HasPermission checks if the user has a specific permission
+// HasPermission checks if the user has a specific permission (legacy)
 func (u *User) HasPermission(perm string) bool {
 	if u.IsSuperAdmin {
 		return true
@@ -122,6 +124,54 @@ func (u *User) HasPermission(perm string) bool {
 		if p == perm {
 			return true
 		}
+	}
+	return false
+}
+
+// HasRBACPermission checks if the user has a specific permission via the RBAC system.
+// It checks all roles assigned to the user and their associated permissions.
+// Super admins always have all permissions.
+// Falls back to legacy role-based checks if no RBAC roles are assigned.
+func (u *User) HasRBACPermission(resource, action string) bool {
+	// Super admin bypasses all permission checks
+	if u.IsSuperAdmin {
+		return true
+	}
+
+	// Check RBAC roles and their permissions
+	if len(u.UserRoles) > 0 {
+		for _, ur := range u.UserRoles {
+			for _, perm := range ur.Role.Permissions {
+				if perm.Matches(resource, action) {
+					return true
+				}
+			}
+		}
+		return false
+	}
+
+	// Legacy fallback: map old Role field to permission checks
+	return u.legacyRoleHasPermission(resource, action)
+}
+
+// legacyRoleHasPermission provides backward compatibility for users who haven't been
+// migrated to the RBAC system yet. Maps the old Role field to permission checks.
+func (u *User) legacyRoleHasPermission(resource, action string) bool {
+	switch u.Role {
+	case RoleAdmin:
+		// Admin has all permissions except system-level ones
+		return resource != "system"
+	case RoleEditor:
+		// Editor has content-related permissions
+		switch resource {
+		case "articles", "pages", "media", "categories", "tags", "comments":
+			return true
+		case "menus":
+			return action == "read"
+		case "dashboard":
+			return action == "read"
+		}
+		return false
 	}
 	return false
 }
