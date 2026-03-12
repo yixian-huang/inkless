@@ -57,6 +57,16 @@ jobs:
       - name: Run frontend tests
         run: pnpm -C frontend test:run
 
+      - name: Display test coverage summary
+        if: always()
+        run: |
+          echo "Frontend test coverage report:"
+          if [ -f frontend/coverage/coverage-summary.json ]; then
+            cat frontend/coverage/coverage-summary.json
+          else
+            echo "No coverage report generated"
+          fi
+
       - name: Upload frontend test results
         if: always()
         uses: actions/upload-artifact@v4
@@ -91,6 +101,16 @@ jobs:
 
       - name: Run Go tests
         run: cd backend && go test -v -race -coverprofile=coverage.out ./...
+
+      - name: Display test coverage summary
+        if: always()
+        run: |
+          cd backend
+          if [ -f coverage.out ]; then
+            go tool cover -func=coverage.out | tail -1
+          else
+            echo "No coverage report generated"
+          fi
 
       - name: Upload backend test coverage
         if: always()
@@ -141,6 +161,13 @@ jobs:
             exit 1
           fi
           echo "Backend binary built successfully"
+
+      - name: Build CLI
+        run: cd backend && go build -v -o ../impress ./cmd/impress
+
+      - name: Verify CLI binary
+        run: |
+          ./impress --help
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
