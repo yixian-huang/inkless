@@ -376,6 +376,19 @@ GET    /public/pages                      — list published pages
 GET    /public/pages/:slug                — get published page config (locale-filtered)
 ```
 
+**Optimistic concurrency for `PUT /admin/pages/:id/draft`:**
+
+The draft save endpoint uses `If-Match` header for conflict detection, following the existing `content_documents` pattern:
+
+1. Client sends `PUT /admin/pages/:id/draft` with header `If-Match: <draft_version>`
+2. Handler reads the header, parses as integer
+3. Handler loads the page from DB, compares `If-Match` value with current `draft_version`
+4. If mismatch → return HTTP 409 with body `{ "error": "conflict", "currentVersion": <actual_version> }`
+5. If match → update `draft_config`, increment `draft_version`, save, return 200 with new version
+6. Client stores the returned version for the next save
+
+This prevents lost updates when multiple tabs or users edit the same page.
+
 #### Template CRUD
 
 ```
@@ -462,7 +475,12 @@ For each existing `pages` row (where `isThemePage` is false):
 - Adds `locked: false` to each section
 - Sets `draft_version: 1`, `published_version: 1` (if status was `published`), `published_version: 0` (if draft)
 
-**3b. Bilingual data fields:** Current block page section data uses flat strings (e.g., `"title": "关于我们"`). The migration wraps these in bilingual objects:
+**3b. Draft/publish contract for migrated pages:**
+- Pages with `status: "published"` → copy `config` to both `draft_config` and `published_config`, set `draft_version: 1`, `published_version: 1`
+- Pages with `status: "draft"` → copy `config` to `draft_config` only, set `published_config: NULL`, `draft_version: 1`, `published_version: 0`
+- **Public endpoint behavior:** `GET /public/pages/:slug` returns 404 if `published_config IS NULL`. This matches the existing check in `page/handler.go` which returns 404 for non-published pages.
+
+**3c. Bilingual data fields:** Current block page section data uses flat strings (e.g., `"title": "关于我们"`). The migration wraps these in bilingual objects:
 - For each string field in `data`: `"title": "关于我们"` → `"title": { "zh": "关于我们", "en": "" }`
 - The source locale is assumed to be `zh` (the site's primary locale)
 - Non-string fields (numbers, booleans, arrays of objects) are left unchanged
@@ -480,7 +498,7 @@ For each existing `pages` row (where `isThemePage` is false):
 | `checklist` | `title`, `items[].title`, `items[].description` |
 | `company-profile` | `title`, `description`, `stats[].label` |
 
-**3c. Down migration safety:** The down migration reverses the bilingual wrapping by extracting the `zh` value from each `{ zh, en }` object back to a flat string. Since `zh` is the primary locale and the source of all existing data, no information is lost on rollback.
+**3d. Down migration safety:** The down migration reverses the bilingual wrapping by extracting the `zh` value from each `{ zh, en }` object back to a flat string. Since `zh` is the primary locale and the source of all existing data, no information is lost on rollback.
 
 #### Step 4: Update frontend
 
