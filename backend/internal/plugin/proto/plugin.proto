@@ -1,0 +1,144 @@
+syntax = "proto3";
+package plugin;
+option go_package = "blotting-consultancy/internal/plugin/proto";
+
+// ProviderService is the main plugin service interface.
+// Each plugin process serves this via go-plugin.
+service ProviderService {
+  // Lifecycle
+  rpc Initialize(InitRequest) returns (InitResponse);
+  rpc Shutdown(ShutdownRequest) returns (ShutdownResponse);
+
+  // StorageProvider methods
+  rpc StorageSave(StorageSaveRequest) returns (StorageSaveResponse);
+  rpc StorageGet(StorageGetRequest) returns (stream StorageChunk);
+  rpc StorageDelete(StorageDeleteRequest) returns (StorageDeleteResponse);
+  rpc StorageURL(StorageURLRequest) returns (StorageURLResponse);
+  rpc StorageExists(StorageExistsRequest) returns (StorageExistsResponse);
+
+  // SearchProvider methods
+  rpc Search(SearchRequest) returns (SearchResponse);
+  rpc SearchSuggest(SearchSuggestRequest) returns (SearchSuggestResponse);
+  rpc SearchIndex(SearchIndexRequest) returns (SearchIndexResponse);
+  rpc SearchRemove(SearchRemoveRequest) returns (SearchRemoveResponse);
+  rpc SearchRebuild(SearchRebuildRequest) returns (SearchRebuildResponse);
+
+  // NotifierProvider methods
+  rpc Notify(NotifyRequest) returns (NotifyResponse);
+
+  // CaptchaProvider methods
+  rpc CaptchaVerify(CaptchaVerifyRequest) returns (CaptchaVerifyResponse);
+
+  // Custom HTTP route handling
+  rpc HandleHTTP(HTTPRequest) returns (HTTPResponse);
+}
+
+message InitRequest {
+  map<string, string> settings = 1;
+  string data_dir = 2;
+  string plugin_id = 3;
+}
+message InitResponse {
+  bool success = 1;
+  string error = 2;
+}
+
+message ShutdownRequest {}
+message ShutdownResponse {}
+
+// Storage messages
+message StorageSaveRequest {
+  string filename = 1;
+  bytes data = 2;
+  int64 size = 3;
+}
+message StorageSaveResponse {
+  string path = 1;
+  string error = 2;
+}
+message StorageGetRequest { string path = 1; }
+message StorageChunk { bytes data = 1; }
+message StorageDeleteRequest { string path = 1; }
+message StorageDeleteResponse { string error = 1; }
+message StorageURLRequest { string path = 1; }
+message StorageURLResponse { string url = 1; }
+message StorageExistsRequest { string path = 1; }
+message StorageExistsResponse { bool exists = 1; string error = 2; }
+
+// Search messages
+message SearchRequest {
+  string query = 1;
+  string locale = 2;
+  string content_type = 3;
+  int32 page = 4;
+  int32 page_size = 5;
+}
+message SearchResponse {
+  repeated SearchResult results = 1;
+  int64 total = 2;
+  string error = 3;
+}
+message SearchResult {
+  uint64 id = 1;
+  string type = 2;
+  string title = 3;
+  string snippet = 4;
+  string url = 5;
+  string locale = 6;
+  double score = 7;
+}
+message SearchSuggestRequest {
+  string prefix = 1;
+  string locale = 2;
+  int32 limit = 3;
+}
+message SearchSuggestResponse {
+  repeated string suggestions = 1;
+  string error = 2;
+}
+message SearchIndexRequest {
+  string content_type = 1;
+  uint64 id = 2;
+  string locale = 3;
+  string title = 4;
+  string body = 5;
+  string slug = 6;
+}
+message SearchIndexResponse { string error = 1; }
+message SearchRemoveRequest {
+  string content_type = 1;
+  uint64 id = 2;
+}
+message SearchRemoveResponse { string error = 1; }
+message SearchRebuildRequest {}
+message SearchRebuildResponse { string error = 1; }
+
+// Notifier messages
+message NotifyRequest {
+  string type = 1;
+  string subject = 2;
+  string body = 3;
+  map<string, string> meta = 4;
+}
+message NotifyResponse { string error = 1; }
+
+// Captcha messages
+message CaptchaVerifyRequest {
+  string token = 1;
+  string remote_ip = 2;
+}
+message CaptchaVerifyResponse { string error = 1; }
+
+// HTTP proxy messages (for custom plugin routes)
+message HTTPRequest {
+  string method = 1;
+  string path = 2;
+  map<string, string> headers = 3;
+  bytes body = 4;
+  map<string, string> query_params = 5;
+}
+message HTTPResponse {
+  int32 status_code = 1;
+  map<string, string> headers = 2;
+  bytes body = 3;
+}
