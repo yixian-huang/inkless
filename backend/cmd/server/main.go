@@ -21,6 +21,8 @@ import (
 	"blotting-consultancy/internal/seo"
 	"blotting-consultancy/internal/db"
 	"blotting-consultancy/internal/db/migrations"
+	_ "blotting-consultancy/docs/swagger" // swagger docs
+	"blotting-consultancy/internal/eventbus"
 	analyticsHandler "blotting-consultancy/internal/handler/analytics"
 	articleHandler "blotting-consultancy/internal/handler/article"
 	auditlogHandler "blotting-consultancy/internal/handler/auditlog"
@@ -43,8 +45,8 @@ import (
 	seoHandler "blotting-consultancy/internal/handler/seo"
 	userHandler "blotting-consultancy/internal/handler/user"
 	"blotting-consultancy/internal/middleware"
-	"blotting-consultancy/internal/provider"
 	"blotting-consultancy/internal/model"
+	"blotting-consultancy/internal/provider"
 	"blotting-consultancy/internal/repository"
 	"blotting-consultancy/internal/seed"
 	"blotting-consultancy/internal/service"
@@ -53,6 +55,9 @@ import (
 	"blotting-consultancy/pkg/config"
 	appLogger "blotting-consultancy/pkg/logger"
 	"blotting-consultancy/pkg/metrics"
+
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
 // Build-time variables (set via ldflags)
@@ -63,6 +68,15 @@ var (
 	GitBranch = "unknown"
 )
 
+// @title           Impress CMS API
+// @version         1.0
+// @description     Bilingual CMS backend API for Impress (印迹). Supports content management, articles, pages, themes, media, and more.
+// @host            localhost:8088
+// @BasePath        /
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
+// @description Enter "Bearer {token}" for JWT authentication
 func main() {
 	// Load configuration
 	cfg, err := config.Load()
@@ -236,6 +250,26 @@ func main() {
 	// Initialize search service (needed by article handler)
 	searchService := service.NewSearchService(database.DB, db.IsPostgresDSN(cfg.DBDSN))
 
+	// Initialize event bus
+	bus := eventbus.New()
+	bus.Subscribe(eventbus.ContentCreated, eventbus.AsyncHandler(func(e eventbus.Event) {
+		log.Info("Content event", "type", e.Type)
+	}))
+	bus.Subscribe(eventbus.ContentUpdated, eventbus.AsyncHandler(func(e eventbus.Event) {
+		log.Info("Content event", "type", e.Type)
+	}))
+	bus.Subscribe(eventbus.ContentDeleted, eventbus.AsyncHandler(func(e eventbus.Event) {
+		log.Info("Content event", "type", e.Type)
+	}))
+	log.Info("Event bus initialized")
+
+	// Initialize provider registry with defaults
+	registry := provider.NewRegistry()
+	registry.Register("notifier", service.NewLogNotifier())
+	registry.Register("captcha", &provider.NoopCaptchaProvider{})
+	registry.Register("storage", service.NewLocalStorage(cfg.UploadDir))
+	log.Info("Provider registry initialized", "providers", registry.List())
+
 	// Initialize handlers
 	authHandlerInst := authHandler.NewHandler(userRepo, refreshTokenRepo, cfg)
 	contentHandlerInst := contentHandler.NewHandler(
@@ -252,7 +286,7 @@ func main() {
 	categoryHandlerInst := categoryHandler.NewHandler(categoryRepo, articleRepo)
 	tagHandlerInst := tagHandler.NewHandler(tagRepo, articleRepo)
 	menuHandlerInst := menuHandler.NewHandler(menuRepo)
-	articleHandlerInst := articleHandler.NewHandler(articleRepo, categoryRepo, tagRepo, searchService)
+	articleHandlerInst := articleHandler.NewHandler(articleRepo, categoryRepo, tagRepo, searchService, bus)
 	backupHandlerInst := backupHandler.NewHandler(backupSvc)
 	auditlogHandlerInst := auditlogHandler.NewHandler(auditEventRepo)
 	sitemapHandlerInst := sitemapHandler.NewHandler(contentDocRepo, articleRepo, cfg.BaseURL)
@@ -358,6 +392,9 @@ func main() {
 			},
 		})
 	})
+
+	// Swagger API documentation (no auth required)
+	router.GET("/api-docs/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	// Sitemap (no auth required)
 	router.GET("/sitemap.xml", sitemapHandlerInst.GetSitemap)

@@ -19,8 +19,15 @@ type MeResponse struct {
 	Permissions  []string `json:"permissions"`
 }
 
-// Me handles GET /auth/me
-// This endpoint requires authentication middleware to be applied
+// Me returns the current authenticated user's profile.
+// @Summary      Get current user
+// @Description  Returns profile of the currently authenticated user
+// @Tags         Auth
+// @Produce      json
+// @Security     BearerAuth
+// @Success      200 {object} MeResponse
+// @Failure      401 {object} object{error=string}
+// @Router       /auth/me [get]
 func (h *Handler) Me(c *gin.Context) {
 	// Extract user context from middleware
 	userCtx, exists := c.Get(string(middleware.UserContextKey))

@@ -25,7 +25,17 @@ type LoginResponse struct {
 	Role         string `json:"role"`
 }
 
-// Login handles POST /auth/login
+// Login authenticates a user and returns JWT tokens.
+// @Summary      User login
+// @Description  Authenticate with username and password, receive JWT access + refresh tokens
+// @Tags         Auth
+// @Accept       json
+// @Produce      json
+// @Param        body body LoginRequest true "Login credentials"
+// @Success      200 {object} LoginResponse
+// @Failure      400 {object} object{error=string}
+// @Failure      401 {object} object{error=string}
+// @Router       /auth/login [post]
 func (h *Handler) Login(c *gin.Context) {
 	var req LoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {

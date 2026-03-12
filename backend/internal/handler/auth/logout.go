@@ -18,7 +18,15 @@ type LogoutResponse struct {
 	OK bool `json:"ok"`
 }
 
-// Logout handles POST /auth/logout
+// Logout invalidates the user's refresh token.
+// @Summary      User logout
+// @Description  Invalidate the refresh token to log out
+// @Tags         Auth
+// @Accept       json
+// @Produce      json
+// @Param        body body LogoutRequest true "Refresh token to invalidate"
+// @Success      200 {object} LogoutResponse
+// @Router       /auth/logout [post]
 func (h *Handler) Logout(c *gin.Context) {
 	var req LogoutRequest
 	if err := c.ShouldBindJSON(&req); err != nil {

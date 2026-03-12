@@ -20,7 +20,16 @@ type RefreshResponse struct {
 	ExpiresIn   int    `json:"expiresIn"`
 }
 
-// Refresh handles POST /auth/refresh
+// Refresh issues a new access token using a refresh token.
+// @Summary      Refresh token
+// @Description  Exchange a valid refresh token for a new access token
+// @Tags         Auth
+// @Accept       json
+// @Produce      json
+// @Param        body body RefreshRequest true "Refresh token"
+// @Success      200 {object} RefreshResponse
+// @Failure      401 {object} object{error=string}
+// @Router       /auth/refresh [post]
 func (h *Handler) Refresh(c *gin.Context) {
 	var req RefreshRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
