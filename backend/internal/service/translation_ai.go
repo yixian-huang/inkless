@@ -11,11 +11,11 @@ import (
 // AITranslationProvider implements TranslationProvider using an AIProvider.
 // It constructs translation prompts with glossary terms and delegates to the AI backend.
 type AITranslationProvider struct {
-	ai provider.AIProvider
+	ai provider.TextGenerator
 }
 
 // NewAITranslationProvider creates a new AITranslationProvider wrapping the given AIProvider
-func NewAITranslationProvider(ai provider.AIProvider) provider.TranslationProvider {
+func NewAITranslationProvider(ai provider.TextGenerator) provider.TranslationProvider {
 	return &AITranslationProvider{ai: ai}
 }
 

@@ -30,9 +30,8 @@ type TranslationProvider interface {
 	DetectLanguage(ctx context.Context, text string) (string, error)
 }
 
-// AIProvider defines the interface for AI-powered text generation.
-// Implementations may wrap OpenAI, Anthropic, or other LLM APIs.
-type AIProvider interface {
-	// GenerateText sends a prompt and returns the generated text.
+// TextGenerator is a minimal AI interface used by translation services.
+// The AIProvider from ai.go satisfies this via an adapter.
+type TextGenerator interface {
 	GenerateText(ctx context.Context, prompt string) (string, error)
 }
