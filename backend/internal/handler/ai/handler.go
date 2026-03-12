@@ -56,6 +56,16 @@ type configResponse struct {
 	Enabled  bool   `json:"enabled"`
 }
 
+// getAI returns the AI provider or sends a 503 error if not configured.
+func (h *Handler) getAI(c *gin.Context) provider.AIProvider {
+	ai := h.registry.AI()
+	if ai == nil {
+		h.handleAIError(c, service.ErrAINotConfigured)
+		return nil
+	}
+	return ai
+}
+
 // Chat handles POST /admin/ai/chat
 func (h *Handler) Chat(c *gin.Context) {
 	var input chatInput
@@ -64,7 +74,10 @@ func (h *Handler) Chat(c *gin.Context) {
 		return
 	}
 
-	ai := h.registry.AI()
+	ai := h.getAI(c)
+	if ai == nil {
+		return
+	}
 	resp, err := ai.Chat(c.Request.Context(), provider.ChatRequest{
 		Messages:    input.Messages,
 		Model:       input.Model,
@@ -92,7 +105,10 @@ func (h *Handler) Summarize(c *gin.Context) {
 		maxLength = 200
 	}
 
-	ai := h.registry.AI()
+	ai := h.getAI(c)
+	if ai == nil {
+		return
+	}
 	summary, err := ai.Summarize(c.Request.Context(), input.Text, maxLength)
 	if err != nil {
 		h.handleAIError(c, err)
@@ -115,7 +131,10 @@ func (h *Handler) SuggestTitles(c *gin.Context) {
 		count = 5
 	}
 
-	ai := h.registry.AI()
+	ai := h.getAI(c)
+	if ai == nil {
+		return
+	}
 	titles, err := ai.SuggestTitles(c.Request.Context(), input.Content, count)
 	if err != nil {
 		h.handleAIError(c, err)
@@ -133,7 +152,10 @@ func (h *Handler) SuggestTags(c *gin.Context) {
 		return
 	}
 
-	ai := h.registry.AI()
+	ai := h.getAI(c)
+	if ai == nil {
+		return
+	}
 	tags, err := ai.SuggestTags(c.Request.Context(), input.Content, input.ExistingTags)
 	if err != nil {
 		h.handleAIError(c, err)
@@ -151,7 +173,10 @@ func (h *Handler) Complete(c *gin.Context) {
 		return
 	}
 
-	ai := h.registry.AI()
+	ai := h.getAI(c)
+	if ai == nil {
+		return
+	}
 	resp, err := ai.Complete(c.Request.Context(), provider.CompletionRequest{
 		Prompt:      input.Prompt,
 		Model:       input.Model,
@@ -169,6 +194,13 @@ func (h *Handler) Complete(c *gin.Context) {
 // GetConfig handles GET /admin/ai/config
 func (h *Handler) GetConfig(c *gin.Context) {
 	ai := h.registry.AI()
+	if ai == nil {
+		c.JSON(http.StatusOK, configResponse{
+			Provider: "noop",
+			Enabled:  false,
+		})
+		return
+	}
 	name := ai.Name()
 	c.JSON(http.StatusOK, configResponse{
 		Provider: name,
