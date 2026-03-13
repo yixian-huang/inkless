@@ -1,6 +1,8 @@
 export interface SectionData {
   id: string;
   type: string;
+  variant?: string;   // layout variant key, defaults to "default"
+  locked?: boolean;    // true in template mode — cannot move/delete
   data: Record<string, unknown>;
   settings?: SectionSettings;
 }
@@ -15,6 +17,7 @@ export interface SectionSettings {
 export interface SectionProps<T = Record<string, unknown>> {
   data: T;
   settings?: SectionSettings;
+  variant?: string;
 }
 
 export interface SectionMeta {
