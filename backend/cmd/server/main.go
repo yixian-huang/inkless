@@ -152,7 +152,7 @@ func main() {
 		&model.User{},
 		&model.RefreshToken{},
 		&model.ContentDocument{},
-		&model.ContentVersion{},
+		// model.ContentVersion removed from AutoMigrate — table dropped by goose 00009
 		&model.Media{},
 		&model.PageView{},
 		&model.Category{},
