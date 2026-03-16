@@ -39,9 +39,9 @@ func NewEmbeddingService(ai provider.AIProvider, vectorStore provider.VectorStor
 // sourceID is a unique identifier for the content source (e.g., "article:42").
 // metadata is additional key-value pairs stored alongside each chunk.
 func (s *EmbeddingService) IndexContent(ctx context.Context, sourceID string, text string, metadata map[string]string) (int, error) {
-	// First, delete any existing chunks for this source
-	// We use a deterministic ID scheme: sourceID + chunk index hash
-	// For simplicity, we'll just overwrite by using consistent IDs.
+	if s.ai == nil {
+		return 0, ErrAINotConfigured
+	}
 
 	chunks := ChunkText(text, s.chunkSize, s.chunkOverlap)
 	if len(chunks) == 0 {

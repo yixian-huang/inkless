@@ -57,6 +57,10 @@ func (s *QAService) Ask(ctx context.Context, question string, locale string) (*Q
 		return nil, fmt.Errorf("question cannot be empty")
 	}
 
+	if s.ai == nil {
+		return nil, ErrAINotConfigured
+	}
+
 	// Step 1: Get embedding for the question
 	queryEmbedding, err := s.ai.Embed(ctx, question)
 	if err != nil {

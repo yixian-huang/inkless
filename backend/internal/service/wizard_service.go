@@ -27,6 +27,9 @@ func NewWizardService(ai provider.AIProvider, pageRepo repository.PageRepository
 
 // GenerateSitePlan uses the AI provider to generate a SitePlan from a Questionnaire.
 func (s *WizardService) GenerateSitePlan(ctx context.Context, q model.Questionnaire) (*model.SitePlan, error) {
+	if s.ai == nil {
+		return nil, ErrAINotConfigured
+	}
 	if q.Industry == "" {
 		return nil, fmt.Errorf("industry is required")
 	}
@@ -166,6 +169,9 @@ func (s *WizardService) ScaffoldSite(ctx context.Context, plan model.SitePlan) (
 
 // SuggestColors returns a color scheme recommendation for an industry/brand.
 func (s *WizardService) SuggestColors(ctx context.Context, req model.ColorSuggestionRequest) (*model.ColorScheme, error) {
+	if s.ai == nil {
+		return nil, ErrAINotConfigured
+	}
 	if req.Industry == "" {
 		return nil, fmt.Errorf("industry is required")
 	}
@@ -216,6 +222,9 @@ Return ONLY a valid JSON object matching this schema (no markdown, no extra text
 
 // GenerateContent returns sample content for a given page type and industry.
 func (s *WizardService) GenerateContent(ctx context.Context, req model.GenerateContentRequest) (*model.SuggestedContent, error) {
+	if s.ai == nil {
+		return nil, ErrAINotConfigured
+	}
 	if req.PageType == "" {
 		return nil, fmt.Errorf("pageType is required")
 	}

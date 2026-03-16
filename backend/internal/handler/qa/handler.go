@@ -2,6 +2,7 @@ package qa
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"strconv"
 
@@ -64,6 +65,10 @@ func (h *Handler) PublicAsk(c *gin.Context) {
 
 	result, err := h.qaService.Ask(c.Request.Context(), input.Question, input.Locale)
 	if err != nil {
+		if errors.Is(err, service.ErrAINotConfigured) {
+			c.JSON(http.StatusServiceUnavailable, gin.H{"error": gin.H{"code": "AI_NOT_CONFIGURED", "message": "AI provider is not configured."}})
+			return
+		}
 		c.JSON(http.StatusInternalServerError, gin.H{"error": gin.H{"message": "failed to process question"}})
 		return
 	}
@@ -115,6 +120,10 @@ func (h *Handler) AdminIndex(c *gin.Context) {
 			}
 			count, err := h.embeddingService.IndexContent(ctx, sourceID, text, metadata)
 			if err != nil {
+				if errors.Is(err, service.ErrAINotConfigured) {
+					c.JSON(http.StatusServiceUnavailable, gin.H{"error": gin.H{"code": "AI_NOT_CONFIGURED", "message": "AI provider is not configured."}})
+					return
+				}
 				c.JSON(http.StatusInternalServerError, gin.H{"error": gin.H{"message": "indexing failed: " + err.Error()}})
 				return
 			}
@@ -138,6 +147,10 @@ func (h *Handler) AdminIndex(c *gin.Context) {
 			}
 			count, err := h.embeddingService.IndexContent(ctx, sourceID, text, metadata)
 			if err != nil {
+				if errors.Is(err, service.ErrAINotConfigured) {
+					c.JSON(http.StatusServiceUnavailable, gin.H{"error": gin.H{"code": "AI_NOT_CONFIGURED", "message": "AI provider is not configured."}})
+					return
+				}
 				c.JSON(http.StatusInternalServerError, gin.H{"error": gin.H{"message": "indexing failed: " + err.Error()}})
 				return
 			}
