@@ -8,8 +8,8 @@ import (
 
 type PageVersion struct {
 	ID        uint      `gorm:"primaryKey" json:"id"`
-	PageID    uint      `gorm:"not null;index;uniqueIndex:idx_page_version" json:"pageId"`
-	Version   int       `gorm:"not null;uniqueIndex:idx_page_version" json:"version"`
+	PageID    uint      `gorm:"not null;index;uniqueIndex:idx_pv_page_version" json:"pageId"`
+	Version   int       `gorm:"not null;uniqueIndex:idx_pv_page_version" json:"version"`
 	Config    JSONMap   `gorm:"type:text;not null" json:"config"`
 	CreatedBy uint      `gorm:"not null" json:"createdBy"`
 	CreatedAt time.Time `gorm:"autoCreateTime" json:"createdAt"`

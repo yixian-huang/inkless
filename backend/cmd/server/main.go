@@ -146,6 +146,11 @@ func main() {
 	}
 	log.Info("Database connection established")
 
+	// Fix legacy index conflict: SQLite indexes are database-global, and both
+	// page_versions and content_versions had an index named idx_page_version.
+	// Drop the stale one on page_versions so AutoMigrate can create idx_pv_page_version.
+	database.DB.Exec("DROP INDEX IF EXISTS idx_page_version")
+
 	// Run migrations
 	migrator := db.NewMigrator(database)
 	if err := migrator.AutoMigrate(
