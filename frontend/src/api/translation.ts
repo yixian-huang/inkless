@@ -2,23 +2,24 @@ import { http } from "@/api/http";
 
 export interface TranslateRequest {
   text: string;
-  source_lang: string;
-  target_lang: string;
+  sourceLang: string;
+  targetLang: string;
   glossary?: Record<string, string>;
 }
 
 export interface TranslateResponse {
-  translated_text: string;
-  source_lang: string;
-  target_lang: string;
+  translatedText: string;
+  sourceLang: string;
+  targetLang: string;
 }
 
 export interface GlossaryTerm {
   id: number;
-  source_term: string;
-  target_term: string;
-  source_lang: string;
-  target_lang: string;
+  sourceTerm: string;
+  targetTerm: string;
+  sourceLang: string;
+  targetLang: string;
+  context?: string;
 }
 
 export interface GlossaryListResponse {

@@ -38,10 +38,10 @@ function TranslationTool() {
     try {
       const result = await translateText({
         text: sourceText,
-        source_lang: sourceLang,
-        target_lang: targetLang,
+        sourceLang: sourceLang,
+        targetLang: targetLang,
       });
-      setTranslatedText(result.translated_text);
+      setTranslatedText(result.translatedText);
     } catch {
       setError("翻译失败，请稍后重试");
     } finally {
@@ -148,10 +148,10 @@ function GlossaryManagement() {
 
   // Add form state
   const [addForm, setAddForm] = useState({
-    source_term: "",
-    target_term: "",
-    source_lang: "zh",
-    target_lang: "en",
+    sourceTerm: "",
+    targetTerm: "",
+    sourceLang: "zh",
+    targetLang: "en",
   });
   const [adding, setAdding] = useState(false);
   const [addError, setAddError] = useState<string | null>(null);
@@ -175,12 +175,12 @@ function GlossaryManagement() {
 
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!addForm.source_term.trim() || !addForm.target_term.trim()) return;
+    if (!addForm.sourceTerm.trim() || !addForm.targetTerm.trim()) return;
     setAdding(true);
     setAddError(null);
     try {
       await addGlossaryTerm(addForm);
-      setAddForm({ source_term: "", target_term: "", source_lang: "zh", target_lang: "en" });
+      setAddForm({ sourceTerm: "", targetTerm: "", sourceLang: "zh", targetLang: "en" });
       await fetchData();
     } catch {
       setAddError("添加术语失败");
@@ -218,8 +218,8 @@ function GlossaryManagement() {
             <label className="block text-xs text-gray-600 mb-1">源术语</label>
             <input
               type="text"
-              value={addForm.source_term}
-              onChange={(e) => setAddForm((f) => ({ ...f, source_term: e.target.value }))}
+              value={addForm.sourceTerm}
+              onChange={(e) => setAddForm((f) => ({ ...f, sourceTerm: e.target.value }))}
               placeholder="源术语"
               className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               required
@@ -229,8 +229,8 @@ function GlossaryManagement() {
             <label className="block text-xs text-gray-600 mb-1">目标术语</label>
             <input
               type="text"
-              value={addForm.target_term}
-              onChange={(e) => setAddForm((f) => ({ ...f, target_term: e.target.value }))}
+              value={addForm.targetTerm}
+              onChange={(e) => setAddForm((f) => ({ ...f, targetTerm: e.target.value }))}
               placeholder="目标术语"
               className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               required
@@ -239,8 +239,8 @@ function GlossaryManagement() {
           <div>
             <label className="block text-xs text-gray-600 mb-1">源语言</label>
             <select
-              value={addForm.source_lang}
-              onChange={(e) => setAddForm((f) => ({ ...f, source_lang: e.target.value }))}
+              value={addForm.sourceLang}
+              onChange={(e) => setAddForm((f) => ({ ...f, sourceLang: e.target.value }))}
               className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               {LANG_OPTIONS.map((opt) => (
@@ -251,8 +251,8 @@ function GlossaryManagement() {
           <div>
             <label className="block text-xs text-gray-600 mb-1">目标语言</label>
             <select
-              value={addForm.target_lang}
-              onChange={(e) => setAddForm((f) => ({ ...f, target_lang: e.target.value }))}
+              value={addForm.targetLang}
+              onChange={(e) => setAddForm((f) => ({ ...f, targetLang: e.target.value }))}
               className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               {LANG_OPTIONS.map((opt) => (
@@ -296,13 +296,13 @@ function GlossaryManagement() {
               <tbody className="bg-white divide-y divide-gray-200">
                 {data?.items.map((term: GlossaryTerm) => (
                   <tr key={term.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-3 text-sm text-gray-900">{term.source_term}</td>
-                    <td className="px-4 py-3 text-sm text-gray-700">{term.target_term}</td>
+                    <td className="px-4 py-3 text-sm text-gray-900">{term.sourceTerm}</td>
+                    <td className="px-4 py-3 text-sm text-gray-700">{term.targetTerm}</td>
                     <td className="px-4 py-3 text-sm text-gray-500">
-                      {LANG_OPTIONS.find((o) => o.value === term.source_lang)?.label || term.source_lang}
+                      {LANG_OPTIONS.find((o) => o.value === term.sourceLang)?.label || term.sourceLang}
                     </td>
                     <td className="px-4 py-3 text-sm text-gray-500">
-                      {LANG_OPTIONS.find((o) => o.value === term.target_lang)?.label || term.target_lang}
+                      {LANG_OPTIONS.find((o) => o.value === term.targetLang)?.label || term.targetLang}
                     </td>
                     <td className="px-4 py-3 text-sm">
                       <button

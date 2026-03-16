@@ -1,17 +1,19 @@
 import { http } from "@/api/http";
 
 export type MigrationFormat = "wordpress" | "halo" | "markdown";
-export type MigrationJobStatus = "pending" | "running" | "completed" | "failed";
+export type MigrationJobPhase = "parsing" | "importing" | "done" | "failed";
 
 export interface MigrationJob {
-  id: string;
-  format: MigrationFormat;
-  status: MigrationJobStatus;
-  progress: number;
-  total_items: number;
-  imported_items: number;
+  jobId: string;
+  source: MigrationFormat;
+  phase: MigrationJobPhase;
+  total: number;
+  processed: number;
+  succeeded: number;
+  failed: number;
   errors: string[];
-  created_at: string;
+  startedAt: string;
+  finishedAt?: string;
 }
 
 export interface MigrationJobsResponse {
@@ -26,11 +28,11 @@ function getAuthHeaders() {
 export async function importData(
   file: File,
   format: MigrationFormat
-): Promise<{ job_id: string; message: string }> {
+): Promise<{ jobId: string; message: string; totalArticles: number; parseErrors: string[] }> {
   const formData = new FormData();
   formData.append("file", file);
-  formData.append("format", format);
-  const response = await http.post<{ job_id: string; message: string }>(
+  formData.append("source", format);
+  const response = await http.post<{ jobId: string; message: string; totalArticles: number; parseErrors: string[] }>(
     "/admin/migration/import",
     formData,
     { headers: getAuthHeaders() }

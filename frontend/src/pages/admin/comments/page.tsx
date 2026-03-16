@@ -57,14 +57,14 @@ async function getAdminComments(
 
 async function approveComment(id: number): Promise<void> {
   const accessToken = localStorage.getItem("accessToken");
-  await http.put(`/admin/comments/${id}/approve`, {}, {
+  await http.patch(`/admin/comments/${id}/status`, { status: "approved" }, {
     headers: { Authorization: `Bearer ${accessToken}` },
   });
 }
 
 async function rejectComment(id: number): Promise<void> {
   const accessToken = localStorage.getItem("accessToken");
-  await http.put(`/admin/comments/${id}/reject`, {}, {
+  await http.patch(`/admin/comments/${id}/status`, { status: "rejected" }, {
     headers: { Authorization: `Bearer ${accessToken}` },
   });
 }

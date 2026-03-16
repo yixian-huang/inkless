@@ -68,7 +68,7 @@ export async function deleteSite(id: number) {
 }
 
 export async function exportSite(id: number) {
-  const res = await http.post(`/admin/sites/export/${id}`, {}, {
+  const res = await http.get(`/admin/sites/${id}/export`, {
     headers: getAuthHeaders(),
     responseType: "blob",
   });

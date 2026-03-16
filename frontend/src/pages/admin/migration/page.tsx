@@ -5,7 +5,7 @@ import {
   createMigrationJobStream,
   type MigrationJob,
   type MigrationFormat,
-  type MigrationJobStatus,
+  type MigrationJobPhase,
 } from "@/api/migration";
 
 const formatOptions: { value: MigrationFormat; label: string; description: string }[] = [
@@ -26,10 +26,10 @@ const formatOptions: { value: MigrationFormat; label: string; description: strin
   },
 ];
 
-const statusConfig: Record<MigrationJobStatus, { label: string; className: string }> = {
-  pending: { label: "等待中", className: "bg-gray-100 text-gray-700" },
-  running: { label: "进行中", className: "bg-blue-100 text-blue-700" },
-  completed: { label: "已完成", className: "bg-green-100 text-green-700" },
+const phaseConfig: Record<MigrationJobPhase, { label: string; className: string }> = {
+  parsing: { label: "解析中", className: "bg-gray-100 text-gray-700" },
+  importing: { label: "导入中", className: "bg-blue-100 text-blue-700" },
+  done: { label: "已完成", className: "bg-green-100 text-green-700" },
   failed: { label: "失败", className: "bg-red-100 text-red-700" },
 };
 
@@ -137,7 +137,7 @@ function useJobStream(
       try {
         const data = JSON.parse(event.data) as Partial<MigrationJob>;
         onUpdate(data);
-        if (data.status === "completed" || data.status === "failed") {
+        if (data.phase === "done" || data.phase === "failed") {
           es.close();
           onDone();
         }
@@ -181,7 +181,7 @@ function ImportSection({ onJobCreated }: { onJobCreated: () => void }) {
     setSuccessMsg(null);
     try {
       const result = await importData(file, format);
-      setSuccessMsg(`导入任务已创建，任务 ID: ${result.job_id}`);
+      setSuccessMsg(`导入任务已创建，任务 ID: ${result.jobId}`);
       setFile(null);
       onJobCreated();
     } catch {
@@ -269,8 +269,8 @@ function JobsTable() {
       const data = await getMigrationJobs();
       setJobs(data);
       // Auto-attach SSE to any running job
-      const running = data.find((j) => j.status === "running");
-      if (running) setStreamJobId(running.id);
+      const running = data.find((j) => j.phase === "importing");
+      if (running) setStreamJobId(running.jobId);
     } catch {
       setError("获取迁移任务列表失败");
     } finally {
@@ -285,7 +285,7 @@ function JobsTable() {
   const handleStreamUpdate = useCallback((update: Partial<MigrationJob>) => {
     setJobs((prev) =>
       prev.map((job) =>
-        job.id === streamJobId ? { ...job, ...update } : job
+        job.jobId === streamJobId ? { ...job, ...update } : job
       )
     );
   }, [streamJobId]);
@@ -306,7 +306,7 @@ function JobsTable() {
     });
   };
 
-  const formatLabel: Record<MigrationFormat, string> = {
+  const sourceLabel: Record<MigrationFormat, string> = {
     wordpress: "WordPress WXR",
     halo: "Halo JSON",
     markdown: "Markdown ZIP",
@@ -348,35 +348,36 @@ function JobsTable() {
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {jobs.map((job) => {
-                const statusInfo = statusConfig[job.status];
-                const showErrors = expandedErrors.has(job.id);
+                const phaseInfo = phaseConfig[job.phase];
+                const showErrors = expandedErrors.has(job.jobId);
+                const progressPct = job.total > 0 ? Math.round((job.processed / job.total) * 100) : 0;
                 return (
                   <>
-                    <tr key={job.id} className="hover:bg-gray-50">
+                    <tr key={job.jobId} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {formatLabel[job.format] || job.format}
+                        {sourceLabel[job.source] || job.source}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${statusInfo.className}`}>
-                          {statusInfo.label}
+                        <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${phaseInfo.className}`}>
+                          {phaseInfo.label}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap" style={{ minWidth: 140 }}>
                         <div className="flex items-center gap-2">
-                          <ProgressBar value={job.progress} />
-                          <span className="text-xs text-gray-500 shrink-0">{job.progress}%</span>
+                          <ProgressBar value={progressPct} />
+                          <span className="text-xs text-gray-500 shrink-0">{progressPct}%</span>
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                        {job.imported_items} / {job.total_items}
+                        {job.processed} / {job.total}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {new Date(job.created_at).toLocaleString("zh-CN")}
+                        {new Date(job.startedAt).toLocaleString("zh-CN")}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm">
                         {job.errors && job.errors.length > 0 ? (
                           <button
-                            onClick={() => toggleErrors(job.id)}
+                            onClick={() => toggleErrors(job.jobId)}
                             className="text-red-600 hover:text-red-800 font-medium"
                           >
                             {job.errors.length} 个错误 {showErrors ? "▲" : "▼"}
@@ -387,7 +388,7 @@ function JobsTable() {
                       </td>
                     </tr>
                     {showErrors && job.errors && job.errors.length > 0 && (
-                      <tr key={`${job.id}-errors`}>
+                      <tr key={`${job.jobId}-errors`}>
                         <td colSpan={6} className="px-6 py-3 bg-red-50">
                           <div className="text-xs font-medium text-red-700 mb-2">错误详情：</div>
                           <ul className="space-y-1 max-h-40 overflow-y-auto">

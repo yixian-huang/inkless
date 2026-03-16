@@ -4,7 +4,7 @@ export interface QALog {
   id: number;
   question: string;
   answer: string;
-  sources: string;
+  sources: unknown[];
   locale: string;
   ip_address: string;
   rating: string;
@@ -19,7 +19,8 @@ export interface QALogsResponse {
 }
 
 export interface IndexResponse {
-  indexed_count: number;
+  chunksStored: number;
+  message: string;
 }
 
 function getAuthHeaders() {

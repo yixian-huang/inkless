@@ -68,7 +68,7 @@ export default function AdminQAPage() {
     setError(null);
     try {
       const result = await triggerQAIndex();
-      setIndexSuccess(`索引完成，已索引 ${result.indexed_count} 条内容`);
+      setIndexSuccess(`索引完成，已索引 ${result.chunksStored} 条内容`);
     } catch {
       setError("内容索引失败，请稍后重试");
     } finally {
@@ -216,7 +216,7 @@ export default function AdminQAPage() {
                                 <div>
                                   <span className="font-medium text-gray-700">来源：</span>
                                   <p className="mt-1 text-gray-600 text-xs font-mono bg-white border border-gray-200 rounded p-2 whitespace-pre-wrap">
-                                    {item.sources}
+                                    {JSON.stringify(item.sources, null, 2)}
                                   </p>
                                 </div>
                               )}
