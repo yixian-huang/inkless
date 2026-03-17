@@ -1,8 +1,10 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { SectionRenderer } from "@/theme/sections";
 import { useSectionRegistry } from "@/plugins/hooks";
-import type { SectionData } from "@/theme/types";
+import type { SectionData, SectionSettings } from "@/theme/types";
+import PropertiesPanel from "./components/PropertiesPanel";
+import { useDragSort } from "./hooks/useDragSort";
 import {
   getUnifiedPage,
   getUnifiedPageDraft,
@@ -292,9 +294,6 @@ export default function PageEditorPage() {
   const [conflictVersion, setConflictVersion] = useState<number | null>(null);
   const [loading, setLoading] = useState(!!id);
 
-  // -- ref for drag --
-  const dragIndexRef = useRef<number | null>(null);
-
   // -- load existing page --
   const loadPage = useCallback(async () => {
     if (!pageId) return;
@@ -314,8 +313,12 @@ export default function PageEditorPage() {
       setPublishedVersion(meta.publishedVersion);
       setDraftVersion(draft.draftVersion);
 
-      const config = draft.draftConfig as { sections?: SectionData[] } | null;
-      const loadedSections = config?.sections || [];
+      const config = draft.draftConfig as { sections?: any[] } | null;
+      // Backend stores content in "props"; frontend SectionData uses "data" — normalize
+      const loadedSections: SectionData[] = (config?.sections || []).map((s: any) => ({
+        ...s,
+        data: s.data || s.props || {},
+      }));
       setSections(loadedSections);
       setSectionJson(JSON.stringify(loadedSections, null, 2));
     } catch {
@@ -383,23 +386,13 @@ export default function PageEditorPage() {
     );
   }, []);
 
-  const makeDragHandlers = (index: number) => ({
-    onDragStart: (e: React.DragEvent) => {
-      dragIndexRef.current = index;
-      e.dataTransfer.effectAllowed = "move";
-    },
-    onDragOver: (e: React.DragEvent) => {
-      e.preventDefault();
-      e.dataTransfer.dropEffect = "move";
-    },
-    onDrop: (e: React.DragEvent) => {
-      e.preventDefault();
-      const from = dragIndexRef.current;
-      if (from !== null && from !== index) moveSection(from, index);
-      dragIndexRef.current = null;
-    },
-    onDragEnd: () => { dragIndexRef.current = null; },
-  });
+  const updateSectionSettings = useCallback((index: number, settings: SectionSettings) => {
+    setSections((prev) =>
+      prev.map((s, i) => (i === index ? { ...s, settings } : s)),
+    );
+  }, []);
+
+  const { makeDragHandlers } = useDragSort(moveSection);
 
   // -- mode toggle --
   const switchToJson = useCallback(() => {
@@ -806,40 +799,11 @@ export default function PageEditorPage() {
             </div>
             <div className="flex-1 overflow-y-auto p-3">
               {selectedSection ? (
-                <div>
-                  <div className="mb-3">
-                    <span className="text-xs text-gray-500">
-                      类型: {selectedSection.type}
-                      {selectedSection.variant ? ` / ${selectedSection.variant}` : ""}
-                      {selectedSection.locked ? " (锁定)" : ""}
-                    </span>
-                  </div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">
-                    数据 (JSON)
-                  </label>
-                  <textarea
-                    value={JSON.stringify(selectedSection.data, null, 2)}
-                    onChange={(e) => {
-                      try {
-                        const parsed = JSON.parse(e.target.value);
-                        updateSectionData(selectedIndex!, parsed);
-                      } catch {
-                        // Allow invalid intermediate JSON while typing
-                      }
-                    }}
-                    onBlur={(e) => {
-                      try {
-                        const parsed = JSON.parse(e.target.value);
-                        updateSectionData(selectedIndex!, parsed);
-                      } catch {
-                        // Revert on blur if invalid
-                      }
-                    }}
-                    rows={12}
-                    className="w-full border border-gray-300 rounded-md px-2 py-1.5 text-xs font-mono resize-none"
-                    spellCheck={false}
-                  />
-                </div>
+                <PropertiesPanel
+                  section={selectedSection}
+                  onDataChange={(data) => updateSectionData(selectedIndex!, data)}
+                  onSettingsChange={(settings) => updateSectionSettings(selectedIndex!, settings)}
+                />
               ) : (
                 <div className="text-xs text-gray-400 text-center py-8">
                   选择左侧区块以编辑属性

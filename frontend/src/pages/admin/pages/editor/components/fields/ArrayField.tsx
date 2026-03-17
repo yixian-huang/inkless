@@ -1,12 +1,27 @@
+import { useMemo, useCallback } from "react";
 import type { FieldProps } from "./types";
 import type { FieldSchema } from "@/theme/types";
 import FieldRenderer from "../FieldRenderer";
+import { useDragSort } from "../../hooks/useDragSort";
 
 export default function ArrayField({ schema, value, onChange }: FieldProps) {
-  const items: Record<string, unknown>[] = Array.isArray(value)
-    ? (value as Record<string, unknown>[])
-    : [];
+  const items: Record<string, unknown>[] = useMemo(
+    () => (Array.isArray(value) ? (value as Record<string, unknown>[]) : []),
+    [value],
+  );
   const itemSchema: FieldSchema[] = schema.itemSchema ?? [];
+
+  const moveItem = useCallback(
+    (from: number, to: number) => {
+      const next = [...items];
+      const [moved] = next.splice(from, 1);
+      next.splice(to, 0, moved);
+      onChange(next);
+    },
+    [items, onChange],
+  );
+
+  const { makeDragHandlers } = useDragSort(moveItem);
 
   const getSummary = (item: Record<string, unknown>): string => {
     for (const field of itemSchema) {
@@ -69,7 +84,9 @@ export default function ArrayField({ schema, value, onChange }: FieldProps) {
         return (
           <div
             key={itemKey}
-            className="border border-gray-200 rounded-lg p-3 mb-2"
+            draggable
+            {...makeDragHandlers(index)}
+            className="border border-gray-200 rounded-lg p-3 mb-2 cursor-grab"
           >
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm font-medium text-gray-700">
