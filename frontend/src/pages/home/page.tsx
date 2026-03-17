@@ -225,24 +225,24 @@ export default function HomePage() {
               <span className="ml-1 sm:ml-2 text-xl sm:text-2xl text-accent flex-shrink-0 cursor-pointer">&gt;</span>
             </div>
             {coreServices.items && coreServices.items.length > 0 && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 sm:gap-x-8 sm:gap-y-10">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
                 {coreServices.items.map((service, index) => (
-                  <div key={index} className="flex flex-col sm:flex-row gap-4 sm:gap-5 p-4 sm:p-0 rounded-lg sm:rounded-none bg-gray-50/80 sm:bg-transparent">
-                    <div className="w-full h-[180px] sm:w-[320px] sm:h-[240px] flex-shrink-0 rounded-md overflow-hidden bg-gray-100">
+                  <div key={index} className="flex flex-col rounded-lg overflow-hidden bg-white shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+                    <div className="w-full h-[160px] sm:h-[180px] flex-shrink-0 overflow-hidden bg-gray-50">
                       <img
                         src={service.image?.url || `/images/service-${index + 1}.png`}
                         alt={service.image?.alt || service.title || `Service ${index + 1}`}
-                        className="w-full h-full object-cover object-top sm:object-contain sm:object-center"
+                        className="w-full h-full object-cover"
                       />
                     </div>
-                    <div className="flex flex-col justify-center min-w-0">
+                    <div className="flex flex-col flex-1 p-4 sm:p-5">
                       {service.title && (
-                        <h3 className="text-base font-bold text-primary mb-1 sm:mb-2">
+                        <h3 className="text-base font-bold text-primary mb-2">
                           {service.title}
                         </h3>
                       )}
                       {service.description && (
-                        <p className="text-sm text-gray-600 leading-relaxed mb-2 sm:mb-3 line-clamp-3 sm:line-clamp-none">
+                        <p className="text-sm text-gray-600 leading-relaxed mb-3 flex-1">
                           {service.description}
                         </p>
                       )}
