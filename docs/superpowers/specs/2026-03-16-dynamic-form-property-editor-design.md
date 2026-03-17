@@ -34,8 +34,10 @@ interface FieldSchema {
   label: string;          // Display label (Chinese)
   placeholder?: string;   // Placeholder text
   defaultValue?: unknown; // Default value for new items
+  hidden?: boolean;       // If true, field is auto-managed (not shown in form)
   options?: { label: string; value: string | number }[];  // For select type
   itemSchema?: FieldSchema[];  // For array type: child field definitions
+  // For "string-array" type: items are raw strings, not objects with sub-fields
 }
 
 type FieldType =
@@ -48,7 +50,8 @@ type FieldType =
   | "select"
   | "number"
   | "boolean"
-  | "array";
+  | "array"
+  | "string-array";  // Plain string[] (e.g., checklist items)
 ```
 
 ### Field Type Reference
@@ -65,6 +68,7 @@ type FieldType =
 | `number` | Number input | Numeric values |
 | `boolean` | Toggle switch | Boolean flags |
 | `array` | Add/delete/drag-reorder list with inline sub-forms | cards[], services[], experts[] |
+| `string-array` | Add/delete/reorder list of plain string inputs | checklist items (string[]) |
 
 ## Component Architecture
 
@@ -158,8 +162,11 @@ cards itemSchema:
 | key | type | label |
 |-----|------|-------|
 | title | bilingual | 标题 |
+| titleEn | text | 英文标题 (legacy) |
 | description | bilingual-textarea | 描述 |
 | image | media | 图片 |
+
+> Note: `titleEn` is a legacy field used by CardGridSection when locale is zh to show an English subtitle. Retained for backward compatibility with existing data. New content should use the bilingual `title` field instead.
 
 ### 4. service-cards
 
@@ -186,12 +193,13 @@ services itemSchema:
 
 experts itemSchema:
 
-| key | type | label |
-|-----|------|-------|
-| name | bilingual | 姓名 |
-| title | bilingual | 职位 |
-| image | media | 头像 |
-| bio | bilingual-textarea | 简介 |
+| key | type | label | notes |
+|-----|------|-------|-------|
+| id | text | ID | hidden: true; auto-generated via crypto.randomUUID() on item creation; preserved on edit |
+| name | bilingual | 姓名 | |
+| title | bilingual | 职位 | |
+| image | media | 头像 | |
+| bio | bilingual-textarea | 简介 | |
 
 ### 6. checklist
 
@@ -204,13 +212,9 @@ categories itemSchema:
 | key | type | label |
 |-----|------|-------|
 | title | bilingual | 分类标题 |
-| items | array | 检查项 |
+| items | string-array | 检查项 |
 
-items itemSchema (nested):
-
-| key | type | label |
-|-----|------|-------|
-| value | bilingual | 内容 |
+> Note: `items` is a plain `string[]` in the ChecklistSection component. The `string-array` type renders as a list of simple text inputs with add/delete/reorder, storing raw strings (not objects).
 
 ### 7. contact-form
 
@@ -261,7 +265,7 @@ items itemSchema (nested):
 - Top-right: move up / move down / delete buttons
 - Card body: expanded sub-form fields
 - Bottom of list: "+ 添加" button, inserts item with defaultValues
-- Drag-to-reorder: reuse existing section list drag logic
+- Drag-to-reorder: extract shared `useDragSort` hook from existing `makeDragHandlers` in page.tsx
 - Supports recursive nesting (checklist's categories → items)
 
 ### BilingualField
@@ -283,6 +287,30 @@ items itemSchema (nested):
 - Bottom of panel: "切换到 JSON 编辑" link
 - Toggles between DynamicForm and raw JSON textarea
 - Allows advanced users / debugging escape hatch
+
+## Implementation Notes
+
+### SelectField Numeric Coercion
+
+HTML `<select>` always returns string values. `SelectField` must coerce the value back to `number` when the option's `value` is a number (e.g., columns: 2/3/4). Check `typeof option.value === "number"` and apply `Number()` on change.
+
+### Bilingual Field Serialization
+
+- Bilingual fields always store `{ zh: string, en: string }` objects.
+- Empty `en` values are stored as empty strings (`""`), not omitted, to ensure stable JSON round-trips.
+- Legacy compatibility: if the existing value is a plain string, the zh tab shows it and en tab is empty. On first edit, the value is migrated to `{ zh: originalString, en: "" }`.
+
+### Variant Field
+
+`SectionData.variant` editing is deferred from this spec. Variant remains editable only via JSON fallback mode. A future enhancement can add a variant selector to the panel header if sections define available variants in their metadata.
+
+### ArrayField Drag Logic
+
+The existing section list drag logic in `page.tsx` (`makeDragHandlers`) is inline and not reusable. Implementation should extract a shared `useDragSort` hook from the existing logic, then use it in both the section list and `ArrayField`.
+
+### Theme Plugin Sections
+
+Theme-contributed sections (e.g., corporate-classic's `stats-counter`) that do not have a schema will fall back to JSON editing. This is intentional for v1. Future enhancement: extend `ThemePlugin` with an optional `sectionSchemas?: Record<string, FieldSchema[]>` field and merge in `useSectionRegistry`.
 
 ## Scope Exclusions
 
