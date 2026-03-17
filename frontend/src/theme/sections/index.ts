@@ -36,3 +36,5 @@ export const sectionMetas: SectionMeta[] = [
 ];
 
 export { default as SectionRenderer } from "./SectionRenderer";
+
+export { sectionSchemas, settingsSchema } from "../sectionSchemas";
