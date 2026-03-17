@@ -1,10 +1,6 @@
 import type { FieldProps } from "./types";
 
 export default function SelectField({ schema, value, onChange }: FieldProps) {
-  const hasNumericOption = schema.options?.some(
-    (opt) => typeof opt.value === "number"
-  );
-
   return (
     <div>
       <label className="block text-xs font-medium text-gray-600 mb-1">
@@ -18,7 +14,9 @@ export default function SelectField({ schema, value, onChange }: FieldProps) {
           if (v === "") {
             onChange(undefined);
           } else {
-            onChange(hasNumericOption ? Number(v) : v);
+            // Per-option coercion: find the matching option and use its original typed value
+            const selectedOpt = schema.options?.find((opt) => String(opt.value) === v);
+            onChange(selectedOpt ? selectedOpt.value : v);
           }
         }}
       >
