@@ -50,11 +50,6 @@ func (h *Handler) HandleGet(c *gin.Context) {
 	c.JSON(http.StatusOK, config)
 }
 
-// updateInput is the JSON body for updating email settings.
-type updateInput struct {
-	Config model.JSONMap `json:"config"`
-}
-
 // HandleUpdate updates email settings (immediate publish like theme).
 // @Summary      Update email settings
 // @Description  Update email SMTP/template configuration (immediate publish)
@@ -67,67 +62,54 @@ type updateInput struct {
 // @Failure      400 {object} object{error=object}
 // @Router       /admin/email-settings [put]
 func (h *Handler) HandleUpdate(c *gin.Context) {
-	var input updateInput
+	var input model.JSONMap
 	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": gin.H{"message": "invalid request data"}})
+		c.JSON(http.StatusBadRequest, gin.H{"error": gin.H{"message": "invalid request body"}})
 		return
 	}
 
-	if input.Config == nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": gin.H{"message": "config is required"}})
-		return
-	}
+	ctx := c.Request.Context()
 
 	// Try to find existing config to preserve password if masked
-	existing, err := h.siteConfigRepo.FindByKey(c.Request.Context(), model.SiteConfigKeyEmail)
+	existing, err := h.siteConfigRepo.FindByKey(ctx, model.SiteConfigKeyEmail)
 	if err != nil {
-		// Create new config
+		// Not found — create new
+		existing = nil
+	}
+
+	if existing != nil {
+		// Preserve password if the client sent the masked value
+		preservePassword(input, existing.PublishedConfig)
+	}
+
+	if existing == nil {
+		// First time — create new
 		sc := &model.SiteConfig{
 			Key:              model.SiteConfigKeyEmail,
-			DraftConfig:      input.Config,
+			DraftConfig:      input,
 			DraftVersion:     1,
-			PublishedConfig:  input.Config,
+			PublishedConfig:  input,
 			PublishedVersion: 1,
 		}
-		if createErr := h.siteConfigRepo.Upsert(c.Request.Context(), sc); createErr != nil {
+		if createErr := h.siteConfigRepo.Upsert(ctx, sc); createErr != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": gin.H{"message": "failed to save email settings"}})
 			return
 		}
-
-		resp := cloneJSONMap(input.Config)
-		maskPassword(resp)
-		c.JSON(http.StatusOK, gin.H{
-			"config":  resp,
-			"message": "Email settings created",
-		})
-		return
+	} else {
+		// Immediate publish (like theme handler)
+		newVersion := existing.DraftVersion + 1
+		existing.DraftConfig = input
+		existing.DraftVersion = newVersion
+		existing.PublishedConfig = input
+		existing.PublishedVersion = newVersion
+		if err := h.siteConfigRepo.Update(ctx, existing); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": gin.H{"message": "failed to save email settings"}})
+			return
+		}
 	}
 
-	// Preserve password if the client sent the masked value
-	preservePassword(input.Config, existing.PublishedConfig)
-
-	// Immediate publish (like theme handler)
-	existing.DraftConfig = input.Config
-	existing.DraftVersion++
-	existing.PublishedConfig = input.Config
-	existing.PublishedVersion = existing.DraftVersion
-
-	if err := h.siteConfigRepo.Update(c.Request.Context(), existing); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": gin.H{"message": "failed to save email settings"}})
-		return
-	}
-
-	resp := cloneJSONMap(input.Config)
-	maskPassword(resp)
-	c.JSON(http.StatusOK, gin.H{
-		"config":  resp,
-		"message": "Email settings updated",
-	})
-}
-
-// testInput is the JSON body for sending a test email.
-type testInput struct {
-	Email string `json:"email"`
+	maskPassword(input)
+	c.JSON(http.StatusOK, input)
 }
 
 // HandleTest sends a test email using current configuration.
@@ -138,28 +120,36 @@ type testInput struct {
 // @Produce      json
 // @Security     BearerAuth
 // @Param        body body object true "Test email recipient"
-// @Success      200 {object} object{message=string}
+// @Success      200 {object} object{success=bool,message=string}
 // @Failure      400 {object} object{error=object}
 // @Router       /admin/email-settings/test [post]
 func (h *Handler) HandleTest(c *gin.Context) {
-	var input testInput
-	if err := c.ShouldBindJSON(&input); err != nil || input.Email == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": gin.H{"message": "email is required"}})
+	var input struct {
+		To string `json:"to" binding:"required,email"`
+	}
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": gin.H{"message": "invalid email address"}})
 		return
 	}
 
 	cfg := h.emailService.LoadConfig(c.Request.Context())
-	if cfg == nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": gin.H{"message": "email not configured"}})
+	if cfg == nil || !cfg.SMTP.IsConfigured() {
+		c.JSON(http.StatusBadRequest, gin.H{"error": gin.H{"message": "SMTP is not configured"}})
 		return
 	}
 
-	if err := h.emailService.SendTest(c.Request.Context(), input.Email, cfg); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": gin.H{"message": err.Error()}})
+	if err := h.emailService.SendTest(c.Request.Context(), input.To, cfg); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"success": false,
+			"message": "发送失败: " + err.Error(),
+		})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Test email sent successfully"})
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "测试邮件已发送到 " + input.To,
+	})
 }
 
 // ---------- Helpers ----------
