@@ -67,6 +67,7 @@ export const sectionSchemas: Record<string, FieldSchema[]> = {
     { key: "messagePlaceholder", type: "bilingual", label: "留言占位符" },
     { key: "submit", type: "bilingual", label: "提交按钮文字" },
     { key: "phone", type: "bilingual", label: "电话" },
+    { key: "email", type: "bilingual", label: "联系邮箱" },
     { key: "address", type: "bilingual", label: "地址" },
     { key: "accentColor", type: "color", label: "主题色" },
   ],
