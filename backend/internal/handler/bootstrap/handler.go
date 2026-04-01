@@ -5,6 +5,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"blotting-consultancy/internal/cache"
 	"blotting-consultancy/internal/model"
 	"blotting-consultancy/internal/repository"
 )
@@ -16,6 +17,7 @@ type Handler struct {
 	themeRepo      repository.InstalledThemeRepository
 	pageRepo       repository.PageRepository
 	siteCfgRepo    repository.SiteConfigRepository
+	cache          *cache.Cache
 }
 
 // NewHandler creates a new bootstrap handler
@@ -24,12 +26,14 @@ func NewHandler(
 	themeRepo repository.InstalledThemeRepository,
 	pageRepo repository.PageRepository,
 	siteCfgRepo repository.SiteConfigRepository,
+	cache *cache.Cache,
 ) *Handler {
 	return &Handler{
 		contentDocRepo: contentDocRepo,
 		themeRepo:      themeRepo,
 		pageRepo:       pageRepo,
 		siteCfgRepo:    siteCfgRepo,
+		cache:          cache,
 	}
 }
 
@@ -71,6 +75,14 @@ func (h *Handler) PublicBootstrap(c *gin.Context) {
 	ctx := c.Request.Context()
 	locale := c.DefaultQuery("locale", "zh")
 	pageKey := c.Query("pageKey")
+
+	cacheKey := "bootstrap:" + locale + ":" + pageKey
+	if cached, ok := h.cache.Get(cacheKey); ok {
+		c.Header("X-Cache", "HIT")
+		c.Header("Cache-Control", "public, max-age=60, stale-while-revalidate=30")
+		c.JSON(http.StatusOK, cached)
+		return
+	}
 
 	// 1. Active theme
 	var activeThemeData gin.H
@@ -174,5 +186,8 @@ func (h *Handler) PublicBootstrap(c *gin.Context) {
 		result["pageContent"] = pageContent
 	}
 
+	h.cache.Set(cacheKey, result)
+	c.Header("X-Cache", "MISS")
+	c.Header("Cache-Control", "public, max-age=60, stale-while-revalidate=30")
 	c.JSON(http.StatusOK, result)
 }

@@ -9,6 +9,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"blotting-consultancy/internal/cache"
 	"blotting-consultancy/internal/eventbus"
 	"blotting-consultancy/internal/model"
 	"blotting-consultancy/internal/repository"
@@ -22,6 +23,7 @@ type Handler struct {
 	tagRepo       repository.TagRepository
 	searchService *service.SearchService
 	eventBus      eventbus.EventBus
+	cache         *cache.Cache
 }
 
 // NewHandler creates a new article handler
@@ -31,6 +33,7 @@ func NewHandler(
 	tagRepo repository.TagRepository,
 	searchService *service.SearchService,
 	eventBus eventbus.EventBus,
+	cache *cache.Cache,
 ) *Handler {
 	return &Handler{
 		articleRepo:   articleRepo,
@@ -38,6 +41,7 @@ func NewHandler(
 		tagRepo:       tagRepo,
 		searchService: searchService,
 		eventBus:      eventBus,
+		cache:         cache,
 	}
 }
 
@@ -66,6 +70,15 @@ func (h *Handler) PublicList(c *gin.Context) {
 
 	categorySlug := c.Query("category")
 	tagSlug := c.Query("tag")
+
+	cacheKey := "articles:list:" + strconv.Itoa(page) + ":" + strconv.Itoa(pageSize) + ":" + categorySlug + ":" + tagSlug
+	if cached, ok := h.cache.Get(cacheKey); ok {
+		c.Header("X-Cache", "HIT")
+		c.Header("Cache-Control", "public, max-age=30, stale-while-revalidate=15")
+		c.JSON(http.StatusOK, cached)
+		return
+	}
+
 	offset := (page - 1) * pageSize
 
 	items, total, err := h.articleRepo.ListPublished(c.Request.Context(), offset, pageSize, categorySlug, tagSlug)
@@ -74,12 +87,16 @@ func (h *Handler) PublicList(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
+	result := gin.H{
 		"items":    items,
 		"total":    total,
 		"page":     page,
 		"pageSize": pageSize,
-	})
+	}
+	h.cache.Set(cacheKey, result)
+	c.Header("X-Cache", "MISS")
+	c.Header("Cache-Control", "public, max-age=30, stale-while-revalidate=15")
+	c.JSON(http.StatusOK, result)
 }
 
 // PublicGetBySlug returns a single published article by slug.
@@ -93,6 +110,14 @@ func (h *Handler) PublicList(c *gin.Context) {
 // @Router       /public/articles/{slug} [get]
 func (h *Handler) PublicGetBySlug(c *gin.Context) {
 	slug := c.Param("slug")
+
+	cacheKey := "article:" + slug
+	if cached, ok := h.cache.Get(cacheKey); ok {
+		c.Header("X-Cache", "HIT")
+		c.Header("Cache-Control", "public, max-age=60, stale-while-revalidate=30")
+		c.JSON(http.StatusOK, cached)
+		return
+	}
 
 	article, err := h.articleRepo.FindBySlug(c.Request.Context(), slug)
 	if err != nil {
@@ -111,6 +136,9 @@ func (h *Handler) PublicGetBySlug(c *gin.Context) {
 		return
 	}
 
+	h.cache.Set(cacheKey, article)
+	c.Header("X-Cache", "MISS")
+	c.Header("Cache-Control", "public, max-age=60, stale-while-revalidate=30")
 	c.JSON(http.StatusOK, article)
 }
 

@@ -18,6 +18,7 @@ import (
 	"gorm.io/gorm/logger"
 
 	"blotting-consultancy/internal/backup"
+	"blotting-consultancy/internal/cache"
 	"blotting-consultancy/internal/seo"
 	"blotting-consultancy/internal/db"
 	"blotting-consultancy/internal/db/migrations"
@@ -350,23 +351,39 @@ func main() {
 		os.Exit(1)
 	}
 
+	// Initialize in-memory TTL cache for public endpoints
+	publicCache := cache.New(60 * time.Second)
+
+	// Cache invalidation on content changes
+	bus.Subscribe(eventbus.ContentCreated, eventbus.AsyncHandler(func(e eventbus.Event) {
+		publicCache.DeletePrefix("articles:")
+		publicCache.DeletePrefix("article:")
+		publicCache.Flush() // bootstrap includes article data indirectly
+	}))
+	bus.Subscribe(eventbus.ContentUpdated, eventbus.AsyncHandler(func(e eventbus.Event) {
+		publicCache.Flush() // simplest: flush all on any content change
+	}))
+	bus.Subscribe(eventbus.ContentDeleted, eventbus.AsyncHandler(func(e eventbus.Event) {
+		publicCache.Flush()
+	}))
+
 	// Initialize handlers
 	authHandlerInst := authHandler.NewHandler(userRepo, refreshTokenRepo, cfg)
 	// (old contentHandlerInst removed — replaced by unified page handler)
-	publicHandlerInst := publicHandler.NewHandler(contentDocRepo, pageViewRepo, unifiedPageRepo)
+	publicHandlerInst := publicHandler.NewHandler(contentDocRepo, pageViewRepo, unifiedPageRepo, publicCache)
 	mediaHandlerInst := mediaHandler.NewHandler(mediaRepo, cfg.UploadDir, "")
 	analyticsHandlerInst := analyticsHandler.NewHandler(pageViewRepo)
 	categoryHandlerInst := categoryHandler.NewHandler(categoryRepo, articleRepo)
 	tagHandlerInst := tagHandler.NewHandler(tagRepo, articleRepo)
 	menuHandlerInst := menuHandler.NewHandler(menuRepo)
-	articleHandlerInst := articleHandler.NewHandler(articleRepo, categoryRepo, tagRepo, searchService, bus)
+	articleHandlerInst := articleHandler.NewHandler(articleRepo, categoryRepo, tagRepo, searchService, bus, publicCache)
 	backupHandlerInst := backupHandler.NewHandler(backupSvc)
 	auditlogHandlerInst := auditlogHandler.NewHandler(auditEventRepo)
 	sitemapHandlerInst := sitemapHandler.NewHandler(contentDocRepo, articleRepo, cfg.BaseURL)
 	// (old pageHandlerInst removed — replaced by unified page handler)
 	themeHandlerInst := themeHandler.NewHandler(siteConfigRepo)
 	installedThemeHandlerInst := installedThemeHandler.NewHandler(installedThemeRepo, themePageService)
-	bootstrapHandlerInst := bootstrapHandler.NewHandler(contentDocRepo, installedThemeRepo, pageRepo, siteConfigRepo)
+	bootstrapHandlerInst := bootstrapHandler.NewHandler(contentDocRepo, installedThemeRepo, pageRepo, siteConfigRepo, publicCache)
 	emailSvc := service.NewEmailService(siteConfigRepo)
 	formSubmissionHandlerInst := formSubmissionHandler.NewHandler(formSubmissionRepo, emailSvc)
 	emailSettingsHandlerInst := emailSettingsHandler.NewHandler(siteConfigRepo, emailSvc)
@@ -390,7 +407,7 @@ func main() {
 	systemHandlerInst := systemHandler.NewHandler(database.DB, cfg.UploadDir)
 	translationHandlerInst := translationHandler.NewHandler(translationProvider, glossaryRepo, articleRepo)
 	unifiedPageSvc := service.NewUnifiedPageService(unifiedPageRepo, pageVersionRepo)
-	unifiedPageHdl := unifiedPageHandler.NewHandler(unifiedPageRepo, pageVersionRepo, unifiedPageSvc)
+	unifiedPageHdl := unifiedPageHandler.NewHandler(unifiedPageRepo, pageVersionRepo, unifiedPageSvc, publicCache)
 	pageTemplateHdl := pageTemplateHandler.NewHandler(pageTemplateRepo)
 	themeExportSvc := service.NewThemeExportService(pageTemplateRepo, siteConfigRepo)
 	themeExportHdl := themeExportHandler.NewHandler(themeExportSvc)

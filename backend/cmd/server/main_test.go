@@ -15,6 +15,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"gorm.io/gorm/logger"
 
+	"blotting-consultancy/internal/cache"
 	"blotting-consultancy/internal/db"
 	authHandler "blotting-consultancy/internal/handler/auth"
 	publicHandler "blotting-consultancy/internal/handler/public"
@@ -66,7 +67,7 @@ func setupTestRouter(t *testing.T) (*gin.Engine, *db.DB) {
 		Env:              "test",
 	}
 	authHandlerInst := authHandler.NewHandler(userRepo, refreshTokenRepo, cfg)
-	publicHandlerInst := publicHandler.NewHandler(contentDocRepo, pageViewRepo, nil)
+	publicHandlerInst := publicHandler.NewHandler(contentDocRepo, pageViewRepo, nil, cache.New(60*time.Second))
 
 	// Setup router
 	gin.SetMode(gin.TestMode)

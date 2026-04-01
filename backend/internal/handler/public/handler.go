@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"time"
 
+	"blotting-consultancy/internal/cache"
 	"blotting-consultancy/internal/model"
 	"blotting-consultancy/internal/repository"
 	"blotting-consultancy/internal/service"
@@ -21,6 +22,7 @@ type Handler struct {
 	docRepo  repository.ContentDocumentRepository
 	pvRepo   repository.PageViewRepository
 	pageRepo repository.UnifiedPageRepository
+	cache    *cache.Cache
 }
 
 // NewHandler creates a new public content handler
@@ -28,11 +30,13 @@ func NewHandler(
 	docRepo repository.ContentDocumentRepository,
 	pvRepo repository.PageViewRepository,
 	pageRepo repository.UnifiedPageRepository,
+	cache *cache.Cache,
 ) *Handler {
 	return &Handler{
 		docRepo:  docRepo,
 		pvRepo:   pvRepo,
 		pageRepo: pageRepo,
+		cache:    cache,
 	}
 }
 
@@ -62,58 +66,83 @@ func (h *Handler) GetPublicContent(c *gin.Context) {
 		return
 	}
 
+	cacheKey := "content:" + pageKeyStr + ":" + locale
+	if cached, ok := h.cache.Get(cacheKey); ok {
+		c.Header("X-Cache", "HIT")
+		c.Header("Cache-Control", "public, max-age=60, stale-while-revalidate=30")
+		c.JSON(200, cached)
+		return
+	}
+
 	// Try unified_pages first (slug == pageKey for the 7 builtin pages)
+	var flatConfig model.JSONMap
+	version := 0
+
 	if h.pageRepo != nil {
 		page, err := h.pageRepo.FindBySlug(c.Request.Context(), pageKeyStr)
-		if err == nil {
-			// Page exists in unified_pages — this is the authoritative source.
-			// If unpublished, return 404 (don't fall through to content_documents).
-			if len(page.PublishedConfig) == 0 {
-				metrics.Global().RecordPublicGetFailure()
-				c.JSON(404, apierror.NotFound("page not published"))
-				return
-			}
-
-			// Convert sections-based config back to flat content doc format
+		if err == nil && len(page.PublishedConfig) > 0 {
 			publishedMap := model.JSONMap(page.PublishedConfig)
-			flatConfig := service.ConvertSectionsToContentDoc(pageKeyStr, publishedMap)
-
-			latency := time.Since(startTime)
-			metrics.Global().RecordPublicGetSuccess(latency)
-
-			h.recordPageViewAsync(pageKeyStr, locale, c)
-
-			c.JSON(200, gin.H{
-				"pageKey": pageKeyStr,
-				"version": page.PublishedVersion,
-				"locale":  locale,
-				"config":  flatConfig,
-			})
-			return
+			flatConfig = service.ConvertSectionsToContentDoc(pageKeyStr, publishedMap)
+			version = page.PublishedVersion
 		}
 	}
 
-	// Fallback: read from legacy content_documents (global, theme, etc.)
-	doc, err := h.docRepo.FindByPageKey(c.Request.Context(), pageKey)
-	if err != nil {
+	// Also read from legacy content_documents to fill gaps (sections migration
+	// may have left non-hero props empty).
+	doc, docErr := h.docRepo.FindByPageKey(c.Request.Context(), pageKey)
+	if docErr == nil && len(doc.PublishedConfig) > 0 {
+		legacyConfig := model.JSONMap(doc.PublishedConfig)
+		if flatConfig == nil {
+			flatConfig = legacyConfig
+			version = doc.PublishedVersion
+		} else {
+			// Merge: fill empty keys in flatConfig from legacy
+			for k, v := range legacyConfig {
+				existing, exists := flatConfig[k]
+				if !exists || isEmptyValue(existing) {
+					flatConfig[k] = v
+				}
+			}
+		}
+	}
+
+	if flatConfig == nil {
 		metrics.Global().RecordPublicGetFailure()
 		c.JSON(404, apierror.NotFound("page not found"))
 		return
 	}
 
-	// Record success with latency
 	latency := time.Since(startTime)
 	metrics.Global().RecordPublicGetSuccess(latency)
 
 	h.recordPageViewAsync(pageKeyStr, locale, c)
 
-	// Return published-only data (never expose draft fields)
-	c.JSON(200, gin.H{
-		"pageKey": doc.PageKey.String(),
-		"version": doc.PublishedVersion,
+	result := gin.H{
+		"pageKey": pageKeyStr,
+		"version": version,
 		"locale":  locale,
-		"config":  doc.PublishedConfig,
-	})
+		"config":  flatConfig,
+	}
+	h.cache.Set(cacheKey, result)
+	c.Header("X-Cache", "MISS")
+	c.Header("Cache-Control", "public, max-age=60, stale-while-revalidate=30")
+	c.JSON(200, result)
+}
+
+// isEmptyValue checks if a value is effectively empty (nil, empty map, or empty slice).
+func isEmptyValue(v interface{}) bool {
+	if v == nil {
+		return true
+	}
+	switch val := v.(type) {
+	case map[string]interface{}:
+		return len(val) == 0
+	case model.JSONMap:
+		return len(val) == 0
+	case []interface{}:
+		return len(val) == 0
+	}
+	return false
 }
 
 // recordPageViewAsync records a page view in a background goroutine.
