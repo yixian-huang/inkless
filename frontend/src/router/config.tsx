@@ -21,7 +21,7 @@ const AdminFormSubmissionsPage = lazy(() => import('../pages/admin/form-submissi
 const AdminMenusPage = lazy(() => import('../pages/admin/menus/page'));
 const AdminUsersPage = lazy(() => import('../pages/admin/users/page'));
 const AdminTranslationPage = lazy(() => import('../pages/admin/translation/page'));
-const AdminQAPage = lazy(() => import('../pages/admin/qa/page'));
+const AdminQAPage = lazy(() => import('../modules/qa/admin/page'));
 const AdminWizardPage = lazy(() => import('../pages/admin/wizard/page'));
 const AdminRolesPage = lazy(() => import('../pages/admin/roles/page'));
 const AdminSitesPage = lazy(() => import('../pages/admin/sites/page'));

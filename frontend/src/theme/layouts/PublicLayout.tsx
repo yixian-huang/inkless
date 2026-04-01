@@ -3,7 +3,8 @@ import ThemedHeader from "./ThemedHeader";
 import ThemedFooter from "./ThemedFooter";
 import Sidebar from "./Sidebar";
 import type { LayoutConfig } from "./types";
-import QAWidget from "@/components/feature/QAWidget";
+import { QAWidget } from "@/modules/qa";
+import { useGlobalConfig } from "@/contexts/GlobalConfigContext";
 
 interface PublicLayoutProps {
   layout?: LayoutConfig;
@@ -11,7 +12,8 @@ interface PublicLayoutProps {
 }
 
 export default function PublicLayout({ layout, children }: PublicLayoutProps) {
-  const layoutType = layout?.type || "default";
+  const layoutType = layout?.type ?? "default";
+  const { features } = useGlobalConfig();
 
   return (
     <div className="min-h-screen bg-surface">
@@ -36,8 +38,8 @@ export default function PublicLayout({ layout, children }: PublicLayoutProps) {
       {/* Footer -- unless layout is "blank" */}
       {layoutType !== "blank" && <ThemedFooter config={layout?.footer} />}
 
-      {/* Floating Q&A Widget */}
-      <QAWidget />
+      {/* Floating Q&A Widget -- only when QA feature is enabled */}
+      {features?.qa?.enabled && <QAWidget />}
     </div>
   );
 }
