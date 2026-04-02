@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"blotting-consultancy/internal/cache"
+	"blotting-consultancy/internal/eventbus"
 	"blotting-consultancy/internal/middleware"
 	"blotting-consultancy/internal/model"
 	"blotting-consultancy/internal/repository"
@@ -20,6 +21,7 @@ type Handler struct {
 	versionRepo repository.PageVersionRepository
 	pageSvc     *service.UnifiedPageService
 	cache       *cache.Cache
+	eventBus    eventbus.EventBus
 }
 
 // NewHandler creates a new unified page handler.
@@ -28,8 +30,9 @@ func NewHandler(
 	versionRepo repository.PageVersionRepository,
 	pageSvc *service.UnifiedPageService,
 	cache *cache.Cache,
+	eventBus eventbus.EventBus,
 ) *Handler {
-	return &Handler{pageRepo: pageRepo, versionRepo: versionRepo, pageSvc: pageSvc, cache: cache}
+	return &Handler{pageRepo: pageRepo, versionRepo: versionRepo, pageSvc: pageSvc, cache: cache, eventBus: eventBus}
 }
 
 // getUserID extracts the authenticated user ID from the Gin context.
@@ -341,6 +344,20 @@ func (h *Handler) AdminPublish(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"message": "published"})
 		return
 	}
+
+	// Publish content published event
+	if h.eventBus != nil {
+		h.eventBus.Publish(eventbus.Event{
+			Type: eventbus.ContentPublished,
+			Payload: eventbus.ContentEventPayload{
+				ContentType: "page",
+				ContentID:   page.ID,
+				Slug:        page.Slug,
+				Action:      eventbus.ContentPublished,
+			},
+		})
+	}
+
 	c.JSON(http.StatusOK, page)
 }
 
@@ -408,6 +425,19 @@ func (h *Handler) AdminDelete(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to delete page"})
 		return
 	}
+
+	// Publish content deleted event
+	if h.eventBus != nil {
+		h.eventBus.Publish(eventbus.Event{
+			Type: eventbus.ContentDeleted,
+			Payload: eventbus.ContentEventPayload{
+				ContentType: "page",
+				ContentID:   uint(id),
+				Action:      eventbus.ContentDeleted,
+			},
+		})
+	}
+
 	c.JSON(http.StatusOK, gin.H{"message": "deleted"})
 }
 

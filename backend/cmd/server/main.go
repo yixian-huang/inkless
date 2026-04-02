@@ -14,6 +14,7 @@ import (
 	"github.com/pressly/goose/v3"
 
 	"github.com/gin-contrib/cors"
+	"github.com/gin-contrib/gzip"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm/logger"
 
@@ -131,8 +132,8 @@ func main() {
 	maxLifetime := 5 * time.Minute
 	if !db.IsPostgresDSN(cfg.DBDSN) {
 		// SQLite is file-based and works best with a small connection pool.
-		maxOpenConn = 1
-		maxIdleConn = 1
+		maxOpenConn = 4
+		maxIdleConn = 2
 		maxLifetime = 0
 	}
 
@@ -367,6 +368,9 @@ func main() {
 	bus.Subscribe(eventbus.ContentDeleted, eventbus.AsyncHandler(func(e eventbus.Event) {
 		publicCache.Flush()
 	}))
+	bus.Subscribe(eventbus.ContentPublished, eventbus.AsyncHandler(func(e eventbus.Event) {
+		publicCache.Flush()
+	}))
 
 	// Initialize handlers
 	authHandlerInst := authHandler.NewHandler(userRepo, refreshTokenRepo, cfg)
@@ -408,7 +412,7 @@ func main() {
 	systemHandlerInst := systemHandler.NewHandler(database.DB, cfg.UploadDir)
 	translationHandlerInst := translationHandler.NewHandler(translationProvider, glossaryRepo, articleRepo)
 	unifiedPageSvc := service.NewUnifiedPageService(unifiedPageRepo, pageVersionRepo)
-	unifiedPageHdl := unifiedPageHandler.NewHandler(unifiedPageRepo, pageVersionRepo, unifiedPageSvc, publicCache)
+	unifiedPageHdl := unifiedPageHandler.NewHandler(unifiedPageRepo, pageVersionRepo, unifiedPageSvc, publicCache, bus)
 	pageTemplateHdl := pageTemplateHandler.NewHandler(pageTemplateRepo)
 	themeExportSvc := service.NewThemeExportService(pageTemplateRepo, siteConfigRepo)
 	themeExportHdl := themeExportHandler.NewHandler(themeExportSvc)
@@ -421,8 +425,9 @@ func main() {
 	router := gin.New()
 
 	// Global middleware (order matters!)
-	router.Use(gin.Recovery()) // Panic recovery
-	router.Use(ginLogger(log)) // Request logging
+	router.Use(gin.Recovery())                      // Panic recovery
+	router.Use(ginLogger(log))                      // Request logging
+	router.Use(gzip.Gzip(gzip.DefaultCompression)) // Gzip compression
 
 	corsConfig := cors.Config{
 		AllowMethods: []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},

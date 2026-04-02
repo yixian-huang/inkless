@@ -152,6 +152,8 @@ func applySQLitePragmas(database *gorm.DB) error {
 	statements := []string{
 		"PRAGMA foreign_keys = ON;",
 		"PRAGMA busy_timeout = 5000;",
+		"PRAGMA journal_mode = WAL;",
+		"PRAGMA synchronous = NORMAL;",
 	}
 
 	for _, stmt := range statements {
