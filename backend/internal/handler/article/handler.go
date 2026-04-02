@@ -232,6 +232,7 @@ type createUpdateInput struct {
 	Pinned            bool          `json:"pinned"`
 	Visibility        string        `json:"visibility"`
 	Metadata          model.JSONMap `json:"metadata"`
+	ScheduledAt       *time.Time    `json:"scheduledAt"`
 }
 
 // AdminCreate creates a new article.
@@ -292,6 +293,9 @@ func (h *Handler) AdminCreate(c *gin.Context) {
 	if status == model.ArticleStatusPublished {
 		now := time.Now()
 		article.PublishedAt = &now
+	}
+	if input.ScheduledAt != nil {
+		article.ScheduledAt = input.ScheduledAt
 	}
 
 	// Resolve categories
@@ -408,6 +412,10 @@ func (h *Handler) AdminUpdate(c *gin.Context) {
 	}
 	if input.Metadata != nil {
 		existing.Metadata = input.Metadata
+	}
+
+	if input.ScheduledAt != nil {
+		existing.ScheduledAt = input.ScheduledAt
 	}
 
 	if input.Status != "" {

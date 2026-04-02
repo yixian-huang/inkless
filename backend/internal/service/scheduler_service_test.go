@@ -1,6 +1,7 @@
 package service_test
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -24,7 +25,7 @@ func TestSchedulerPublishesOverdueArticles(t *testing.T) {
 	})
 
 	sched := service.NewSchedulerService(db)
-	count, err := sched.PublishOverdue()
+	count, err := sched.PublishOverdue(context.Background())
 	if err != nil {
 		t.Fatalf("publish overdue: %v", err)
 	}

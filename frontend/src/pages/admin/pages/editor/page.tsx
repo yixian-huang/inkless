@@ -352,11 +352,13 @@ export default function PageEditorPage() {
         data: {},
         settings: {},
       };
-      setSections((prev) => [...prev, newSection]);
-      setSelectedIndex(sections.length);
+      setSections((prev) => {
+        setSelectedIndex(prev.length);
+        return [...prev, newSection];
+      });
       setShowPicker(false);
     },
-    [sections.length],
+    [],
   );
 
   const moveSection = useCallback((from: number, to: number) => {

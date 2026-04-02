@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"log/slog"
 	"time"
 
@@ -21,11 +22,11 @@ func NewSchedulerService(db *gorm.DB) *SchedulerService {
 	}
 }
 
-func (s *SchedulerService) PublishOverdue() (int, error) {
+func (s *SchedulerService) PublishOverdue(ctx context.Context) (int, error) {
 	now := time.Now()
 	total := 0
 
-	result := s.db.Table("articles").
+	result := s.db.WithContext(ctx).Table("articles").
 		Where("status = ? AND scheduled_at <= ?", "scheduled", now).
 		Updates(map[string]interface{}{
 			"status":       "published",
@@ -36,7 +37,7 @@ func (s *SchedulerService) PublishOverdue() (int, error) {
 	}
 	total += int(result.RowsAffected)
 
-	result = s.db.Table("pages").
+	result = s.db.WithContext(ctx).Table("pages").
 		Where("status = ? AND scheduled_at <= ?", "scheduled", now).
 		Updates(map[string]interface{}{
 			"status":       "published",
@@ -63,9 +64,11 @@ func (s *SchedulerService) Start() {
 			case <-s.done:
 				return
 			case <-ticker.C:
-				if _, err := s.PublishOverdue(); err != nil {
+				ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+				if _, err := s.PublishOverdue(ctx); err != nil {
 					s.logger.Error("Scheduler error", "error", err)
 				}
+				cancel()
 			}
 		}
 	}()

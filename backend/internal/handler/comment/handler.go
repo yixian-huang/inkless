@@ -118,6 +118,9 @@ func (h *Handler) AdminList(c *gin.Context) {
 	status := c.DefaultQuery("status", "")
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	pageSize, _ := strconv.Atoi(c.DefaultQuery("pageSize", "20"))
+	if pageSize > 100 {
+		pageSize = 100
+	}
 	comments, total, err := h.repo.ListAll(c.Request.Context(), status, page, pageSize)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to list comments"})
