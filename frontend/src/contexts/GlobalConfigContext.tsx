@@ -44,7 +44,7 @@ interface GlobalConfigContextValue {
   config: GlobalConfig;
   loading: boolean;
   locale: Locale;
-  features: Record<string, { enabled?: boolean }>;
+  features: SiteConfigFeatures | undefined;
   refetch: () => Promise<void>;
 }
 
@@ -52,7 +52,7 @@ const GlobalConfigContext = createContext<GlobalConfigContextValue>({
   config: {},
   loading: true,
   locale: "zh",
-  features: {},
+  features: undefined,
   refetch: async () => {},
 });
 
@@ -63,7 +63,7 @@ export function GlobalConfigProvider({ children }: { children: ReactNode }) {
   const { data: bootstrapData, isLoading: bootstrapLoading } = useBootstrap();
   const [config, setConfig] = useState<GlobalConfig>({});
   const [loading, setLoading] = useState(true);
-  const features = bootstrapData?.features ?? {};
+  const features = bootstrapData?.features ?? undefined;
 
   // Use bootstrap data for initial load
   useEffect(() => {

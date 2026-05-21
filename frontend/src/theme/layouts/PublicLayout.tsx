@@ -39,7 +39,7 @@ export default function PublicLayout({ layout, children }: PublicLayoutProps) {
       {layoutType !== "blank" && <ThemedFooter config={layout?.footer} />}
 
       {/* Floating Q&A Widget -- only when QA feature is enabled */}
-      {features?.qa?.enabled && <QAWidget />}
+      {(features as any)?.qa?.enabled && <QAWidget />}
     </div>
   );
 }

@@ -7,7 +7,6 @@ import { resolveLocale } from '@/utils/locale';
 import { useBranding } from '@/hooks/useBranding';
 import { useLocaleMode } from '@/hooks/useLocaleMode';
 import { isFeatureEnabled, routeFeatureMap } from '@/router/featureMap';
-import type { SiteConfigFeatures } from '@/types/siteConfig';
 
 interface NavItem {
   label?: string;
@@ -29,12 +28,11 @@ export default function Header() {
     : headerNavItems.length > 0
       ? headerNavItems.map((item) => ({ label: item.label, href: item.path }))
       : (globalConfig.nav?.items || []);
-  const publishedFeatures = features as unknown as SiteConfigFeatures;
   const visibleNav = navigation.filter((item) => {
     if (!item.href) return true;
     const key = routeFeatureMap[item.href];
     if (!key) return true;
-    return isFeatureEnabled(publishedFeatures, key);
+    return isFeatureEnabled(features, key);
   });
   const logoSrc = branding.logo.light || '/images/logo.png';
   const logoAlt = branding.siteName || 'Site';

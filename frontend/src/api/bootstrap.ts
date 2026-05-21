@@ -1,5 +1,6 @@
 import { http } from "./http";
 import type { ThemePageItem } from "./themePages";
+import type { SiteConfigFeatures } from "@/types/siteConfig";
 
 export interface ActiveThemeData {
   themeId?: string;
@@ -27,7 +28,7 @@ export interface BootstrapData {
   themePages: ThemePageItem[];
   globalConfig: GlobalConfigData;
   pageContent?: PageContentData;
-  features?: Record<string, { enabled?: boolean }>;
+  features?: SiteConfigFeatures;
 }
 
 export async function fetchBootstrap(
