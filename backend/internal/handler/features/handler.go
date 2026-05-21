@@ -28,7 +28,7 @@ func (h *Handler) RegisterRoutes(admin *gin.RouterGroup) {
 
 func (h *Handler) adminGet(c *gin.Context) {
 	sc, err := h.repo.FindByKey(c.Request.Context(), model.SiteConfigKeyFeatures)
-	if err != nil || sc == nil {
+	if err != nil || sc == nil || sc.ID == 0 {
 		c.JSON(http.StatusOK, gin.H{
 			"draftConfig":      model.JSONMap{},
 			"draftVersion":     0,
@@ -60,8 +60,8 @@ func (h *Handler) adminPutDraft(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": gin.H{"message": err.Error()}})
 		return
 	}
-	existing, _ := h.repo.FindByKey(c.Request.Context(), model.SiteConfigKeyFeatures)
-	if existing == nil {
+	existing, ferr := h.repo.FindByKey(c.Request.Context(), model.SiteConfigKeyFeatures)
+	if ferr != nil || existing == nil || existing.ID == 0 {
 		sc := &model.SiteConfig{
 			Key:              model.SiteConfigKeyFeatures,
 			DraftConfig:      in.DraftConfig,
@@ -86,7 +86,7 @@ func (h *Handler) adminPutDraft(c *gin.Context) {
 
 func (h *Handler) adminPublish(c *gin.Context) {
 	sc, err := h.repo.FindByKey(c.Request.Context(), model.SiteConfigKeyFeatures)
-	if err != nil || sc == nil {
+	if err != nil || sc == nil || sc.ID == 0 {
 		c.JSON(http.StatusNotFound, gin.H{"error": gin.H{"message": "no draft to publish"}})
 		return
 	}
