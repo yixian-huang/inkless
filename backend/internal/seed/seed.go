@@ -320,11 +320,14 @@ func (s *Seeder) BlankSiteSeed(ctx context.Context) error {
 	// in PR-4 default to "consultancy pages off". Without an explicit record,
 	// the frontend treats missing features as "all on" (old-deploy compat).
 	if s.siteCfgRepo != nil {
+		// GormSiteConfigRepository.FindByKey returns (&sc, err) with a zero-value
+		// struct (ID == 0) when the row is missing — the pointer is NEVER nil.
+		// Check `existing.ID == 0` (or err) instead of `existing == nil`.
 		featuresExisting, ferr := s.siteCfgRepo.FindByKey(ctx, model.SiteConfigKeyFeatures)
-		if ferr != nil && !strings.Contains(ferr.Error(), "not found") {
+		if ferr != nil && !strings.Contains(ferr.Error(), "not found") && !strings.Contains(ferr.Error(), "record not found") {
 			return ferr
 		}
-		if featuresExisting == nil {
+		if featuresExisting == nil || featuresExisting.ID == 0 {
 			cfg := blankFeaturesConfig()
 			row := &model.SiteConfig{
 				Key:              model.SiteConfigKeyFeatures,
