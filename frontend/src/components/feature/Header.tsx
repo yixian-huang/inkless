@@ -6,6 +6,8 @@ import { useThemePages } from '@/contexts/ThemePagesContext';
 import { resolveLocale } from '@/utils/locale';
 import { useBranding } from '@/hooks/useBranding';
 import { useLocaleMode } from '@/hooks/useLocaleMode';
+import { isFeatureEnabled, routeFeatureMap } from '@/router/featureMap';
+import type { SiteConfigFeatures } from '@/types/siteConfig';
 
 interface NavItem {
   label?: string;
@@ -17,7 +19,7 @@ export default function Header() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  const { config: globalConfig } = useGlobalConfig();
+  const { config: globalConfig, features } = useGlobalConfig();
   const branding = useBranding();
   const { isMono, currentLocale } = useLocaleMode();
   const { headerNavItems, menuNavItems } = useThemePages();
@@ -27,6 +29,13 @@ export default function Header() {
     : headerNavItems.length > 0
       ? headerNavItems.map((item) => ({ label: item.label, href: item.path }))
       : (globalConfig.nav?.items || []);
+  const publishedFeatures = features as unknown as SiteConfigFeatures;
+  const visibleNav = navigation.filter((item) => {
+    if (!item.href) return true;
+    const key = routeFeatureMap[item.href];
+    if (!key) return true;
+    return isFeatureEnabled(publishedFeatures, key);
+  });
   const logoSrc = branding.logo.light || '/images/logo.png';
   const logoAlt = branding.siteName || 'Site';
 
@@ -85,9 +94,9 @@ export default function Header() {
             </div>
 
             {/* Desktop Navigation */}
-            {navigation.length > 0 && (
+            {visibleNav.length > 0 && (
               <div className="hidden lg:flex items-center space-x-8">
-                {navigation.map((item, index) => (
+                {visibleNav.map((item, index) => (
                   <Link
                     key={item.href || item.label || String(index)}
                     to={item.href || '/'}
@@ -117,9 +126,9 @@ export default function Header() {
           </div>
 
           {/* Mobile Menu */}
-          {isMobileMenuOpen && navigation.length > 0 && (
+          {isMobileMenuOpen && visibleNav.length > 0 && (
             <div className="lg:hidden mt-4 pb-4 space-y-3">
-              {navigation.map((item, index) => (
+              {visibleNav.map((item, index) => (
                 <Link
                   key={item.href || item.label || String(index)}
                   to={item.href || '/'}

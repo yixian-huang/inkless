@@ -1,12 +1,15 @@
 import { useNavigate, type RouteObject } from "react-router-dom";
 import { useRoutes } from "react-router-dom";
 import { useEffect, useMemo } from "react";
+import type { ReactElement } from "react";
 import { staticRoutes } from "./config";
 import { resolveNavigate } from "./navigate";
 import { useThemeManager } from "@/plugins/hooks";
 import { useThemePages } from "@/contexts/ThemePagesContext";
 import ThemePageWrapper from "@/plugins/ThemePageWrapper";
 import type { ThemePageDefinition } from "@/plugins/types";
+import { FeatureGate } from "@/components/feature/FeatureGate";
+import { routeFeatureMap } from "@/router/featureMap";
 
 declare global {
   interface Window {
@@ -35,6 +38,12 @@ export function AppRoutes() {
     return map;
   }, [activeTheme]);
 
+  const wrapWithFeatureGate = (path: string, element: ReactElement) => {
+    const key = routeFeatureMap[path];
+    if (!key) return element;
+    return <FeatureGate feature={key}>{element}</FeatureGate>;
+  };
+
   const routes = useMemo(() => {
     // If we have backend-driven theme pages, use them for routing
     if (themePages.length > 0) {
@@ -50,19 +59,23 @@ export function AppRoutes() {
             nav: { label: page.title.en || page.slug, labelZh: page.title.zh || page.slug, order: page.sortOrder },
           };
 
+          const fullPath = page.slug === "home" ? "/" : `/${page.slug}`;
           return {
-            path: page.slug === "home" ? "/" : `/${page.slug}`,
-            element: <ThemePageWrapper pageDef={pageDef} />,
+            path: fullPath,
+            element: wrapWithFeatureGate(fullPath, <ThemePageWrapper pageDef={pageDef} />),
           };
         });
       return [...backendRoutes, ...staticRoutes];
     }
 
     // Fallback: use theme's hardcoded pages directly (before backend data loads)
-    const themeRoutes: RouteObject[] = (activeTheme?.pages || []).map((pageDef) => ({
-      path: pageDef.slug === "home" ? "/" : `/${pageDef.slug}`,
-      element: <ThemePageWrapper pageDef={pageDef} />,
-    }));
+    const themeRoutes: RouteObject[] = (activeTheme?.pages || []).map((pageDef) => {
+      const fullPath = pageDef.slug === "home" ? "/" : `/${pageDef.slug}`;
+      return {
+        path: fullPath,
+        element: wrapWithFeatureGate(fullPath, <ThemePageWrapper pageDef={pageDef} />),
+      };
+    });
     return [...themeRoutes, ...staticRoutes];
   }, [activeTheme, themePages, componentMap]);
 
