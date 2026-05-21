@@ -75,7 +75,7 @@ func TestBuildSystemPrompt(t *testing.T) {
 	// No context
 	prompt := buildSystemPrompt(nil, "zh")
 	assert.Contains(t, prompt, "Chinese")
-	assert.Contains(t, prompt, "Blotting Consultancy")
+	assert.Contains(t, prompt, "helpful assistant")
 
 	// With context, English locale
 	prompt = buildSystemPrompt([]string{"chunk1", "chunk2"}, "en")

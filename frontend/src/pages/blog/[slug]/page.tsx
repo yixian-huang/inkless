@@ -62,7 +62,7 @@ export default function BlogDetailPage() {
     <PublicLayout>
       {article && (
         <SeoHead
-          title={`${article.zhTitle || article.enTitle} | 印迹法规咨询`}
+          title={`${article.zhTitle || article.enTitle}`}
           description={article.zhMetaDescription || article.enMetaDescription || ""}
           ogTitle={article.zhSeoTitle || article.zhTitle || article.enTitle}
           ogDescription={article.zhMetaDescription || article.enMetaDescription || ""}

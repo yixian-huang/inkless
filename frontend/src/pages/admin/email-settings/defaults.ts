@@ -8,8 +8,8 @@ const autoReplyZhBody = `<!DOCTYPE html>
     <tr><td align="center">
       <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
         <tr><td style="background:linear-gradient(135deg,#1e40af,#3b82f6);padding:32px 40px;">
-          <h1 style="margin:0;color:#ffffff;font-size:22px;font-weight:600;">印迹咨询</h1>
-          <p style="margin:8px 0 0;color:rgba(255,255,255,0.85);font-size:14px;">Blotting Consultancy</p>
+          <h1 style="margin:0;color:#ffffff;font-size:22px;font-weight:600;">{{siteName}}</h1>
+          <p style="margin:8px 0 0;color:rgba(255,255,255,0.85);font-size:14px;">{{siteNameEn}}</p>
         </td></tr>
         <tr><td style="padding:32px 40px;">
           <p style="margin:0 0 16px;color:#374151;font-size:16px;line-height:1.6;">尊敬的 {{name}}，您好！</p>
@@ -17,7 +17,7 @@ const autoReplyZhBody = `<!DOCTYPE html>
           <div style="background:#f0f9ff;border-left:4px solid #3b82f6;padding:16px 20px;margin:24px 0;border-radius:0 6px 6px 0;">
             <p style="margin:0;color:#1e40af;font-size:14px;">如有紧急事项，请直接拨打我们的联系电话。</p>
           </div>
-          <p style="margin:24px 0 0;color:#6b7280;font-size:14px;line-height:1.6;">此致<br/>印迹咨询团队</p>
+          <p style="margin:24px 0 0;color:#6b7280;font-size:14px;line-height:1.6;">此致<br/>{{siteName}}团队</p>
         </td></tr>
         <tr><td style="background:#f9fafb;padding:20px 40px;border-top:1px solid #e5e7eb;">
           <p style="margin:0;color:#9ca3af;font-size:12px;text-align:center;">此邮件由系统自动发送，请勿直接回复。</p>
@@ -36,7 +36,7 @@ const autoReplyEnBody = `<!DOCTYPE html>
     <tr><td align="center">
       <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
         <tr><td style="background:linear-gradient(135deg,#1e40af,#3b82f6);padding:32px 40px;">
-          <h1 style="margin:0;color:#ffffff;font-size:22px;font-weight:600;">Blotting Consultancy</h1>
+          <h1 style="margin:0;color:#ffffff;font-size:22px;font-weight:600;">{{siteNameEn}}</h1>
           <p style="margin:8px 0 0;color:rgba(255,255,255,0.85);font-size:14px;">Professional Consulting Services</p>
         </td></tr>
         <tr><td style="padding:32px 40px;">
@@ -45,7 +45,7 @@ const autoReplyEnBody = `<!DOCTYPE html>
           <div style="background:#f0f9ff;border-left:4px solid #3b82f6;padding:16px 20px;margin:24px 0;border-radius:0 6px 6px 0;">
             <p style="margin:0;color:#1e40af;font-size:14px;">For urgent matters, please contact us by phone directly.</p>
           </div>
-          <p style="margin:24px 0 0;color:#6b7280;font-size:14px;line-height:1.6;">Best regards,<br/>Blotting Consultancy Team</p>
+          <p style="margin:24px 0 0;color:#6b7280;font-size:14px;line-height:1.6;">Best regards,<br/>{{siteNameEn}} Team</p>
         </td></tr>
         <tr><td style="background:#f9fafb;padding:20px 40px;border-top:1px solid #e5e7eb;">
           <p style="margin:0;color:#9ca3af;font-size:12px;text-align:center;">This is an automated message. Please do not reply directly.</p>
@@ -65,7 +65,7 @@ const forwardZhBody = `<!DOCTYPE html>
       <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
         <tr><td style="background:linear-gradient(135deg,#7c3aed,#a855f7);padding:32px 40px;">
           <h1 style="margin:0;color:#ffffff;font-size:22px;font-weight:600;">新表单提交通知</h1>
-          <p style="margin:8px 0 0;color:rgba(255,255,255,0.85);font-size:14px;">印迹咨询 - 官网留言</p>
+          <p style="margin:8px 0 0;color:rgba(255,255,255,0.85);font-size:14px;">{{siteName}} - 官网留言</p>
         </td></tr>
         <tr><td style="padding:32px 40px;">
           <p style="margin:0 0 20px;color:#374151;font-size:15px;">收到一条新的网站咨询，详情如下：</p>
@@ -94,7 +94,7 @@ const forwardZhBody = `<!DOCTYPE html>
           <p style="margin:20px 0 0;color:#9ca3af;font-size:12px;">提交时间：{{date}}</p>
         </td></tr>
         <tr><td style="background:#f9fafb;padding:20px 40px;border-top:1px solid #e5e7eb;">
-          <p style="margin:0;color:#9ca3af;font-size:12px;text-align:center;">此通知由印迹咨询官网系统自动发送</p>
+          <p style="margin:0;color:#9ca3af;font-size:12px;text-align:center;">此邮件由系统自动发送，请勿直接回复。</p>
         </td></tr>
       </table>
     </td></tr>
@@ -111,7 +111,7 @@ const forwardEnBody = `<!DOCTYPE html>
       <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
         <tr><td style="background:linear-gradient(135deg,#7c3aed,#a855f7);padding:32px 40px;">
           <h1 style="margin:0;color:#ffffff;font-size:22px;font-weight:600;">New Form Submission</h1>
-          <p style="margin:8px 0 0;color:rgba(255,255,255,0.85);font-size:14px;">Blotting Consultancy - Website Inquiry</p>
+          <p style="margin:8px 0 0;color:rgba(255,255,255,0.85);font-size:14px;">{{siteNameEn}} - Website Inquiry</p>
         </td></tr>
         <tr><td style="padding:32px 40px;">
           <p style="margin:0 0 20px;color:#374151;font-size:15px;">A new inquiry has been submitted via the website:</p>
@@ -140,7 +140,7 @@ const forwardEnBody = `<!DOCTYPE html>
           <p style="margin:20px 0 0;color:#9ca3af;font-size:12px;">Submitted at: {{date}}</p>
         </td></tr>
         <tr><td style="background:#f9fafb;padding:20px 40px;border-top:1px solid #e5e7eb;">
-          <p style="margin:0;color:#9ca3af;font-size:12px;text-align:center;">This notification was sent automatically by Blotting Consultancy website</p>
+          <p style="margin:0;color:#9ca3af;font-size:12px;text-align:center;">This is an automated message. Please do not reply directly.</p>
         </td></tr>
       </table>
     </td></tr>
@@ -155,7 +155,7 @@ export const defaultEmailConfig: EmailConfig = {
     username: "",
     password: "",
     from: "",
-    fromName: "印迹咨询",
+    fromName: "",
     useTLS: true,
     insecureSkipVerify: false,
   },
@@ -169,11 +169,11 @@ export const defaultEmailConfig: EmailConfig = {
   templates: {
     autoReply: {
       zh: {
-        subject: "感谢您的咨询 - 印迹咨询",
+        subject: "感谢您的咨询",
         body: autoReplyZhBody,
       },
       en: {
-        subject: "Thank you for your inquiry - Blotting Consultancy",
+        subject: "Thank you for your inquiry",
         body: autoReplyEnBody,
       },
     },

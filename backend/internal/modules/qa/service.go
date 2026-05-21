@@ -132,14 +132,14 @@ func buildSystemPrompt(contextParts []string, locale string) string {
 	}
 
 	if len(contextParts) == 0 {
-		return fmt.Sprintf(`You are a helpful assistant for Blotting Consultancy (印迹咨询).
+		return fmt.Sprintf(`You are a helpful assistant for this website.
 %s
 If you don't have enough information to answer the question, politely say so and suggest the user contact us directly.`, langInstruction)
 	}
 
 	contextText := strings.Join(contextParts, "\n\n---\n\n")
 
-	return fmt.Sprintf(`You are a helpful assistant for Blotting Consultancy (印迹咨询).
+	return fmt.Sprintf(`You are a helpful assistant for this website.
 %s
 
 Use the following reference content to answer the user's question. If the answer is not in the provided content, say so honestly and suggest contacting us directly. Do not make up information.

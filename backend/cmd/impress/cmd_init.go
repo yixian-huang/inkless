@@ -49,7 +49,7 @@ func initCmd() *cobra.Command {
 				if dbType == "postgres" {
 					cfg.DBDSN = "postgres://impress:impress@localhost:5432/impress?sslmode=disable"
 				} else {
-					cfg.DBDSN = "file:./data/blotting.db?cache=shared&mode=rwc"
+					cfg.DBDSN = "file:./data/impress.db?cache=shared&mode=rwc"
 				}
 			} else {
 				fmt.Print("Port [8088]: ")
@@ -63,7 +63,7 @@ func initCmd() *cobra.Command {
 				input, _ = reader.ReadString('\n')
 				dbChoice := strings.TrimSpace(input)
 				if dbChoice == "" || dbChoice == "sqlite" {
-					cfg.DBDSN = "file:./data/blotting.db?cache=shared&mode=rwc"
+					cfg.DBDSN = "file:./data/impress.db?cache=shared&mode=rwc"
 				} else {
 					fmt.Print("PostgreSQL DSN [postgres://impress:impress@localhost:5432/impress?sslmode=disable]: ")
 					input, _ = reader.ReadString('\n')

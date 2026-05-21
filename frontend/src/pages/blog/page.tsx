@@ -82,10 +82,10 @@ export default function BlogPage() {
   return (
     <PublicLayout>
       <SeoHead
-        title="博客 | 印迹法规咨询"
-        description="印迹法规咨询博客 - 行业洞察、最新动态与专家观点"
-        ogTitle="博客 | 印迹法规咨询"
-        ogDescription="印迹法规咨询博客 - 行业洞察、最新动态与专家观点"
+        title="博客"
+        description="博客 - 行业洞察、最新动态与专家观点"
+        ogTitle="博客"
+        ogDescription="博客 - 行业洞察、最新动态与专家观点"
         ogType="website"
         canonicalUrl="/blog"
       />

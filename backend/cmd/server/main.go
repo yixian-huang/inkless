@@ -82,7 +82,7 @@ var (
 
 // @title           Impress CMS API
 // @version         1.0
-// @description     Bilingual CMS backend API for Impress (印迹). Supports content management, articles, pages, themes, media, and more.
+// @description     Bilingual CMS backend API for Impress. Supports content management, articles, pages, themes, media, and more.
 // @host            localhost:8088
 // @BasePath        /
 // @securityDefinitions.apikey BearerAuth
@@ -99,7 +99,7 @@ func main() {
 
 	// Initialize logger
 	log := appLogger.New(cfg.Env, map[string]interface{}{
-		"service": "blotting-consultancy-api",
+		"service": "impress-api",
 		"version": Version,
 	})
 	log.Info("Starting server",

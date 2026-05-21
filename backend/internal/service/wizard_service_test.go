@@ -374,7 +374,7 @@ func TestWizardService_GenerateContent_Success(t *testing.T) {
 	req := model.GenerateContentRequest{
 		PageType:  "home",
 		Industry:  "consulting",
-		BrandName: "Blotting",
+		BrandName: "TestBrand",
 		Locale:    "en",
 	}
 

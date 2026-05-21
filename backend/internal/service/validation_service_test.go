@@ -515,8 +515,8 @@ func TestValidateConfig_GlobalPage_Valid(t *testing.T) {
 				},
 			},
 			"companyName": map[string]interface{}{
-				"zh": "印迹咨询",
-				"en": "Blotting Consultancy",
+				"zh": "测试站点",
+				"en": "Test Site",
 			},
 		},
 		"nav": map[string]interface{}{

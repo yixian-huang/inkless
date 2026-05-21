@@ -8,7 +8,7 @@ import (
 )
 
 func TestOrganizationJSONLD(t *testing.T) {
-	ld := seo.OrganizationJSONLD("印迹法规咨询", "https://example.com", "https://example.com/logo.png")
+	ld := seo.OrganizationJSONLD("Test Site", "https://example.com", "https://example.com/logo.png")
 	var m map[string]interface{}
 	if err := json.Unmarshal([]byte(ld), &m); err != nil {
 		t.Fatalf("invalid JSON: %v", err)
@@ -16,7 +16,7 @@ func TestOrganizationJSONLD(t *testing.T) {
 	if m["@type"] != "Organization" {
 		t.Errorf("expected @type Organization, got %v", m["@type"])
 	}
-	if m["name"] != "印迹法规咨询" {
+	if m["name"] != "Test Site" {
 		t.Errorf("expected name, got %v", m["name"])
 	}
 }

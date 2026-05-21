@@ -11,8 +11,8 @@ func TestConvertContentDocConfig_Home(t *testing.T) {
 	config := model.JSONMap{
 		"hero": map[string]interface{}{
 			"title": map[string]interface{}{
-				"zh": "欢迎来到印迹咨询",
-				"en": "Welcome to Blotting Consultancy",
+				"zh": "欢迎来到测试站点",
+				"en": "Welcome to Test Site",
 			},
 			"subtitle": map[string]interface{}{
 				"zh": "专业的咨询服务",
@@ -86,11 +86,11 @@ func TestConvertContentDocConfig_Home(t *testing.T) {
 		t.Fatal("hero title should be a map")
 	}
 
-	if heroTitle["zh"] != "欢迎来到印迹咨询" {
+	if heroTitle["zh"] != "欢迎来到测试站点" {
 		t.Errorf("expected zh title preserved, got %v", heroTitle["zh"])
 	}
 
-	if heroTitle["en"] != "Welcome to Blotting Consultancy" {
+	if heroTitle["en"] != "Welcome to Test Site" {
 		t.Errorf("expected en title preserved, got %v", heroTitle["en"])
 	}
 

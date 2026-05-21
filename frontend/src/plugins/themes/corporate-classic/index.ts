@@ -9,7 +9,7 @@ export const corporateClassicTheme: ThemePlugin = {
     nameZh: "企业经典",
     description: "Professional corporate website with homepage, about, advantages, services, cases, experts, and contact pages",
     descriptionZh: "专业企业官网，含首页、关于、优势、服务、案例、专家、联系",
-    author: "Blotting Consultancy",
+    author: "Impress CMS",
     version: "1.0.0",
     type: "theme",
     preview: "linear-gradient(135deg, #1a5f8f 0%, #8bc34a 100%)",

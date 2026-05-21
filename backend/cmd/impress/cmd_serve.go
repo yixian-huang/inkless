@@ -38,7 +38,7 @@ func serveCmd() *cobra.Command {
 
 			// Set sensible defaults if not configured
 			setDefault("PORT", "8088")
-			setDefault("DB_DSN", "file:./data/blotting.db?cache=shared&mode=rwc")
+			setDefault("DB_DSN", "file:./data/impress.db?cache=shared&mode=rwc")
 			setDefault("JWT_SECRET", "dev-jwt-secret-change-in-production")
 			setDefault("JWT_REFRESH_SECRET", "dev-jwt-refresh-secret-change-in-production")
 			setDefault("ENV", "development")

@@ -38,7 +38,7 @@ func openDatabase(dsn string) (*db.DB, error) {
 		dsn = os.Getenv("DB_DSN")
 	}
 	if dsn == "" {
-		dsn = "file:./data/blotting.db?cache=shared&mode=rwc"
+		dsn = "file:./data/impress.db?cache=shared&mode=rwc"
 	}
 
 	maxOpen := 1

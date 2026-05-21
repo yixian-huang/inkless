@@ -268,7 +268,7 @@ function SidebarContent({ collapsed, onToggle, onMobileClose }: {
         {collapsed ? (
           <span className="text-lg font-bold text-blue-400 mx-auto">印</span>
         ) : (
-          <span className="text-lg font-bold text-blue-400 truncate">印迹管理后台</span>
+          <span className="text-lg font-bold text-blue-400 truncate">管理后台</span>
         )}
       </div>
 

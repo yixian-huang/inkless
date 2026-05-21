@@ -187,7 +187,7 @@ export default function ThemedHeader({ config }: ThemedHeaderProps) {
         : globalNavItems.map((item) => ({ label: item.label, path: item.href })));
 
   const logoSrc = config?.logo ?? globalConfig.branding?.logo?.url ?? "/images/logo.png";
-  const logoAlt = globalConfig.branding?.companyName || "Blotting Consultancy";
+  const logoAlt = globalConfig.branding?.companyName || "Site Logo";
   const showLanguageToggle = config?.showLanguageToggle ?? true;
   const style = config?.style ?? "sticky";
 
