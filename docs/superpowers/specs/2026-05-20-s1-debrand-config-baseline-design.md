@@ -90,9 +90,13 @@ interface SiteConfigGlobal {
 }
 ```
 
-**存储**：沿用 `site_configs` 表，`key = "global"`，schema 落在 `DraftConfig` / `PublishedConfig` JSON 字段。draft/publish 流程沿用现有 handler，不新增 API。
+**存储（实际现状）**：现有代码把 global config 存在 **`content_documents` 表，`PageKey = "global"`**（不是 `site_configs.global` — 后者在 model 中定义但无 handler 写入）。bootstrap `globalConfig` 字段由 `contentDocRepo.FindByPageKey("global")` 读取；本 spec 不迁移存储，仅在写入路径上加 schema 校验。
 
-**验证**：在 Go 端为 `global` key 添加 schema 校验（接收 JSONMap → 反序列化为结构体 → validate `localeMode` 合法值、required 字段不空）。validate 失败返回 400。
+**已发现的实现差距**：legacy `/admin/content/:pageKey/draft|publish` 路由在 content_documents → unified_pages 迁移后被移除，但 `global` PageKey 没有同步迁到 unified_pages，**当前 admin 无法写 global 配置**。S1 需补回 `/admin/global-config` 端点。
+
+**验证**：在写入 `PageKey=global` 时进入新增的 `validateGlobalConfig(JSONMap) error`（接收 JSONMap → 反序列化为 `SiteConfigGlobal` 结构体 → validate `localeMode` 合法值、required 字段不空）。validate 失败返回 400。
+
+同样，**`site_configs.features` 也没有 admin 写入端点**（只在 bootstrap 被读、由 seed 初始化）；S1 需补回 `/admin/features` 端点（写 `site_configs.features`）。
 
 ### 4.2 `site_config.features` 子开关
 
@@ -117,7 +121,9 @@ interface SiteConfigFeatures {
 
 **键名约定**：`publicPages` 的字段名一律使用 JS camelCase（`coreServices`），路由 URL 使用 kebab-case（`/core-services`）。`<FeatureGate>` 接收的是 JS dot-path（`"publicPages.coreServices"`），不是 URL。路由 ↔ 配置键映射在 `frontend/src/router/featureMap.ts`（新增文件）集中声明。
 
-**与现有 features 的兼容**：现有 `site_config.features` 已存在但 schema 未规范化；本 spec 把它定义清楚。已部署站点首次启动若 `publicPages.*` 缺省，按"旧行为兼容"——所有页面默认开启（保留现状）。新部署 / `BlankSiteSeed` 走"个人博客默认"——只开 home/blog/contact。
+**与现有 features 的兼容**：`site_configs.features` 已存在但 schema 未规范化；本 spec 把它定义清楚。已部署站点首次启动若 `publicPages.*` 缺省，按"旧行为兼容"——所有页面默认开启（保留现状）。新部署 / `BlankSiteSeed` 走"个人博客默认"——只开 home/blog/contact。
+
+**Admin 写入路径**：S1 新增 `GET/PUT /admin/features` 端点（写 `site_configs.features.DraftConfig` / `PublishedConfig`，draft → publish 两步）。
 
 ### 4.3 LocalizedString 读取契约
 
@@ -249,14 +255,14 @@ const defaultSQLiteDSN = "file:./data/impress.db?cache=shared&mode=rwc"
 
 #### 5.2.4 `site_config` validate
 
-在 `internal/service/site_config_service.go`（或 handler 中如无 service）增加 `validateGlobalSchema(JSONMap) error`：
+在新增的 `internal/handler/global_config/handler.go`（或 service 层）增加 `validateGlobalConfig(JSONMap) error`：
 - `identity.name` 至少一种语言非空
 - `identity.localeMode` ∈ {mono-zh, mono-en, bilingual}
 - `identity.defaultLocale` ∈ {zh, en}，且 mono 模式下与主语言一致
 - `brand.logo.light`、`brand.favicon`、`brand.ogImage` 可空但若非空必须是合法 URL/相对路径
 - `footer.icp` 长度上限 100
 
-非 `global` key 沿用现有行为（不强制 schema）。
+写入操作通过 `contentDocRepo.UpsertByPageKey(ctx, model.PageKeyGlobal, draft, published)` 落入既有表，不引入新表。
 
 ### 5.3 主题包元数据
 
@@ -278,11 +284,11 @@ author: "impress",
 
 每个 PR 自带测试，过 `pnpm lint && pnpm type-check && go vet && go test -race ./...`。
 
-### PR-1 `feat(site-config): expand global schema`
-- 后端：定义 `SiteConfigGlobal` Go struct + validate；handler 不动
-- 前端：`GlobalConfigContext` TypeScript 类型扩展；`pickLocaleValue` helper + 单元测试
+### PR-1 `feat(global-config): schema + admin endpoint + raw JSON editor`
+- 后端：定义 `SiteConfigGlobal` Go struct + `validateGlobalConfig`；新增 `internal/handler/global_config/handler.go` 提供 `GET /admin/global-config`、`PUT /admin/global-config/draft`、`POST /admin/global-config/publish`；写入走 `contentDocRepo` (PageKey="global")
+- 前端：`GlobalConfigContext` TypeScript 类型扩展；`pickLocaleValue` helper + 单元测试；新增 `pages/admin/site-config/page.tsx` 简易 JSON 编辑器（textarea + 校验提示），允许填写真值供后续 PR 测试
 - **不**包含 `useBranding` / `useLocaleMode` / `useSEODefaults` —— 它们随其消费者落入 PR-2 / PR-3 / PR-5
-- 无可见行为变化
+- 公开页行为无变化（GlobalConfigContext 兼容旧 schema 与新 schema）
 
 ### PR-2 `refactor(i18n): UI-only boundary, move business strings out`
 - 删除 `i18n/local/{zh,en}/common.ts` 中所有业务文案
@@ -298,16 +304,18 @@ author: "impress",
 - `i18next` detector 在 mono 模式强制覆盖
 - 单元测试覆盖三种模式
 
-### PR-4 `feat(routing): features.publicPages gates`
-- `<FeatureGate>` 组件 + 单元测试
+### PR-4 `feat(routing): features.publicPages gates + admin endpoint`
+- 后端：新增 `internal/handler/features/handler.go` 提供 `GET /admin/features`、`PUT /admin/features/draft`、`POST /admin/features/publish`；写 `site_configs.features`
+- 前端：`<FeatureGate>` 组件 + 单元测试
 - 新增 `frontend/src/router/featureMap.ts`（route ↔ feature key 集中映射）
 - 路由出口 + 菜单接入
 - Admin 增加 features toggles UI（最简列表+开关）
 
-### PR-5 `feat(seo): seo defaults from site_config`
+### PR-5 `feat(seo): seo defaults from global-config + form-based admin editor`
 - **新增** `useSEODefaults()` hook；所有 `useDocumentTitle` 调用收口（删 suffix 参数）
-- 后端 `seo/meta.go` 读 site_config + eventbus 失效
-- 测试：mock site_config → SEO meta 输出正确
+- 后端 `seo/meta.go` 读 `content_documents.global.seo` + eventbus 失效（global 写入时发 invalidate 事件）
+- 前端：把 PR-1 的 raw JSON 编辑器升级为 tabbed form（Identity / Brand / Author / Footer / SEO）
+- 测试：mock global config → SEO meta 输出正确
 
 ### PR-6 `chore: rename DSN, blank seed, cleanup`
 - `pkg/config/config.go` 默认 DSN 改 `impress.db`
