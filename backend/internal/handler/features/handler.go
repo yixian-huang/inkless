@@ -2,6 +2,7 @@ package features
 
 import (
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 
@@ -78,6 +79,10 @@ func (h *Handler) adminPutDraft(c *gin.Context) {
 	}
 	newVersion, err := h.repo.UpdateDraft(c.Request.Context(), model.SiteConfigKeyFeatures, in.ExpectedDraftVersion, in.DraftConfig)
 	if err != nil {
+		if strings.Contains(err.Error(), "version conflict") {
+			c.JSON(http.StatusConflict, gin.H{"error": gin.H{"message": "draft version conflict"}})
+			return
+		}
 		c.JSON(http.StatusInternalServerError, gin.H{"error": gin.H{"message": "update failed"}})
 		return
 	}

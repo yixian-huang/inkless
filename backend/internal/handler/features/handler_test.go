@@ -118,3 +118,23 @@ func TestAdminGet_ReturnsEmptyDefaultsWhenMissing(t *testing.T) {
 		t.Fatalf("expected 200, got %d", w.Code)
 	}
 }
+
+func TestAdminPutDraft_VersionConflictReturns409(t *testing.T) {
+	repo := &MockSiteConfigRepository{
+		FindByKeyFunc: func(ctx context.Context, key string) (*model.SiteConfig, error) {
+			return &model.SiteConfig{ID: 1, Key: model.SiteConfigKeyFeatures, DraftVersion: 5}, nil
+		},
+		UpdateDraftFunc: func(ctx context.Context, key string, expected int, draft model.JSONMap) (int, error) {
+			return 0, errors.New("draft version conflict or config not found")
+		},
+	}
+	r := newRouter(repo)
+	body := `{"draftConfig":{"publicPages":{"home":true,"blog":true,"contact":true,"about":false,"experts":false,"coreServices":false,"advantages":false,"cases":false},"blog":{"comments":true,"rss":true}},"expectedDraftVersion":1}`
+	req := httptest.NewRequest(http.MethodPut, "/admin/features/draft", bytes.NewBufferString(body))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+	if w.Code != http.StatusConflict {
+		t.Fatalf("expected 409, got %d: %s", w.Code, w.Body.String())
+	}
+}
