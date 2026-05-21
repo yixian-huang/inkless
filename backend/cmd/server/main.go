@@ -180,6 +180,7 @@ func main() {
 		&model.PageVersion{},
 		&model.PageTemplate{},
 		&model.SiteConfig{},
+		&commentMod.Comment{},
 	); err != nil {
 		log.Error("Failed to run migrations", "error", err)
 		os.Exit(1)
