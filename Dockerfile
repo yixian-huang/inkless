@@ -25,7 +25,7 @@ RUN pnpm -C frontend build
 # ────────────────────────────────────────────────────────────────────────────
 # Stage 2: build Go backend (CGO enabled for SQLite driver compatibility)
 # ────────────────────────────────────────────────────────────────────────────
-FROM golang:1.24.1-alpine AS backend-builder
+FROM golang:1.25-alpine AS backend-builder
 
 RUN apk add --no-cache git gcc musl-dev
 
