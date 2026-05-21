@@ -34,7 +34,7 @@ func TestAuthWorkflow(t *testing.T) {
 	themePageSvc := service.NewThemePageService(pageRepo)
 	unifiedPageRepo := repository.NewGormUnifiedPageRepository(database.DB)
 	pageTemplateRepo := repository.NewGormPageTemplateRepository(database.DB)
-	seeder := seed.NewSeeder(userRepo, contentRepo, installedThemeRepo, themePageSvc, unifiedPageRepo, pageTemplateRepo)
+	seeder := seed.NewSeeder(userRepo, contentRepo, installedThemeRepo, themePageSvc, unifiedPageRepo, pageTemplateRepo, nil)
 	err := seeder.SeedUsers(ctx)
 	require.NoError(t, err)
 
@@ -128,7 +128,7 @@ func TestAuthInvalidCredentials(t *testing.T) {
 	themePageSvc := service.NewThemePageService(pageRepo)
 	unifiedPageRepo := repository.NewGormUnifiedPageRepository(database.DB)
 	pageTemplateRepo := repository.NewGormPageTemplateRepository(database.DB)
-	seeder := seed.NewSeeder(userRepo, contentRepo, installedThemeRepo, themePageSvc, unifiedPageRepo, pageTemplateRepo)
+	seeder := seed.NewSeeder(userRepo, contentRepo, installedThemeRepo, themePageSvc, unifiedPageRepo, pageTemplateRepo, nil)
 	err := seeder.SeedUsers(ctx)
 	require.NoError(t, err)
 
@@ -201,7 +201,7 @@ func TestRoleBasedAuthorization(t *testing.T) {
 	themePageSvc := service.NewThemePageService(pageRepo)
 	unifiedPageRepo := repository.NewGormUnifiedPageRepository(database.DB)
 	pageTemplateRepo := repository.NewGormPageTemplateRepository(database.DB)
-	seeder := seed.NewSeeder(userRepo, contentRepo, installedThemeRepo, themePageSvc, unifiedPageRepo, pageTemplateRepo)
+	seeder := seed.NewSeeder(userRepo, contentRepo, installedThemeRepo, themePageSvc, unifiedPageRepo, pageTemplateRepo, nil)
 	err := seeder.SeedAll(ctx)
 	require.NoError(t, err)
 
@@ -302,7 +302,7 @@ func TestConcurrentDraftConflict(t *testing.T) {
 	themePageSvc := service.NewThemePageService(pageRepo)
 	unifiedPageRepo := repository.NewGormUnifiedPageRepository(database.DB)
 	pageTemplateRepo := repository.NewGormPageTemplateRepository(database.DB)
-	seeder := seed.NewSeeder(userRepo, contentRepo, installedThemeRepo, themePageSvc, unifiedPageRepo, pageTemplateRepo)
+	seeder := seed.NewSeeder(userRepo, contentRepo, installedThemeRepo, themePageSvc, unifiedPageRepo, pageTemplateRepo, nil)
 	err := seeder.SeedAll(ctx)
 	require.NoError(t, err)
 
@@ -400,7 +400,7 @@ func TestValidationGate(t *testing.T) {
 	themePageSvc := service.NewThemePageService(pageRepo)
 	unifiedPageRepo := repository.NewGormUnifiedPageRepository(database.DB)
 	pageTemplateRepo := repository.NewGormPageTemplateRepository(database.DB)
-	seeder := seed.NewSeeder(userRepo, contentRepo, installedThemeRepo, themePageSvc, unifiedPageRepo, pageTemplateRepo)
+	seeder := seed.NewSeeder(userRepo, contentRepo, installedThemeRepo, themePageSvc, unifiedPageRepo, pageTemplateRepo, nil)
 	err := seeder.SeedAll(ctx)
 	require.NoError(t, err)
 

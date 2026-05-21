@@ -254,12 +254,29 @@ func main() {
 	themePageService := service.NewThemePageService(pageRepo)
 
 	// Run seed (idempotent)
-	seeder := seed.NewSeeder(userRepo, contentDocRepo, installedThemeRepo, themePageService, unifiedPageRepo, pageTemplateRepo)
+	seeder := seed.NewSeeder(userRepo, contentDocRepo, installedThemeRepo, themePageService, unifiedPageRepo, pageTemplateRepo, siteConfigRepo)
 	seedCtx, seedCancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer seedCancel()
-	if err := seeder.SeedAll(seedCtx); err != nil {
-		log.Error("Failed to seed initial data", "error", err)
-		os.Exit(1)
+	seedMode := os.Getenv("SEED_MODE")
+	switch seedMode {
+	case "blank":
+		if err := seeder.BlankSiteSeed(seedCtx); err != nil {
+			log.Error("Failed to run blank-site seed", "error", err)
+			os.Exit(1)
+		}
+	case "none":
+		log.Info("SEED_MODE=none, skipping seed")
+	case "demo":
+		if err := seeder.DemoSiteSeed(seedCtx); err != nil {
+			log.Error("Failed to run demo-site seed", "error", err)
+			os.Exit(1)
+		}
+	default:
+		// Backwards compat: existing deployments continue to get demo behavior.
+		if err := seeder.DemoSiteSeed(seedCtx); err != nil {
+			log.Error("Failed to run seed (default demo)", "error", err)
+			os.Exit(1)
+		}
 	}
 	// Seed RBAC roles and permissions
 	if err := seed.SeedRBAC(seedCtx, roleRepo); err != nil {

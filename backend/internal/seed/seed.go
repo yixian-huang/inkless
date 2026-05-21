@@ -19,6 +19,7 @@ type Seeder struct {
 	themePageService   *service.ThemePageService
 	unifiedPageRepo    repository.UnifiedPageRepository
 	templateRepo       repository.PageTemplateRepository
+	siteCfgRepo        repository.SiteConfigRepository
 }
 
 // NewSeeder creates a new seeder instance
@@ -29,6 +30,7 @@ func NewSeeder(
 	themePageService *service.ThemePageService,
 	unifiedPageRepo repository.UnifiedPageRepository,
 	templateRepo repository.PageTemplateRepository,
+	siteCfgRepo repository.SiteConfigRepository,
 ) *Seeder {
 	return &Seeder{
 		userRepo:           userRepo,
@@ -37,6 +39,7 @@ func NewSeeder(
 		themePageService:   themePageService,
 		unifiedPageRepo:    unifiedPageRepo,
 		templateRepo:       templateRepo,
+		siteCfgRepo:        siteCfgRepo,
 	}
 }
 
@@ -276,6 +279,102 @@ func (s *Seeder) SeedThemePages(ctx context.Context) error {
 
 	log.Printf("Seeding pages for active theme: %s", activeTheme.ThemeID)
 	return s.themePageService.SeedThemePages(ctx, activeTheme.ThemeID)
+}
+
+// DemoSiteSeed runs the full consultancy demo data seed.
+// Equivalent to the legacy SeedAll().
+func (s *Seeder) DemoSiteSeed(ctx context.Context) error {
+	return s.SeedAll(ctx)
+}
+
+// BlankSiteSeed inserts the minimum required for a fresh personal-blog site:
+// one admin user, the global content document with default SiteConfigGlobal
+// payload, and (if siteCfgRepo provided) the features site_config with
+// personal-blog defaults. No articles, no media, no demo data.
+func (s *Seeder) BlankSiteSeed(ctx context.Context) error {
+	log.Println("Starting blank-site seed...")
+	if err := s.SeedUsers(ctx); err != nil {
+		return err
+	}
+
+	// Ensure a "global" content_document exists with personal-blog defaults.
+	existing, err := s.contentRepo.FindByPageKey(ctx, model.PageKeyGlobal)
+	if err != nil && !strings.Contains(err.Error(), "not found") {
+		return err
+	}
+	if existing == nil {
+		doc := &model.ContentDocument{
+			PageKey:          model.PageKeyGlobal,
+			DraftConfig:      blankGlobalConfig(),
+			DraftVersion:     1,
+			PublishedConfig:  blankGlobalConfig(),
+			PublishedVersion: 1,
+		}
+		if err := s.contentRepo.Create(ctx, doc); err != nil {
+			return err
+		}
+		log.Println("Created blank global content document")
+	}
+
+	// Seed site_configs.features with personal-blog defaults so the gates
+	// in PR-4 default to "consultancy pages off". Without an explicit record,
+	// the frontend treats missing features as "all on" (old-deploy compat).
+	if s.siteCfgRepo != nil {
+		featuresExisting, ferr := s.siteCfgRepo.FindByKey(ctx, model.SiteConfigKeyFeatures)
+		if ferr != nil && !strings.Contains(ferr.Error(), "not found") {
+			return ferr
+		}
+		if featuresExisting == nil {
+			cfg := blankFeaturesConfig()
+			row := &model.SiteConfig{
+				Key:              model.SiteConfigKeyFeatures,
+				DraftConfig:      cfg,
+				DraftVersion:     1,
+				PublishedConfig:  cfg,
+				PublishedVersion: 1,
+			}
+			if err := s.siteCfgRepo.Upsert(ctx, row); err != nil {
+				return err
+			}
+			log.Println("Created blank features site_config")
+		}
+	}
+
+	log.Println("Blank-site seed completed")
+	return nil
+}
+
+func blankGlobalConfig() model.JSONMap {
+	return model.JSONMap{
+		"identity": model.JSONMap{
+			"name":          model.JSONMap{"zh": "My Site"},
+			"localeMode":    "mono-zh",
+			"defaultLocale": "zh",
+		},
+		"brand":  model.JSONMap{"logo": model.JSONMap{"light": ""}, "favicon": "", "ogImage": "", "primaryColor": "#1e40af"},
+		"author": model.JSONMap{"name": "", "socials": []any{}},
+		"footer": model.JSONMap{},
+		"seo":    model.JSONMap{},
+	}
+}
+
+func blankFeaturesConfig() model.JSONMap {
+	return model.JSONMap{
+		"publicPages": model.JSONMap{
+			"home":         true,
+			"blog":         true,
+			"contact":      true,
+			"about":        false,
+			"experts":      false,
+			"coreServices": false,
+			"advantages":   false,
+			"cases":        false,
+		},
+		"blog": model.JSONMap{
+			"comments": true,
+			"rss":      true,
+		},
+	}
 }
 
 // getInitialConfig returns an initial empty config structure for a page

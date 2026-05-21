@@ -297,5 +297,39 @@ func newTestSeeder(db *gorm.DB) *Seeder {
 	themePageSvc := service.NewThemePageService(pageRepo)
 	unifiedPageRepo := repository.NewGormUnifiedPageRepository(db)
 	templateRepo := repository.NewGormPageTemplateRepository(db)
-	return NewSeeder(userRepo, contentRepo, themeRepo, themePageSvc, unifiedPageRepo, templateRepo)
+	return NewSeeder(userRepo, contentRepo, themeRepo, themePageSvc, unifiedPageRepo, templateRepo, nil)
+}
+
+func TestBlankSiteSeed_CreatesGlobalWithDefaults(t *testing.T) {
+	db := setupTestDB(t)
+
+	// Also migrate SiteConfig table for this test
+	err := db.AutoMigrate(&model.SiteConfig{})
+	require.NoError(t, err)
+
+	userRepo := repository.NewGormUserRepository(db)
+	contentRepo := repository.NewGormContentDocumentRepository(db)
+	installedThemeRepo := repository.NewGormInstalledThemeRepository(db)
+	pageRepo := repository.NewGormPageRepository(db)
+	themePageService := service.NewThemePageService(pageRepo)
+	unifiedPageRepo := repository.NewGormUnifiedPageRepository(db)
+	pageTemplateRepo := repository.NewGormPageTemplateRepository(db)
+	siteCfgRepo := repository.NewGormSiteConfigRepository(db)
+
+	s := NewSeeder(userRepo, contentRepo, installedThemeRepo, themePageService, unifiedPageRepo, pageTemplateRepo, siteCfgRepo)
+
+	if err := s.BlankSiteSeed(context.Background()); err != nil {
+		t.Fatalf("blank seed: %v", err)
+	}
+	doc, err := contentRepo.FindByPageKey(context.Background(), model.PageKeyGlobal)
+	if err != nil {
+		t.Fatalf("find global: %v", err)
+	}
+	identity, ok := doc.PublishedConfig["identity"].(map[string]interface{})
+	if !ok {
+		t.Fatalf("expected identity map in published config, got: %#v", doc.PublishedConfig["identity"])
+	}
+	if identity["localeMode"] != "mono-zh" {
+		t.Fatalf("expected mono-zh, got: %v", identity["localeMode"])
+	}
 }
