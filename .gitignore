@@ -39,6 +39,10 @@ data/
 # Test artifacts
 test-screenshots/
 test-*.png
+test/site-export-*.zip
+
+# Deploy credentials (copy from .prod_server.example)
+.prod_server
 
 # Backend binaries & uploads
 backend/server

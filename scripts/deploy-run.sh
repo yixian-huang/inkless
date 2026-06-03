@@ -34,7 +34,9 @@ header()    { echo -e "\n${YELLOW}[$1]${NC} $2"; }
 # ── Parse server config ────────────────────────────
 parse_server_conf() {
   if [ ! -f "$CONF_FILE" ]; then
-    echo -e "${RED}Server config not found: $CONF_FILE${NC}" >&2; exit 1
+    echo -e "${RED}Server config not found: $CONF_FILE${NC}" >&2
+    echo -e "${YELLOW}Copy .prod_server.example to .prod_server and set credentials.${NC}" >&2
+    exit 1
   fi
   SERVER_IP=$(grep '^ip=' "$CONF_FILE" | cut -d= -f2 | cut -d: -f1)
   SERVER_PORT=$(grep '^ip=' "$CONF_FILE" | cut -d: -f2)

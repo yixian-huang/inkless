@@ -1,0 +1,7 @@
+# Copy to .prod_server and fill in real values (never commit .prod_server)
+# cp .prod_server.example .prod_server
+ip=your.host:22
+user=deploy
+passwd=your-ssh-password
+path=/home/app/impress
+port=18090
