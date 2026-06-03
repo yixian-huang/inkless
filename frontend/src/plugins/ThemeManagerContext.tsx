@@ -4,6 +4,7 @@ import { ThemeManagerContext } from "./ThemeManagerContextDef";
 import { corporateClassicTheme } from "./themes/corporate-classic";
 import { blogFirstTheme } from "./themes/blog-first";
 import { useBootstrap } from "@/contexts/BootstrapContext";
+import { DEFAULT_FALLBACK_THEME_ID } from "@/plugins/builtinThemes";
 import "@/plugins/externals";
 
 export type { ThemeManagerContextValue } from "./ThemeManagerContextDef";
@@ -38,7 +39,7 @@ export function ThemeManagerProvider({ children }: ThemeManagerProviderProps) {
         const externalUrl = activeTheme?.externalUrl;
 
         if (!themeId) {
-          themeManager.activate("corporate-classic");
+          themeManager.activate(DEFAULT_FALLBACK_THEME_ID);
           return;
         }
 
@@ -55,10 +56,10 @@ export function ThemeManagerProvider({ children }: ThemeManagerProviderProps) {
 
         // Activate the theme; fallback to corporate-classic
         if (!themeManager.activate(themeId)) {
-          themeManager.activate("corporate-classic");
+          themeManager.activate(DEFAULT_FALLBACK_THEME_ID);
         }
       } catch {
-        themeManager.activate("corporate-classic");
+        themeManager.activate(DEFAULT_FALLBACK_THEME_ID);
       } finally {
         if (!cancelled) {
           setIsLoading(false);

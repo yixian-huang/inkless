@@ -10,10 +10,18 @@ export function useThemeManager(): ThemeManagerContextValue {
   return useContext(ThemeManagerContext);
 }
 
-/** Whether the active built-in theme is blog-first (author intro + posts at /). */
-export function useIsBlogTheme(): boolean {
-  const { activeThemeId } = useThemeManager();
-  return activeThemeId === "blog-first";
+/** Active theme content column max-width from tokens. */
+export function useContentMaxWidth(): string {
+  const { activeTheme } = useThemeManager();
+  return activeTheme?.defaultTokens?.layout?.maxWidth ?? "1400px";
+}
+
+/** Whether active theme uses narrow reading column (blog-style). */
+export function useIsReadingLayout(): boolean {
+  const { activeTheme } = useThemeManager();
+  if (!activeTheme) return false;
+  if (activeTheme.defaultLayout?.contentProfile === "reading") return true;
+  return activeTheme.manifest.tags?.includes("blog") ?? false;
 }
 
 /** Merge base section registry with active theme's section overrides */

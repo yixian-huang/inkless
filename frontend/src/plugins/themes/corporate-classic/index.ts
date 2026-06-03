@@ -1,13 +1,14 @@
 import type { ThemePlugin } from "@/plugins/types";
 import { defaultTokens } from "@/theme/tokens";
 import { CORPORATE_DEFAULT_LAYOUT } from "@/theme/layouts/defaults";
+import { BUILTIN_THEME_IDS } from "@/plugins/builtinThemes";
 import StatsCounterSection from "./StatsCounterSection";
 import CorporateHeader from "./chrome/CorporateHeader";
 import CorporateFooter from "./chrome/CorporateFooter";
 
 export const corporateClassicTheme: ThemePlugin = {
   manifest: {
-    id: "corporate-classic",
+    id: BUILTIN_THEME_IDS.CORPORATE_CLASSIC,
     name: "Corporate Classic",
     nameZh: "企业经典",
     description: "Professional corporate website with homepage, about, advantages, services, cases, experts, and contact pages",

@@ -1,6 +1,7 @@
 import { lazy } from 'react';
 import { RouteObject } from 'react-router-dom';
 import { FeatureGate } from '@/components/feature/FeatureGate';
+import { withSiteLayout } from '@/plugins/ThemePageWrapper';
 
 // Admin routes
 const AdminLayout = lazy(() => import('../pages/admin/AdminLayout'));
@@ -45,7 +46,6 @@ const TagDetailPage = lazy(() => import('../pages/tags/[slug]/page'));
 
 // Dynamic page (section-based rendering)
 const DynamicPage = lazy(() => import('../theme/DynamicPage'));
-const PublicLayout = lazy(() => import('../theme/layouts/PublicLayout'));
 
 /**
  * Static routes — blog, admin, dynamic CMS pages, 404.
@@ -55,35 +55,35 @@ const PublicLayout = lazy(() => import('../theme/layouts/PublicLayout'));
 export const staticRoutes: RouteObject[] = [
   {
     path: '/blog',
-    element: (
+    element: withSiteLayout(
       <FeatureGate feature="blog">
         <BlogPage />
-      </FeatureGate>
+      </FeatureGate>,
     ),
   },
   {
     path: '/blog/:slug',
-    element: (
+    element: withSiteLayout(
       <FeatureGate feature="blog">
         <BlogDetailPage />
-      </FeatureGate>
+      </FeatureGate>,
     ),
   },
   {
     path: '/categories',
-    element: <CategoriesPage />,
+    element: withSiteLayout(<CategoriesPage />),
   },
   {
     path: '/categories/:slug',
-    element: <CategoryDetailPage />,
+    element: withSiteLayout(<CategoryDetailPage />),
   },
   {
     path: '/tags',
-    element: <TagsPage />,
+    element: withSiteLayout(<TagsPage />),
   },
   {
     path: '/tags/:slug',
-    element: <TagDetailPage />,
+    element: withSiteLayout(<TagDetailPage />),
   },
   {
     path: '/admin',
@@ -207,7 +207,7 @@ export const staticRoutes: RouteObject[] = [
   },
   {
     path: '/p/*',
-    element: <PublicLayout><DynamicPage /></PublicLayout>,
+    element: withSiteLayout(<DynamicPage />),
   },
   {
     path: '*',

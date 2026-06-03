@@ -5,6 +5,7 @@ import (
 	"log"
 	"strings"
 
+	"blotting-consultancy/internal/builtinthemes"
 	"blotting-consultancy/internal/model"
 	"blotting-consultancy/internal/repository"
 	"blotting-consultancy/internal/service"
@@ -239,7 +240,7 @@ func (s *Seeder) SeedUnifiedPages(ctx context.Context) error {
 // SeedInstalledThemes creates built-in themes if they don't exist
 func (s *Seeder) SeedInstalledThemes(ctx context.Context) error {
 	if err := s.ensureInstalledTheme(ctx, &model.InstalledTheme{
-		ThemeID:     "corporate-classic",
+		ThemeID:     builtinthemes.CorporateClassic,
 		Name:        "Corporate Classic",
 		NameZh:      "企业经典",
 		Description: "专业企业官网，含首页、关于、优势、服务、案例、专家、联系",
@@ -253,7 +254,7 @@ func (s *Seeder) SeedInstalledThemes(ctx context.Context) error {
 	}
 
 	return s.ensureInstalledTheme(ctx, &model.InstalledTheme{
-		ThemeID:     "blog-first",
+		ThemeID:     builtinthemes.BlogFirst,
 		Name:        "Blog First",
 		NameZh:      "博客优先",
 		Description: "极简个人博客，首页展示作者介绍与最近文章",
@@ -357,12 +358,12 @@ func (s *Seeder) BlankSiteSeed(ctx context.Context) error {
 			}
 			log.Println("Created blank features site_config")
 			if s.installedThemeRepo != nil {
-				if err := s.installedThemeRepo.SetActive(ctx, "blog-first"); err != nil {
-					log.Printf("Warning: could not activate blog-first theme: %v", err)
+				if err := s.installedThemeRepo.SetActive(ctx, builtinthemes.BlankSiteDefaultThemeID); err != nil {
+					log.Printf("Warning: could not activate %s theme: %v", builtinthemes.BlankSiteDefaultThemeID, err)
 				} else {
-					log.Println("Activated blog-first theme for blank site")
+					log.Printf("Activated %s theme for blank site", builtinthemes.BlankSiteDefaultThemeID)
 					if s.themePageService != nil {
-						if err := s.themePageService.SeedThemePages(ctx, "blog-first"); err != nil {
+						if err := s.themePageService.SeedThemePages(ctx, builtinthemes.BlankSiteDefaultThemeID); err != nil {
 							return err
 						}
 					}
@@ -576,7 +577,7 @@ func getInitialConfig(pageKey model.PageKey) model.JSONMap {
 		}
 	case model.PageKeyTheme:
 		return model.JSONMap{
-			"activeTheme": "corporate-classic",
+			"activeTheme": builtinthemes.DefaultFallbackThemeID,
 		}
 	default:
 		return model.JSONMap{}

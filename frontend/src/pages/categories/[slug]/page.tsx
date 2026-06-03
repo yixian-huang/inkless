@@ -3,8 +3,8 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { getPublicCategoryBySlug } from "@/api/articles";
 import type { Article, Category } from "@/api/articles";
-import { PublicLayout } from "@/theme/layouts";
 import PageHero from "@/components/feature/PageHero";
+import BlogPageShell from "@/components/blog/BlogPageShell";
 
 export default function CategoryDetailPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -56,13 +56,13 @@ export default function CategoryDetailPage() {
   };
 
   return (
-    <PublicLayout>
+    <>
       <PageHero
         title={category?.zhName || category?.enName || t("categories.title", "分类")}
         subtitle={category?.zhDescription || undefined}
         imageSrc={category?.coverImage || undefined}
       />
-    <div className="max-w-6xl mx-auto px-4 py-12">
+      <BlogPageShell>
       {loading && !category ? (
         <div className="flex items-center justify-center h-64">
           <div className="text-gray-600">{t("common.loading", "Loading...")}</div>
@@ -141,7 +141,7 @@ export default function CategoryDetailPage() {
         </>
       )}
       </>)}
-    </div>
-    </PublicLayout>
+      </BlogPageShell>
+    </>
   );
 }

@@ -4,7 +4,6 @@ import PageHero from '../../components/feature/PageHero';
 import { usePublicContent } from '@/hooks/usePublicContent';
 import { useFormSubmit } from '@/hooks/useFormSubmit';
 import { resolveLocale } from '@/utils/locale';
-import { PublicLayout } from '@/theme/layouts';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 
 interface HeroConfig {
@@ -71,21 +70,21 @@ export default function ContactPage() {
 
   if (loading) {
     return (
-      <PublicLayout>
+      <>
         <div className="min-h-screen bg-white flex items-center justify-center">
           <div className="text-gray-600">Loading...</div>
         </div>
-      </PublicLayout>
+      </>
     );
   }
 
   if (error) {
     return (
-      <PublicLayout>
+      <>
         <div className="min-h-screen bg-white flex items-center justify-center">
           <div className="text-red-600">Failed to load page content</div>
         </div>
-      </PublicLayout>
+      </>
     );
   }
 
@@ -96,7 +95,7 @@ export default function ContactPage() {
   const heroBgColor = hero.backgroundColor || '#1E9188';
 
   return (
-    <PublicLayout>
+    <>
       <PageHero
         title={hero.title}
         backgroundColor={heroBgColor}
@@ -228,6 +227,6 @@ export default function ContactPage() {
           </div>
         </div>
       </section>
-    </PublicLayout>
+    </>
   );
 }

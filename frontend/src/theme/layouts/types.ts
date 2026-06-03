@@ -1,7 +1,11 @@
 export type LayoutType = "default" | "sidebar" | "fullwidth" | "landing" | "blank";
 
+/** Content column profile — reading = narrow blog column, wide = marketing pages. */
+export type ContentProfile = "reading" | "wide";
+
 export interface LayoutConfig {
   type: LayoutType;
+  contentProfile?: ContentProfile;
   header?: HeaderConfig;
   footer?: FooterConfig;
   sidebar?: SidebarConfig;

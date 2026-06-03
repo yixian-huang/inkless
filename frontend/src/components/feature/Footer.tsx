@@ -1,3 +1,6 @@
+/**
+ * @deprecated Use active theme layoutChrome (CorporateFooter / BlogFooter) via SiteLayout instead.
+ */
 import { useBranding } from "@/hooks/useBranding";
 import { pickLocaleValue } from "@/lib/locale";
 

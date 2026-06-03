@@ -1,6 +1,7 @@
 import type { ThemePlugin } from "@/plugins/types";
 import type { ThemeTokens } from "@/theme/tokens";
 import { BLOG_DEFAULT_LAYOUT } from "@/theme/layouts/defaults";
+import { BUILTIN_THEME_IDS } from "@/plugins/builtinThemes";
 import BlogHeader from "./chrome/BlogHeader";
 import BlogFooter from "./chrome/BlogFooter";
 
@@ -32,7 +33,7 @@ export const blogFirstTokens: ThemeTokens = {
 
 export const blogFirstTheme: ThemePlugin = {
   manifest: {
-    id: "blog-first",
+    id: BUILTIN_THEME_IDS.BLOG_FIRST,
     name: "Blog First",
     nameZh: "博客优先",
     description: "Minimal personal blog with author intro and article list at home",

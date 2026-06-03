@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import PageHero from '../../components/feature/PageHero';
 import { usePublicContent } from '@/hooks/usePublicContent';
-import { PublicLayout } from '@/theme/layouts';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { resolveLocale } from '@/utils/locale';
 
@@ -67,21 +66,21 @@ export default function ExpertsPage() {
 
   if (loading) {
     return (
-      <PublicLayout>
+      <>
         <div className="min-h-screen bg-white flex items-center justify-center">
           <div className="text-gray-600">Loading...</div>
         </div>
-      </PublicLayout>
+      </>
     );
   }
 
   if (error) {
     return (
-      <PublicLayout>
+      <>
         <div className="min-h-screen bg-white flex items-center justify-center">
           <div className="text-red-600">Failed to load page content</div>
         </div>
-      </PublicLayout>
+      </>
     );
   }
 
@@ -89,7 +88,7 @@ export default function ExpertsPage() {
   const bioParagraphs = activeExpert?.bioParagraphs || [];
 
   return (
-    <PublicLayout>
+    <>
       <PageHero
         label={hero.label}
         title={hero.title}
@@ -167,6 +166,6 @@ export default function ExpertsPage() {
           )}
         </div>
       </section>
-    </PublicLayout>
+    </>
   );
 }

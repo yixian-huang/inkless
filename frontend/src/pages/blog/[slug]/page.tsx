@@ -3,8 +3,8 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { getPublicArticle } from "@/api/articles";
 import type { Article } from "@/api/articles";
-import BlogLayout from "@/theme/layouts/BlogLayout";
 import SeoHead from "@/components/SeoHead";
+import BlogPageShell from "@/components/blog/BlogPageShell";
 import CommentSection from "@/components/feature/CommentSection";
 import { BlogFeatureGate } from "@/components/feature/BlogFeatureGate";
 import { useLocaleMode } from "@/hooks/useLocaleMode";
@@ -66,7 +66,7 @@ export default function BlogDetailPage() {
     : "";
 
   return (
-    <BlogLayout>
+    <>
       {article && (
         <SeoHead
           title={title}
@@ -78,7 +78,7 @@ export default function BlogDetailPage() {
           canonicalUrl={`/blog/${article.slug}`}
         />
       )}
-      <div className="max-w-3xl mx-auto px-4 md:px-content py-section-sm flex-1 w-full">
+      <BlogPageShell>
         {loading ? (
           <div className="flex items-center justify-center h-64">
             <div className="text-on-surface-muted">{t("status.loading")}</div>
@@ -155,7 +155,7 @@ export default function BlogDetailPage() {
             )}
           </>
         )}
-      </div>
+      </BlogPageShell>
 
       {lightboxSrc && (
         <div
@@ -171,6 +171,6 @@ export default function BlogDetailPage() {
           />
         </div>
       )}
-    </BlogLayout>
+    </>
   );
 }

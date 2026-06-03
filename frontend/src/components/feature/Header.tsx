@@ -1,3 +1,6 @@
+/**
+ * @deprecated Use active theme layoutChrome (CorporateHeader / BlogHeader) via SiteLayout instead.
+ */
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';

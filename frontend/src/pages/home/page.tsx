@@ -1,5 +1,4 @@
 import { useTranslation } from 'react-i18next';
-import { PublicLayout } from '@/theme/layouts';
 import { usePublicContent } from '@/hooks/usePublicContent';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { resolveLocale } from '@/utils/locale';
@@ -73,21 +72,21 @@ export default function HomePage() {
 
   if (loading) {
     return (
-      <PublicLayout>
+      <>
         <div className="flex items-center justify-center py-32">
           <div className="text-gray-600">Loading...</div>
         </div>
-      </PublicLayout>
+      </>
     );
   }
 
   if (error) {
     return (
-      <PublicLayout>
+      <>
         <div className="flex items-center justify-center py-32">
           <div className="text-red-600">Failed to load page content</div>
         </div>
-      </PublicLayout>
+      </>
     );
   }
 
@@ -98,7 +97,7 @@ export default function HomePage() {
   const coreServices = pageConfig.coreServices || {};
 
   return (
-    <PublicLayout>
+    <>
 
       {/* Hero Section - 横向占满屏幕 */}
       <section data-page-hero className="relative h-[280px] sm:h-[360px] md:h-[440px] lg:h-[560px] flex items-center justify-center overflow-hidden">
@@ -266,6 +265,6 @@ export default function HomePage() {
         </section>
       )}
 
-    </PublicLayout>
+    </>
   );
 }

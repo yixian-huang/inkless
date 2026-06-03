@@ -3,8 +3,8 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { getPublicTagBySlug } from "@/api/articles";
 import type { Article, Tag } from "@/api/articles";
-import { PublicLayout } from "@/theme/layouts";
 import PageHero from "@/components/feature/PageHero";
+import BlogPageShell from "@/components/blog/BlogPageShell";
 
 export default function TagDetailPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -56,12 +56,12 @@ export default function TagDetailPage() {
   };
 
   return (
-    <PublicLayout>
+    <>
       <PageHero
         title={tag?.zhName || tag?.enName || t("tags.title", "标签")}
         imageSrc={tag?.coverImage || undefined}
       />
-    <div className="max-w-6xl mx-auto px-4 py-12">
+      <BlogPageShell>
       {loading && !tag ? (
         <div className="flex items-center justify-center h-64">
           <div className="text-gray-600">{t("common.loading", "Loading...")}</div>
@@ -139,7 +139,7 @@ export default function TagDetailPage() {
         </>
       )}
       </>)}
-    </div>
-    </PublicLayout>
+      </BlogPageShell>
+    </>
   );
 }

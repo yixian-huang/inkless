@@ -2,9 +2,11 @@ package service
 
 import (
 	"context"
+	"encoding/json"
 	"log"
 	"strings"
 
+	"blotting-consultancy/internal/builtinthemes"
 	"blotting-consultancy/internal/model"
 	"blotting-consultancy/internal/repository"
 )
@@ -19,52 +21,44 @@ type ThemePageSeedDef struct {
 	NavConfig  model.JSONMap
 }
 
-// BuiltInThemePages maps theme IDs to their page definitions
-var BuiltInThemePages = map[string][]ThemePageSeedDef{
-	"corporate-classic": {
-		{
-			Slug: "home", ContentKey: "home", RenderMode: "hardcoded", SortOrder: 0,
-			Title:     model.JSONMap{"zh": "首页", "en": "Home"},
-			NavConfig: model.JSONMap{"showInHeader": true, "showInFooter": true},
-		},
-		{
-			Slug: "about", ContentKey: "about", RenderMode: "hardcoded", SortOrder: 1,
-			Title:     model.JSONMap{"zh": "关于我们", "en": "About"},
-			NavConfig: model.JSONMap{"showInHeader": true, "showInFooter": true},
-		},
-		{
-			Slug: "advantages", ContentKey: "advantages", RenderMode: "hardcoded", SortOrder: 2,
-			Title:     model.JSONMap{"zh": "我们的优势", "en": "Advantages"},
-			NavConfig: model.JSONMap{"showInHeader": true, "showInFooter": true},
-		},
-		{
-			Slug: "core-services", ContentKey: "core-services", RenderMode: "hardcoded", SortOrder: 3,
-			Title:     model.JSONMap{"zh": "核心服务", "en": "Services"},
-			NavConfig: model.JSONMap{"showInHeader": true, "showInFooter": true},
-		},
-		{
-			Slug: "cases", ContentKey: "cases", RenderMode: "hardcoded", SortOrder: 4,
-			Title:     model.JSONMap{"zh": "案例展示", "en": "Cases"},
-			NavConfig: model.JSONMap{"showInHeader": true, "showInFooter": true},
-		},
-		{
-			Slug: "experts", ContentKey: "experts", RenderMode: "hardcoded", SortOrder: 5,
-			Title:     model.JSONMap{"zh": "专家团队", "en": "Experts"},
-			NavConfig: model.JSONMap{"showInHeader": true, "showInFooter": true},
-		},
-		{
-			Slug: "contact", ContentKey: "contact", RenderMode: "hardcoded", SortOrder: 6,
-			Title:     model.JSONMap{"zh": "联系我们", "en": "Contact"},
-			NavConfig: model.JSONMap{"showInHeader": true, "showInFooter": true},
-		},
-	},
-	"blog-first": {
-		{
-			Slug: "home", ContentKey: "home", RenderMode: "hardcoded", SortOrder: 0,
-			Title:     model.JSONMap{"zh": "首页", "en": "Home"},
-			NavConfig: model.JSONMap{"showInHeader": true, "showInFooter": false},
-		},
-	},
+type builtinPageJSON struct {
+	Slug       string         `json:"slug"`
+	ContentKey string         `json:"contentKey"`
+	RenderMode string         `json:"renderMode"`
+	SortOrder  int            `json:"sortOrder"`
+	Title      model.JSONMap  `json:"title"`
+	NavConfig  model.JSONMap  `json:"navConfig"`
+}
+
+// BuiltInThemePages maps theme IDs to their page definitions (loaded from embedded JSON).
+var BuiltInThemePages map[string][]ThemePageSeedDef
+
+func init() {
+	BuiltInThemePages = loadBuiltInThemePages()
+}
+
+func loadBuiltInThemePages() map[string][]ThemePageSeedDef {
+	out := make(map[string][]ThemePageSeedDef)
+	var raw map[string][]builtinPageJSON
+	if err := json.Unmarshal(builtinthemes.PagesJSON, &raw); err != nil {
+		log.Printf("Warning: failed to parse builtin_theme_pages.json: %v", err)
+		return out
+	}
+	for themeID, pages := range raw {
+		defs := make([]ThemePageSeedDef, 0, len(pages))
+		for _, p := range pages {
+			defs = append(defs, ThemePageSeedDef{
+				Slug:       p.Slug,
+				ContentKey: p.ContentKey,
+				RenderMode: p.RenderMode,
+				Title:      p.Title,
+				SortOrder:  p.SortOrder,
+				NavConfig:  p.NavConfig,
+			})
+		}
+		out[themeID] = defs
+	}
+	return out
 }
 
 // ThemePageService handles seeding theme pages into the Page table

@@ -5,8 +5,8 @@ import { CORPORATE_DEFAULT_LAYOUT } from "./defaults";
 import { QAWidget } from "@/modules/qa";
 import { useGlobalConfig } from "@/contexts/GlobalConfigContext";
 import { useThemeManager } from "@/plugins/hooks";
-import CorporateHeader from "@/plugins/themes/corporate-classic/chrome/CorporateHeader";
-import CorporateFooter from "@/plugins/themes/corporate-classic/chrome/CorporateFooter";
+import { getFallbackLayoutChrome } from "@/plugins/builtinThemes";
+import RssHeadLink from "@/components/feature/RssHeadLink";
 
 interface SiteLayoutProps {
   layout?: LayoutConfig;
@@ -23,12 +23,16 @@ export default function SiteLayout({ layout: layoutProp, children }: SiteLayoutP
   const hasHeader = layoutType !== "blank";
   const mainClassName = "flex-1 min-w-0 flex flex-col";
 
-  const HeaderComponent = activeTheme?.layoutChrome?.Header ?? CorporateHeader;
-  const FooterComponent = activeTheme?.layoutChrome?.Footer ?? CorporateFooter;
+  const fallbackChrome = getFallbackLayoutChrome();
+  const HeaderComponent = activeTheme?.layoutChrome?.Header ?? fallbackChrome?.Header;
+  const FooterComponent = activeTheme?.layoutChrome?.Footer ?? fallbackChrome?.Footer;
+
+  const showRss = features?.blog?.rss === true;
 
   return (
     <div className="min-h-screen bg-surface flex flex-col">
-      {hasHeader && <HeaderComponent config={layout.header} />}
+      {showRss && <RssHeadLink />}
+      {hasHeader && HeaderComponent && <HeaderComponent config={layout.header} />}
 
       {layoutType === "sidebar" ? (
         <div className={`${mainClassName} max-w-layout mx-auto px-4 md:px-content xl:px-8 py-8 w-full`}>
@@ -46,7 +50,7 @@ export default function SiteLayout({ layout: layoutProp, children }: SiteLayoutP
         <main className={mainClassName}>{children}</main>
       )}
 
-      {layoutType !== "blank" && <FooterComponent config={layout.footer} />}
+      {layoutType !== "blank" && FooterComponent && <FooterComponent config={layout.footer} />}
 
       {(features as { qa?: { enabled?: boolean } })?.qa?.enabled && <QAWidget />}
     </div>

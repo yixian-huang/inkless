@@ -1,5 +1,4 @@
 import { useTranslation } from 'react-i18next';
-import { PublicLayout } from '@/theme/layouts';
 import PageHero from '@/components/feature/PageHero';
 import { usePublicContent } from '@/hooks/usePublicContent';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
@@ -89,21 +88,21 @@ export default function AdvantagesPage() {
 
   if (loading) {
     return (
-      <PublicLayout>
+      <>
         <div className="flex items-center justify-center py-32">
           <div className="text-gray-600">Loading...</div>
         </div>
-      </PublicLayout>
+      </>
     );
   }
 
   if (error) {
     return (
-      <PublicLayout>
+      <>
         <div className="flex items-center justify-center py-32">
           <div className="text-red-600">Failed to load page content</div>
         </div>
-      </PublicLayout>
+      </>
     );
   }
 
@@ -121,7 +120,7 @@ export default function AdvantagesPage() {
   }
 
   return (
-    <PublicLayout>
+    <>
 
       <PageHero
         label={hero.label || ''}
@@ -169,6 +168,6 @@ export default function AdvantagesPage() {
         })}
       </div>
 
-    </PublicLayout>
+    </>
   );
 }

@@ -3,8 +3,8 @@ import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { getPublicTags } from "@/api/articles";
 import type { Tag } from "@/api/articles";
-import { PublicLayout } from "@/theme/layouts";
 import PageHero from "@/components/feature/PageHero";
+import BlogPageShell from "@/components/blog/BlogPageShell";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 
 export default function TagsPage() {
@@ -30,9 +30,9 @@ export default function TagsPage() {
   }, []);
 
   return (
-    <PublicLayout>
+    <>
       <PageHero title={t("tags.title", "标签")} subtitle={t("tags.subtitle", "浏览所有文章标签")} />
-    <div className="max-w-6xl mx-auto px-4 py-12">
+      <BlogPageShell>
       {loading ? (
         <div className="flex items-center justify-center h-64">
           <div className="text-gray-600">{t("common.loading", "Loading...")}</div>
@@ -93,7 +93,7 @@ export default function TagsPage() {
         </div>
       )}
     </>)}
-    </div>
-    </PublicLayout>
+      </BlogPageShell>
+    </>
   );
 }

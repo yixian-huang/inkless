@@ -7,6 +7,7 @@ import {
   type InstalledThemeDTO,
 } from "@/api/installedThemes";
 import { themeManager } from "@/plugins/ThemeManager";
+import { useBootstrap } from "@/contexts/BootstrapContext";
 
 type ModalTab = "gallery" | "install";
 
@@ -15,6 +16,7 @@ interface ThemeManagementModalProps {
 }
 
 export default function ThemeManagementModal({ onClose }: ThemeManagementModalProps) {
+  const { refetch: refetchBootstrap } = useBootstrap();
   const [activeTab, setActiveTab] = useState<ModalTab>("gallery");
 
   // --- Gallery state ---
@@ -55,7 +57,8 @@ export default function ThemeManagementModal({ onClose }: ThemeManagementModalPr
     setGalleryMsg("");
     try {
       await activateTheme(theme.id);
-      setGalleryMsg(`已激活主题「${theme.nameZh || theme.name}」，刷新页面后生效`);
+      await refetchBootstrap();
+      setGalleryMsg(`已激活主题「${theme.nameZh || theme.name}」`);
       fetchInstalledThemes();
     } catch {
       setGalleryMsg("激活失败");

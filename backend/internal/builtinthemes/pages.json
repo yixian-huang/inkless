@@ -1,0 +1,70 @@
+{
+  "corporate-classic": [
+    {
+      "slug": "home",
+      "contentKey": "home",
+      "renderMode": "hardcoded",
+      "sortOrder": 0,
+      "title": { "zh": "首页", "en": "Home" },
+      "navConfig": { "showInHeader": true, "showInFooter": true }
+    },
+    {
+      "slug": "about",
+      "contentKey": "about",
+      "renderMode": "hardcoded",
+      "sortOrder": 1,
+      "title": { "zh": "关于我们", "en": "About" },
+      "navConfig": { "showInHeader": true, "showInFooter": true }
+    },
+    {
+      "slug": "advantages",
+      "contentKey": "advantages",
+      "renderMode": "hardcoded",
+      "sortOrder": 2,
+      "title": { "zh": "我们的优势", "en": "Advantages" },
+      "navConfig": { "showInHeader": true, "showInFooter": true }
+    },
+    {
+      "slug": "core-services",
+      "contentKey": "core-services",
+      "renderMode": "hardcoded",
+      "sortOrder": 3,
+      "title": { "zh": "核心服务", "en": "Services" },
+      "navConfig": { "showInHeader": true, "showInFooter": true }
+    },
+    {
+      "slug": "cases",
+      "contentKey": "cases",
+      "renderMode": "hardcoded",
+      "sortOrder": 4,
+      "title": { "zh": "案例展示", "en": "Cases" },
+      "navConfig": { "showInHeader": true, "showInFooter": true }
+    },
+    {
+      "slug": "experts",
+      "contentKey": "experts",
+      "renderMode": "hardcoded",
+      "sortOrder": 5,
+      "title": { "zh": "专家团队", "en": "Experts" },
+      "navConfig": { "showInHeader": true, "showInFooter": true }
+    },
+    {
+      "slug": "contact",
+      "contentKey": "contact",
+      "renderMode": "hardcoded",
+      "sortOrder": 6,
+      "title": { "zh": "联系我们", "en": "Contact" },
+      "navConfig": { "showInHeader": true, "showInFooter": true }
+    }
+  ],
+  "blog-first": [
+    {
+      "slug": "home",
+      "contentKey": "home",
+      "renderMode": "hardcoded",
+      "sortOrder": 0,
+      "title": { "zh": "首页", "en": "Home" },
+      "navConfig": { "showInHeader": true, "showInFooter": false }
+    }
+  ]
+}

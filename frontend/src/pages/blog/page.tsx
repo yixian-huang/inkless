@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { getPublicArticles } from "@/api/articles";
-import BlogLayout from "@/theme/layouts/BlogLayout";
 import SeoHead from "@/components/SeoHead";
 import BlogPageShell from "@/components/blog/BlogPageShell";
 import ArticleList from "@/components/blog/ArticleList";
@@ -77,7 +76,7 @@ export default function BlogPage() {
   const listDesc = t("blog.archiveDescription");
 
   return (
-    <BlogLayout>
+    <>
       <SeoHead
         title={buildTitle(listTitle)}
         description={listDesc || defaultDescription}
@@ -159,6 +158,6 @@ export default function BlogPage() {
           </div>
         )}
       </BlogPageShell>
-    </BlogLayout>
+    </>
   );
 }

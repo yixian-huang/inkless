@@ -1,6 +1,7 @@
-import { lazy, Suspense, useMemo } from "react";
+import { lazy, Suspense, useMemo, type ReactNode } from "react";
 import type { ComponentType } from "react";
 import type { ThemePageDefinition } from "./types";
+import SiteLayout from "@/theme/layouts/PublicLayout";
 
 const DynamicPage = lazy(() => import("@/theme/DynamicPage"));
 
@@ -42,8 +43,15 @@ export default function ThemePageWrapper({ pageDef }: ThemePageWrapperProps) {
   }, [pageDef]);
 
   return (
-    <Suspense fallback={<Loading />}>
-      <Component slug={pageDef.slug} />
-    </Suspense>
+    <SiteLayout>
+      <Suspense fallback={<Loading />}>
+        <Component slug={pageDef.slug} />
+      </Suspense>
+    </SiteLayout>
   );
+}
+
+/** Wrap arbitrary public route elements in SiteLayout (static routes). */
+export function withSiteLayout(element: ReactNode) {
+  return <SiteLayout>{element}</SiteLayout>;
 }

@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { getPublicArticles } from "@/api/articles";
-import BlogLayout from "@/theme/layouts/BlogLayout";
 import SeoHead from "@/components/SeoHead";
 import BlogPageShell from "@/components/blog/BlogPageShell";
 import AuthorIntro from "@/components/blog/AuthorIntro";
@@ -70,7 +69,7 @@ export default function BlogHomePage() {
   const pageTitle = buildTitle(siteName || t("blog.homeTitle"));
 
   return (
-    <BlogLayout>
+    <>
       <SeoHead
         title={pageTitle}
         description={intro}
@@ -127,6 +126,6 @@ export default function BlogHomePage() {
           )}
         </section>
       </BlogPageShell>
-    </BlogLayout>
+    </>
   );
 }
