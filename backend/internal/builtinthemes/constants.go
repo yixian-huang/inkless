@@ -1,8 +1,9 @@
 package builtinthemes
 
 const (
-	CorporateClassic = "corporate-classic"
-	BlogFirst        = "blog-first"
+	CorporateClassic  = "corporate-classic"
+	BlogFirst         = "blog-first"
+	MinimalStarter    = "minimal-starter"
 )
 
 // DefaultFallbackThemeID is used when activation fails or no theme is set.

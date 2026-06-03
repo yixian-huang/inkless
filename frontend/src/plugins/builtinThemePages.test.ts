@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { blogFirstTheme } from "./themes/blog-first";
 import { corporateClassicTheme } from "./themes/corporate-classic";
+import { minimalStarterTheme } from "./themes/minimal-starter";
 import { BUILTIN_THEME_IDS } from "./builtinThemes";
 import manifest from "../../../backend/internal/builtinthemes/pages.json";
 
@@ -35,6 +36,14 @@ describe("builtin theme pages SSOT", () => {
   it("blog-first frontend pages match embedded backend manifest", () => {
     const backend = (manifest as Record<string, PageMeta[]>)[BUILTIN_THEME_IDS.BLOG_FIRST];
     const frontend = themePageMetas(BUILTIN_THEME_IDS.BLOG_FIRST, blogFirstTheme.pages);
+    expect(frontend.map((p) => p.contentKey)).toEqual(
+      backend.map((p) => p.contentKey),
+    );
+  });
+
+  it("minimal-starter frontend pages match embedded backend manifest", () => {
+    const backend = (manifest as Record<string, PageMeta[]>)[BUILTIN_THEME_IDS.MINIMAL_STARTER];
+    const frontend = themePageMetas(BUILTIN_THEME_IDS.MINIMAL_STARTER, minimalStarterTheme.pages);
     expect(frontend.map((p) => p.contentKey)).toEqual(
       backend.map((p) => p.contentKey),
     );

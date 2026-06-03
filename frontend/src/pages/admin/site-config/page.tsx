@@ -4,6 +4,7 @@ import {
   putAdminGlobalConfigDraft,
   publishAdminGlobalConfig,
 } from "@/api/globalConfig";
+import { useBootstrap } from "@/contexts/BootstrapContext";
 import { SITE_CONFIG_GLOBAL_DEFAULT, type SiteConfigGlobal, type HeaderBrandMode } from "@/types/siteConfig";
 
 type TabKey = "identity" | "brand" | "author" | "header" | "footer" | "seo";
@@ -18,6 +19,8 @@ const TABS: { key: TabKey; label: string }[] = [
 ];
 
 export default function AdminSiteConfigPage() {
+  const { data: bootstrapData } = useBootstrap();
+  const activeThemeId = bootstrapData?.activeTheme?.themeId ?? "—";
   const [cfg, setCfg] = useState<SiteConfigGlobal>(SITE_CONFIG_GLOBAL_DEFAULT);
   const [draftVersion, setDraftVersion] = useState(0);
   const [tab, setTab] = useState<TabKey>("identity");
@@ -78,7 +81,7 @@ export default function AdminSiteConfigPage() {
       {tab === "identity" && <IdentityTab cfg={cfg} setCfg={setCfg} />}
       {tab === "brand"    && <BrandTab cfg={cfg} setCfg={setCfg} />}
       {tab === "author"   && <AuthorTab cfg={cfg} setCfg={setCfg} />}
-      {tab === "header"   && <HeaderTab cfg={cfg} setCfg={setCfg} />}
+      {tab === "header"   && <HeaderTab cfg={cfg} setCfg={setCfg} activeThemeId={activeThemeId} />}
       {tab === "footer"   && <FooterTab cfg={cfg} setCfg={setCfg} />}
       {tab === "seo"      && <SEOTab cfg={cfg} setCfg={setCfg} />}
       <div className="mt-6 flex gap-2 items-center">
@@ -202,7 +205,7 @@ function AuthorTab({ cfg, setCfg }: TabProps) {
   );
 }
 
-function HeaderTab({ cfg, setCfg }: TabProps) {
+function HeaderTab({ cfg, setCfg, activeThemeId }: TabProps & { activeThemeId: string }) {
   const header = cfg.header ?? {};
   const setHeader = (patch: Partial<NonNullable<SiteConfigGlobal["header"]>>) => {
     setCfg({ ...cfg, header: { ...header, ...patch } });
@@ -211,8 +214,9 @@ function HeaderTab({ cfg, setCfg }: TabProps) {
   return (
     <div className="space-y-3">
       <p className="text-sm text-gray-500">
-        Overrides active theme header defaults (blog-first: text brand uses Author name or Identity site name;
-        logo mode uses Brand → Logo URL). Navigation comes from Menus or theme pages.
+        Overrides header defaults for the active theme (<strong>{activeThemeId}</strong>).
+        Brand / RSS / social toggles apply when the theme exposes them in its settingSchema.
+        Navigation comes from Menus or theme pages.
       </p>
       <div>
         <label className="block text-sm font-medium">Brand mark mode</label>

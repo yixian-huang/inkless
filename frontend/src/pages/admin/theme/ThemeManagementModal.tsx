@@ -58,7 +58,7 @@ export default function ThemeManagementModal({ onClose }: ThemeManagementModalPr
     try {
       await activateTheme(theme.id);
       await refetchBootstrap();
-      setGalleryMsg(`已激活主题「${theme.nameZh || theme.name}」`);
+      setGalleryMsg(`已激活「${theme.nameZh || theme.name}」，主题页面已同步`);
       fetchInstalledThemes();
     } catch {
       setGalleryMsg("激活失败");

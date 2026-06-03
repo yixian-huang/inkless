@@ -1,3 +1,9 @@
+export { default as BaseSiteHeader } from "./BaseSiteHeader";
+export type { BaseSiteHeaderProps } from "./BaseSiteHeader";
+export { useHeaderScroll } from "./useHeaderScroll";
+export { default as MobileMenuButton } from "./MobileMenuButton";
+export { default as HeaderLanguageToggle } from "./HeaderLanguageToggle";
+export { default as HeaderUtilities } from "./HeaderUtilities";
 export { useSiteNavigation } from "./useSiteNavigation";
 export type { SiteNavItem } from "./useSiteNavigation";
 export { useHeaderSettings, useSiteConfigGlobal } from "./useHeaderSettings";

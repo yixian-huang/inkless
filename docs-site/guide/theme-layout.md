@@ -16,6 +16,7 @@ Each built-in theme registers layout chrome in its plugin definition:
 
 - [`corporate-classic`](../../frontend/src/plugins/themes/corporate-classic/index.ts) — `CorporateHeader` / `CorporateFooter`, wide layout
 - [`blog-first`](../../frontend/src/plugins/themes/blog-first/index.ts) — `BlogHeader` / `BlogFooter`, narrow reading layout
+- [`minimal-starter`](../../frontend/src/plugins/themes/minimal-starter/index.ts) — reference theme for third-party authors (dynamic home, shared `BaseSiteHeader`)
 
 [`SiteLayout`](../../frontend/src/theme/layouts/PublicLayout.tsx) (also exported as `PublicLayout`) resolves:
 
@@ -30,10 +31,12 @@ Pages should not hardcode header/footer config unless overriding the theme defau
 
 Under [`frontend/src/theme/layouts/chrome/`](../../frontend/src/theme/layouts/chrome/):
 
+- `BaseSiteHeader` — shared shell (nav, mobile menu, language toggle); corporate/blog themes compose brand + utilities
 - `useSiteNavigation()` — Menus → theme pages → legacy global nav, with Features gating
 - `useBranding()` — logo, site name, author from Site Config
 - `useHeaderSettings()` — merges theme `settingSchema` defaults with Site Config **Header** tab
 - `BrandMark` — text / logo / avatar / none brand area
+- `HeaderUtilities` — RSS + social links when theme/schema enables them
 
 ## Configuring blog-first header
 
@@ -47,14 +50,19 @@ Theme defaults apply when Site Config Header fields are empty.
 
 ## Adding a new theme
 
-1. Create `plugins/themes/my-theme/chrome/MyHeader.tsx` and `MyFooter.tsx`
-2. Register in theme plugin:
+Copy [`minimal-starter`](../../frontend/src/plugins/themes/minimal-starter/index.ts) as a starting point—it only needs `chrome/` + `index.ts` + registration in `ThemeManagerContext`.
+
+1. Create `plugins/themes/my-theme/chrome/MyHeader.tsx` and `MyFooter.tsx` (reuse `BaseSiteHeader` when possible)
+2. Add page metadata to [`backend/internal/builtinthemes/pages.json`](../../backend/internal/builtinthemes/pages.json) for backend seed on activation
+3. Register in theme plugin:
 
 ```ts
 layoutChrome: { Header: MyHeader, Footer: MyFooter },
 defaultLayout: { type: "default", header: { style: "sticky" }, footer: { style: "minimal" } },
 ```
 
-3. Optionally add `settingSchema` for theme-specific toggles (Ghost-style custom settings)
+4. Optionally add `settingSchema` for theme-specific toggles (Ghost-style custom settings)
 
-No changes to `SiteLayout` are required if chrome components accept `HeaderChromeProps` / `FooterChromeProps`.
+5. Register built-in: `themeManager.registerBuiltIn(myTheme)` in `ThemeManagerContext.tsx`
+
+No changes to `SiteLayout` are required if chrome components accept `HeaderChromeProps` / `FooterChromeProps`. Activating a theme in Admin → Theme runs backend `SeedThemePages` from `pages.json`.

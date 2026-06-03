@@ -253,7 +253,7 @@ func (s *Seeder) SeedInstalledThemes(ctx context.Context) error {
 		return err
 	}
 
-	return s.ensureInstalledTheme(ctx, &model.InstalledTheme{
+	if err := s.ensureInstalledTheme(ctx, &model.InstalledTheme{
 		ThemeID:     builtinthemes.BlogFirst,
 		Name:        "Blog First",
 		NameZh:      "博客优先",
@@ -263,6 +263,24 @@ func (s *Seeder) SeedInstalledThemes(ctx context.Context) error {
 		Source:      "built-in",
 		IsActive:    false,
 		Preview:     "linear-gradient(135deg, #1e40af 0%, #64748b 100%)",
+	}); err != nil {
+		return err
+	}
+
+	return s.seedMinimalStarterTheme(ctx)
+}
+
+func (s *Seeder) seedMinimalStarterTheme(ctx context.Context) error {
+	return s.ensureInstalledTheme(ctx, &model.InstalledTheme{
+		ThemeID:     builtinthemes.MinimalStarter,
+		Name:        "Minimal Starter",
+		NameZh:      "极简起步",
+		Description: "最简内置主题，演示第三方主题扩展路径",
+		Author:      "Impress CMS",
+		Version:     "1.0.0",
+		Source:      "built-in",
+		IsActive:    false,
+		Preview:     "linear-gradient(135deg, #374151 0%, #9ca3af 100%)",
 	})
 }
 

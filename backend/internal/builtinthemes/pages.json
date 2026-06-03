@@ -66,5 +66,15 @@
       "title": { "zh": "首页", "en": "Home" },
       "navConfig": { "showInHeader": true, "showInFooter": false }
     }
+  ],
+  "minimal-starter": [
+    {
+      "slug": "home",
+      "contentKey": "home",
+      "renderMode": "dynamic",
+      "sortOrder": 0,
+      "title": { "zh": "首页", "en": "Home" },
+      "navConfig": { "showInHeader": true, "showInFooter": false }
+    }
   ]
 }
