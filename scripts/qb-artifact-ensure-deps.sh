@@ -4,6 +4,23 @@ set -euo pipefail
 
 qb_log_info() { echo "[qb-artifact][INFO] $*"; }
 
+ensure_build_essential() {
+  if command -v gcc >/dev/null 2>&1; then
+    qb_log_info "gcc present: $(gcc --version | head -1)"
+    return 0
+  fi
+  qb_log_info "installing build-essential (gcc for CGO/SQLite)"
+  if command -v apt-get >/dev/null 2>&1; then
+    apt-get update -qq
+    apt-get install -y build-essential
+  elif command -v yum >/dev/null 2>&1; then
+    yum groupinstall -y "Development Tools"
+  else
+    qb_log_info "no supported package manager for build-essential"
+    return 1
+  fi
+}
+
 ensure_go() {
   if command -v go >/dev/null 2>&1; then
     qb_log_info "go present: $(go version)"
@@ -50,5 +67,6 @@ ensure_node_pnpm() {
   pnpm --version
 }
 
+ensure_build_essential
 ensure_go
 ensure_node_pnpm
