@@ -3,6 +3,19 @@
 set -euo pipefail
 
 qb_log_info() { echo "[qb-artifact][INFO] $*"; }
+
+qb_heartbeat_loop() {
+  while sleep 60; do
+    echo "[qb-artifact][heartbeat] $(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+  done
+}
+
+qb_run_with_heartbeat() {
+  qb_heartbeat_loop &
+  local hb_pid=$!
+  trap 'kill "${hb_pid}" 2>/dev/null || true' RETURN
+  "$@"
+}
 qb_log_warn() { echo "[qb-artifact][WARN] $*" >&2; }
 qb_log_error() { echo "[qb-artifact][ERROR] $*" >&2; }
 

@@ -28,10 +28,7 @@ if qb_component_enabled "backend"; then
   if [[ "${QB_SKIP_BACKEND_TESTS:-false}" == "true" ]]; then
   qb_log_warn "QB_SKIP_BACKEND_TESTS=true — using fast go build (no test/vet gate)"
     mkdir -p "${WORKDIR}/artifacts"
-    (cd "${WORKDIR}/backend" && CGO_ENABLED=1 go build \
-      -ldflags="-s -w" \
-      -o "${WORKDIR}/artifacts/blotting-api-${VERSION}" \
-      ./cmd/server)
+    qb_run_with_heartbeat bash -c "cd '${WORKDIR}/backend' && CGO_ENABLED=1 go build -ldflags='-s -w' -o '${WORKDIR}/artifacts/blotting-api-${VERSION}' ./cmd/server"
     chmod +x "${WORKDIR}/artifacts/blotting-api-${VERSION}"
     cat >"${WORKDIR}/artifacts/build-info.json" <<EOF
 {"version":"${VERSION}","buildTime":"$(date -u +"%Y-%m-%dT%H:%M:%SZ")","gitCommit":"$(git -C "${WORKDIR}" rev-parse HEAD 2>/dev/null || echo unknown)"}
@@ -51,7 +48,7 @@ if qb_component_enabled "frontend"; then
   qb_log_info "building frontend component"
   if [[ "${QB_SKIP_FRONTEND_CHECKS:-true}" == "true" ]]; then
     qb_log_warn "QB_SKIP_FRONTEND_CHECKS=true — vite build only"
-    (cd "${WORKDIR}/frontend" && pnpm install --frozen-lockfile && pnpm build)
+    qb_run_with_heartbeat bash -c "cd '${WORKDIR}/frontend' && pnpm install --frozen-lockfile && pnpm build"
     mkdir -p "${WORKDIR}/artifacts"
     (cd "${WORKDIR}/frontend/out" && tar -czf "${WORKDIR}/artifacts/frontend-${VERSION}.tar.gz" .)
     (cd "${WORKDIR}/artifacts" && sha256sum "frontend-${VERSION}.tar.gz" > "frontend-${VERSION}.tar.gz.sha256" 2>/dev/null || shasum -a 256 "frontend-${VERSION}.tar.gz" > "frontend-${VERSION}.tar.gz.sha256")
