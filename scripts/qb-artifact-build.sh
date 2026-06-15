@@ -29,7 +29,7 @@ if qb_component_enabled "backend"; then
   if [[ "${QB_SKIP_BACKEND_TESTS:-false}" == "true" ]]; then
   qb_log_warn "QB_SKIP_BACKEND_TESTS=true — using fast go build (no test/vet gate)"
     mkdir -p "${WORKDIR}/artifacts"
-    qb_run_with_heartbeat bash -c "cd '${WORKDIR}/backend' && CGO_ENABLED=1 go build -ldflags='-s -w' -o '${WORKDIR}/artifacts/blotting-api-${VERSION}' ./cmd/server"
+    qb_run_with_heartbeat bash -c "cd '${WORKDIR}/backend' && CGO_ENABLED=1 go build -v -ldflags='-s -w' -o '${WORKDIR}/artifacts/blotting-api-${VERSION}' ./cmd/server"
     chmod +x "${WORKDIR}/artifacts/blotting-api-${VERSION}"
     cat >"${WORKDIR}/artifacts/build-info.json" <<EOF
 {"version":"${VERSION}","buildTime":"$(date -u +"%Y-%m-%dT%H:%M:%SZ")","gitCommit":"$(git -C "${WORKDIR}" rev-parse HEAD 2>/dev/null || echo unknown)"}

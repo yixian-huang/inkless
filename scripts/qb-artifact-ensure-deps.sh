@@ -38,6 +38,7 @@ ensure_go() {
     *) qb_log_info "unsupported arch for go bootstrap: ${arch}"; return 1 ;;
   esac
   qb_log_info "installing go ${ver} (${arch})"
+  rm -rf /usr/local/go
   curl -fsSL "https://go.dev/dl/go${ver}.linux-${arch}.tar.gz" | tar -C /usr/local -xzf -
   export PATH="/usr/local/go/bin:${PATH}"
   ln -sf /usr/local/go/bin/go /usr/local/bin/go 2>/dev/null || true
