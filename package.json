@@ -1,7 +1,8 @@
 {
   "name": "blotting-consultancy",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.1.0-alpha.1",
+  "packageManager": "pnpm@9.15.9",
   "scripts": {
     "dev": "pnpm -C frontend dev",
     "dev:up": "make dev-up",

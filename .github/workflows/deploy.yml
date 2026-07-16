@@ -12,7 +12,7 @@ on:
         required: false
         default: "main"
       version:
-        description: "Version label (default: v0.0.0-<short-sha>)"
+        description: "Version label (default: v0.1.0-alpha.1-<short-sha>)"
         required: false
       deploy_method:
         description: "Deployment transport"
@@ -37,6 +37,7 @@ jobs:
     if: >
       github.event_name == 'workflow_dispatch' ||
       (github.event_name == 'workflow_run' &&
+       vars.AUTO_DEPLOY_ENABLED == 'true' &&
        github.event.workflow_run.conclusion == 'success' &&
        (github.event.workflow_run.head_branch == 'main' || github.event.workflow_run.head_branch == 'master'))
     outputs:
@@ -69,7 +70,7 @@ jobs:
             source_branch="${GITHUB_REF_NAME}"
           fi
 
-          version="${INPUT_VERSION:-v0.0.0-${git_ref:0:7}}"
+          version="${INPUT_VERSION:-v0.1.0-alpha.1-${git_ref:0:7}}"
           deploy_method="${INPUT_METHOD:-${DEFAULT_METHOD:-ssh}}"
           deploy_env="${INPUT_ENV:-${DEFAULT_ENV:-production}}"
 
@@ -104,13 +105,14 @@ jobs:
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: 9
+          version: 9.15.9
 
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
-          go-version: "1.24"
+          go-version-file: backend/go.mod
           cache: true
+          cache-dependency-path: backend/go.sum
 
       - name: Build frontend artifact
         env:

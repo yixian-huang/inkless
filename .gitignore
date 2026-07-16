@@ -35,6 +35,7 @@ data/
 .lragent/
 .playwright-cli/
 .playwright-mcp/
+.vscode/
 
 # Test artifacts
 test-screenshots/

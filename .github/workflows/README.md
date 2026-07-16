@@ -34,7 +34,8 @@ Require these checks before merge:
 
 ### Trigger
 
-- Automatic: `workflow_run` when `Quality Gate` succeeds on `main`/`master`
+- Automatic: `workflow_run` when `Quality Gate` succeeds on `main`/`master` and
+  repository variable `AUTO_DEPLOY_ENABLED` is set to `true`
 - Manual: `workflow_dispatch` (choose ref/method/environment/version)
 
 ### Deployment methods
@@ -86,6 +87,8 @@ Optional for HTTP mode:
 
 ### Optional repository variables
 
+- `AUTO_DEPLOY_ENABLED` (`true` enables automatic deploys after the main branch
+  quality gate; unset/other values keep automatic deploys disabled)
 - `DEPLOY_METHOD` (default deploy method for auto run, `ssh`/`http`)
 - `DEPLOY_ENVIRONMENT` (default `production`)
 - `BACKEND_SERVICE` (for SSH script override)

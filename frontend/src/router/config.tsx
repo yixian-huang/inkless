@@ -1,7 +1,7 @@
 import { lazy } from 'react';
 import { RouteObject } from 'react-router-dom';
 import { FeatureGate } from '@/components/feature/FeatureGate';
-import { withSiteLayout } from '@/plugins/ThemePageWrapper';
+import { withSiteLayout } from '@/plugins/withSiteLayout';
 
 // Admin routes
 const AdminLayout = lazy(() => import('../pages/admin/AdminLayout'));

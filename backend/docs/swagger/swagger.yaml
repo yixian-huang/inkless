@@ -3,25 +3,6 @@ definitions:
   blotting-consultancy_internal_model.JSONMap:
     additionalProperties: true
     type: object
-  blotting-consultancy_internal_service.TranslationState:
-    enum:
-    - done
-    - missing
-    - stale
-    type: string
-    x-enum-varnames:
-    - TranslationStateDone
-    - TranslationStateMissing
-    - TranslationStateStale
-  blotting-consultancy_internal_service.ValidationError:
-    properties:
-      code:
-        type: string
-      message:
-        type: string
-      path:
-        type: string
-    type: object
   internal_handler_article.createUpdateInput:
     properties:
       allowComments:
@@ -52,6 +33,8 @@ definitions:
         type: string
       pinned:
         type: boolean
+      scheduledAt:
+        type: string
       slug:
         type: string
       status:
@@ -133,149 +116,90 @@ definitions:
       expiresIn:
         type: integer
     type: object
-  internal_handler_comment.createInput:
+  internal_handler_role.AssignRoleRequest:
     properties:
-      authorEmail:
-        type: string
-      authorName:
-        type: string
-      authorUrl:
-        type: string
-      captchaToken:
-        type: string
-      content:
-        type: string
-      contentId:
+      roleId:
         type: integer
-      contentType:
-        type: string
-      parentId:
+      siteId:
+        type: integer
+      userId:
         type: integer
     required:
-    - authorName
-    - content
-    - contentId
-    - contentType
+    - roleId
+    - userId
     type: object
-  internal_handler_content.GetDraftResponse:
+  internal_handler_role.CreateRequest:
     properties:
-      config:
-        $ref: '#/definitions/blotting-consultancy_internal_model.JSONMap'
-      pageKey:
+      description:
         type: string
-      publishedVersion:
-        type: integer
-      updatedAt:
+      displayName:
         type: string
-      version:
-        type: integer
+      name:
+        type: string
+      permissionIds:
+        items:
+          type: integer
+        type: array
+    required:
+    - displayName
+    - name
     type: object
-  internal_handler_content.GetVersionDetailResponse:
+  internal_handler_role.PermissionResponse:
     properties:
-      config:
-        $ref: '#/definitions/blotting-consultancy_internal_model.JSONMap'
-      createdBy:
-        type: integer
+      action:
+        type: string
+      description:
+        type: string
       id:
         type: integer
-      pageKey:
+      key:
         type: string
-      publishedAt:
-        type: string
-      version:
-        type: integer
-    type: object
-  internal_handler_content.GetVersionsResponse:
-    properties:
-      items:
-        items:
-          $ref: '#/definitions/internal_handler_content.VersionListItem'
-        type: array
-      total:
-        type: integer
-    type: object
-  internal_handler_content.PublishRequest:
-    properties:
-      changeNote:
-        type: string
-      expectedDraftVersion:
-        type: integer
-    required:
-    - expectedDraftVersion
-    type: object
-  internal_handler_content.PublishResponse:
-    properties:
-      pageKey:
-        type: string
-      publishedAt:
-        type: string
-      publishedVersion:
-        type: integer
-    type: object
-  internal_handler_content.RollbackRequest:
-    properties:
-      changeNote:
+      resource:
         type: string
     type: object
-  internal_handler_content.RollbackResponse:
+  internal_handler_role.RoleResponse:
     properties:
-      pageKey:
-        type: string
-      publishedAt:
-        type: string
-      publishedVersion:
-        type: integer
-      sourceVersion:
-        type: integer
-    type: object
-  internal_handler_content.UpdateDraftRequest:
-    properties:
-      changeNote:
-        type: string
-      config:
-        $ref: '#/definitions/blotting-consultancy_internal_model.JSONMap'
-    required:
-    - config
-    type: object
-  internal_handler_content.UpdateDraftResponse:
-    properties:
-      pageKey:
-        type: string
-      updatedAt:
-        type: string
-      version:
-        type: integer
-    type: object
-  internal_handler_content.ValidateRequest:
-    properties:
-      config:
-        $ref: '#/definitions/blotting-consultancy_internal_model.JSONMap'
-    required:
-    - config
-    type: object
-  internal_handler_content.ValidateResponse:
-    properties:
-      errors:
-        items:
-          $ref: '#/definitions/blotting-consultancy_internal_service.ValidationError'
-        type: array
-      translationStatus:
-        additionalProperties:
-          $ref: '#/definitions/blotting-consultancy_internal_service.TranslationState'
-        type: object
-      valid:
-        type: boolean
-    type: object
-  internal_handler_content.VersionListItem:
-    properties:
-      changeNote:
-        type: string
       createdAt:
         type: string
-      operator:
+      description:
         type: string
-      version:
+      displayName:
+        type: string
+      id:
         type: integer
+      isSystem:
+        type: boolean
+      name:
+        type: string
+      permissions:
+        items:
+          $ref: '#/definitions/internal_handler_role.PermissionResponse'
+        type: array
+      updatedAt:
+        type: string
+      userCount:
+        type: integer
+    type: object
+  internal_handler_role.UnassignRoleRequest:
+    properties:
+      roleId:
+        type: integer
+      userId:
+        type: integer
+    required:
+    - roleId
+    - userId
+    type: object
+  internal_handler_role.UpdateRequest:
+    properties:
+      description:
+        type: string
+      displayName:
+        type: string
+      permissionIds:
+        items:
+          type: integer
+        type: array
     type: object
   internal_handler_user.CreateRequest:
     properties:
@@ -327,10 +251,34 @@ definitions:
       username:
         type: string
     type: object
+  internal_modules_comment.createInput:
+    properties:
+      authorEmail:
+        type: string
+      authorName:
+        type: string
+      authorUrl:
+        type: string
+      captchaToken:
+        type: string
+      content:
+        type: string
+      contentId:
+        type: integer
+      contentType:
+        type: string
+      parentId:
+        type: integer
+    required:
+    - authorName
+    - content
+    - contentId
+    - contentType
+    type: object
 host: localhost:8088
 info:
   contact: {}
-  description: Bilingual CMS backend API for Impress (印迹). Supports content management,
+  description: Bilingual CMS backend API for Impress. Supports content management,
     articles, pages, themes, media, and more.
   title: Impress CMS API
   version: "1.0"
@@ -558,6 +506,43 @@ paths:
       security:
       - BearerAuth: []
       summary: Export article as Markdown
+      tags:
+      - Articles (Admin)
+  /admin/articles/import:
+    post:
+      consumes:
+      - multipart/form-data
+      description: Accepts multipart form with .md files and creates draft articles
+      parameters:
+      - description: Markdown files to import
+        in: formData
+        name: files
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              count:
+                type: integer
+              imported:
+                items:
+                  type: string
+                type: array
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            properties:
+              error:
+                type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Import articles from Markdown
       tags:
       - Articles (Admin)
   /admin/audit-logs:
@@ -1035,316 +1020,95 @@ paths:
       summary: Update comment status
       tags:
       - Comments (Admin)
-  /admin/content/{pageKey}/draft:
+  /admin/comments/reply:
+    post:
+      responses: {}
+      security:
+      - BearerAuth: []
+      summary: Reply as site author (admin)
+      tags:
+      - Comments (Admin)
+  /admin/email-settings:
     get:
-      description: Returns the draft config for a given page key
-      parameters:
-      - description: Page key (e.g. home, about)
-        in: path
-        name: pageKey
-        required: true
-        type: string
+      description: Returns the email configuration with SMTP password masked
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/internal_handler_content.GetDraftResponse'
-        "400":
-          description: Bad Request
-          schema:
-            properties:
-              error:
-                type: string
-            type: object
-        "404":
-          description: Not Found
-          schema:
-            properties:
-              error:
-                type: string
             type: object
       security:
       - BearerAuth: []
-      summary: Get draft content
+      summary: Get email settings
       tags:
-      - Content (Admin)
+      - Email Settings (Admin)
     put:
       consumes:
       - application/json
-      description: Updates the draft config for a page key with optimistic locking
-        via If-Match header
+      description: Update email SMTP/template configuration (immediate publish)
       parameters:
-      - description: Page key
-        in: path
-        name: pageKey
-        required: true
-        type: string
-      - description: Expected draft version for optimistic locking
-        in: header
-        name: If-Match
-        required: true
-        type: integer
-      - description: Draft content data
+      - description: Email configuration
         in: body
         name: body
         required: true
         schema:
-          $ref: '#/definitions/internal_handler_content.UpdateDraftRequest'
+          type: object
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/internal_handler_content.UpdateDraftResponse'
+            type: object
         "400":
           description: Bad Request
           schema:
             properties:
               error:
-                type: string
-            type: object
-        "404":
-          description: Not Found
-          schema:
-            properties:
-              error:
-                type: string
-            type: object
-        "409":
-          description: Conflict
-          schema:
-            properties:
-              error:
-                type: string
+                type: object
             type: object
       security:
       - BearerAuth: []
-      summary: Update draft content
+      summary: Update email settings
       tags:
-      - Content (Admin)
-  /admin/content/{pageKey}/publish:
+      - Email Settings (Admin)
+  /admin/email-settings/test:
     post:
       consumes:
       - application/json
-      description: Promotes the current draft to published state with optimistic locking
+      description: Sends a test email to verify SMTP configuration
       parameters:
-      - description: Page key
-        in: path
-        name: pageKey
-        required: true
-        type: string
-      - description: Publish parameters
+      - description: Test email recipient
         in: body
         name: body
         required: true
         schema:
-          $ref: '#/definitions/internal_handler_content.PublishRequest'
+          type: object
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/internal_handler_content.PublishResponse'
+            properties:
+              message:
+                type: string
+              success:
+                type: boolean
+            type: object
         "400":
           description: Bad Request
           schema:
             properties:
               error:
-                type: string
-            type: object
-        "404":
-          description: Not Found
-          schema:
-            properties:
-              error:
-                type: string
-            type: object
-        "409":
-          description: Conflict
-          schema:
-            properties:
-              error:
-                type: string
-            type: object
-        "422":
-          description: Unprocessable Entity
-          schema:
-            properties:
-              error:
-                type: string
+                type: object
             type: object
       security:
       - BearerAuth: []
-      summary: Publish content
+      summary: Send test email
       tags:
-      - Content (Admin)
-  /admin/content/{pageKey}/rollback/{version}:
-    post:
-      consumes:
-      - application/json
-      description: Rolls back published content to a previous version
-      parameters:
-      - description: Page key
-        in: path
-        name: pageKey
-        required: true
-        type: string
-      - description: Source version to rollback to
-        in: path
-        name: version
-        required: true
-        type: integer
-      - description: Rollback parameters
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/internal_handler_content.RollbackRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/internal_handler_content.RollbackResponse'
-        "400":
-          description: Bad Request
-          schema:
-            properties:
-              error:
-                type: string
-            type: object
-        "404":
-          description: Not Found
-          schema:
-            properties:
-              error:
-                type: string
-            type: object
-      security:
-      - BearerAuth: []
-      summary: Rollback content
-      tags:
-      - Content (Admin)
-  /admin/content/{pageKey}/validate:
-    post:
-      consumes:
-      - application/json
-      description: Validates a page config and returns translation status without
-        saving
-      parameters:
-      - description: Page key
-        in: path
-        name: pageKey
-        required: true
-        type: string
-      - description: Config to validate
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/internal_handler_content.ValidateRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/internal_handler_content.ValidateResponse'
-        "400":
-          description: Bad Request
-          schema:
-            properties:
-              error:
-                type: string
-            type: object
-      security:
-      - BearerAuth: []
-      summary: Validate content config
-      tags:
-      - Content (Admin)
-  /admin/content/{pageKey}/versions:
-    get:
-      description: Returns a paginated list of published versions for a page key
-      parameters:
-      - description: Page key
-        in: path
-        name: pageKey
-        required: true
-        type: string
-      - default: 1
-        description: Page number
-        in: query
-        name: page
-        type: integer
-      - default: 20
-        description: Items per page
-        in: query
-        name: pageSize
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/internal_handler_content.GetVersionsResponse'
-        "400":
-          description: Bad Request
-          schema:
-            properties:
-              error:
-                type: string
-            type: object
-      security:
-      - BearerAuth: []
-      summary: List content versions
-      tags:
-      - Content (Admin)
-  /admin/content/{pageKey}/versions/{version}:
-    get:
-      description: Returns the config snapshot for a specific published version
-      parameters:
-      - description: Page key
-        in: path
-        name: pageKey
-        required: true
-        type: string
-      - description: Version number
-        in: path
-        name: version
-        required: true
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/internal_handler_content.GetVersionDetailResponse'
-        "400":
-          description: Bad Request
-          schema:
-            properties:
-              error:
-                type: string
-            type: object
-        "404":
-          description: Not Found
-          schema:
-            properties:
-              error:
-                type: string
-            type: object
-      security:
-      - BearerAuth: []
-      summary: Get version detail
-      tags:
-      - Content (Admin)
+      - Email Settings (Admin)
   /admin/form-submissions:
     get:
       description: Returns paginated form submissions with optional filters
@@ -1536,6 +1300,254 @@ paths:
       summary: Get submission counts
       tags:
       - Form Submissions (Admin)
+  /admin/marketplace/installed:
+    get:
+      description: Returns all active marketplace items (proxy for installed state)
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              type: object
+            type: array
+      security:
+      - BearerAuth: []
+      summary: List installed marketplace items
+      tags:
+      - Marketplace
+  /admin/marketplace/items:
+    get:
+      description: Returns a paginated list of marketplace items with optional filters
+      parameters:
+      - description: 'Item type: plugin or theme'
+        in: query
+        name: type
+        type: string
+      - description: Category filter
+        in: query
+        name: category
+        type: string
+      - description: Search term
+        in: query
+        name: search
+        type: string
+      - description: Page number (default 1)
+        in: query
+        name: page
+        type: integer
+      - description: Page size (default 20, max 100)
+        in: query
+        name: pageSize
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: object
+      security:
+      - BearerAuth: []
+      summary: List marketplace items
+      tags:
+      - Marketplace
+    post:
+      consumes:
+      - application/json
+      description: Adds a new plugin or theme to the marketplace registry
+      parameters:
+      - description: Item data
+        in: body
+        name: body
+        required: true
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            properties:
+              error:
+                type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Register a marketplace item
+      tags:
+      - Marketplace
+  /admin/marketplace/items/{slug}:
+    delete:
+      description: Soft-deletes a marketplace item from the registry
+      parameters:
+      - description: Item slug
+        in: path
+        name: slug
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              message:
+                type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            properties:
+              error:
+                type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Uninstall/remove a marketplace item
+      tags:
+      - Marketplace
+    get:
+      description: Returns details for a marketplace item including all versions
+      parameters:
+      - description: Item slug
+        in: path
+        name: slug
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            properties:
+              error:
+                type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get marketplace item details
+      tags:
+      - Marketplace
+  /admin/marketplace/items/{slug}/install:
+    post:
+      description: Installs a plugin or theme from the marketplace (increments download
+        count and returns download URL)
+      parameters:
+      - description: Item slug
+        in: path
+        name: slug
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            properties:
+              error:
+                type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            properties:
+              error:
+                type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Install a marketplace item
+      tags:
+      - Marketplace
+  /admin/marketplace/items/{slug}/update:
+    put:
+      description: Records an update download for an installed marketplace item
+      parameters:
+      - description: Item slug
+        in: path
+        name: slug
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            properties:
+              error:
+                type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            properties:
+              error:
+                type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Update an installed marketplace item
+      tags:
+      - Marketplace
+  /admin/marketplace/items/{slug}/versions:
+    post:
+      consumes:
+      - application/json
+      description: Records a new version for a marketplace item
+      parameters:
+      - description: Item slug
+        in: path
+        name: slug
+        required: true
+        type: string
+      - description: Version data
+        in: body
+        name: body
+        required: true
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            properties:
+              error:
+                type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Add a version to a marketplace item
+      tags:
+      - Marketplace
   /admin/media:
     get:
       description: Returns paginated list of uploaded media files
@@ -2054,74 +2066,69 @@ paths:
       summary: Set primary menu
       tags:
       - Menus
-  /admin/pages:
+  /admin/permissions:
     get:
-      description: Returns pages with optional status, parentId, and themeId filters
-      parameters:
-      - description: Status filter (draft/published)
-        in: query
-        name: status
-        type: string
-      - description: Parent page ID filter
-        in: query
-        name: parentId
-        type: integer
-      - description: Theme ID filter
-        in: query
-        name: themeId
-        type: string
+      description: Returns all available permissions
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            properties:
-              items:
-                items:
-                  type: object
-                type: array
-            type: object
+            items:
+              $ref: '#/definitions/internal_handler_role.PermissionResponse'
+            type: array
       security:
       - BearerAuth: []
-      summary: List all pages (admin)
+      summary: List permissions
       tags:
-      - Pages (Admin)
+      - Roles
+  /admin/roles:
+    get:
+      description: Returns all roles with their permissions
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/internal_handler_role.RoleResponse'
+            type: array
+      security:
+      - BearerAuth: []
+      summary: List roles
+      tags:
+      - Roles
     post:
       consumes:
       - application/json
-      description: Create a new page (draft by default)
+      description: Create a new custom role with permissions
       parameters:
-      - description: Page data
+      - description: Role data
         in: body
         name: body
         required: true
         schema:
-          type: object
+          $ref: '#/definitions/internal_handler_role.CreateRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            type: object
-        "400":
-          description: Bad Request
-          schema:
-            properties:
-              error:
-                type: string
-            type: object
+            $ref: '#/definitions/internal_handler_role.RoleResponse'
       security:
       - BearerAuth: []
-      summary: Create page
+      summary: Create role
       tags:
-      - Pages (Admin)
-  /admin/pages/{id}:
+      - Roles
+  /admin/roles/{id}:
     delete:
-      description: Soft-delete a page by ID
+      description: Delete a role (cannot delete system roles or roles with assigned
+        users)
       parameters:
-      - description: Page ID
+      - description: Role ID
         in: path
         name: id
         required: true
@@ -2136,22 +2143,15 @@ paths:
               message:
                 type: string
             type: object
-        "404":
-          description: Not Found
-          schema:
-            properties:
-              error:
-                type: string
-            type: object
       security:
       - BearerAuth: []
-      summary: Delete page
+      summary: Delete role
       tags:
-      - Pages (Admin)
+      - Roles
     get:
-      description: Returns a single page by its database ID
+      description: Returns a single role with its permissions
       parameters:
-      - description: Page ID
+      - description: Role ID
         in: path
         name: id
         required: true
@@ -2162,61 +2162,102 @@ paths:
         "200":
           description: OK
           schema:
-            type: object
-        "404":
-          description: Not Found
-          schema:
-            properties:
-              error:
-                type: string
-            type: object
+            $ref: '#/definitions/internal_handler_role.RoleResponse'
       security:
       - BearerAuth: []
-      summary: Get page by ID (admin)
+      summary: Get role by ID
       tags:
-      - Pages (Admin)
+      - Roles
     put:
       consumes:
       - application/json
-      description: Update an existing page by ID
+      description: Update role details and permissions. System roles can only have
+        permissions updated.
       parameters:
-      - description: Page ID
+      - description: Role ID
         in: path
         name: id
         required: true
         type: integer
-      - description: Updated page data
+      - description: Updated role data
         in: body
         name: body
         required: true
         schema:
-          type: object
+          $ref: '#/definitions/internal_handler_role.UpdateRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            type: object
-        "404":
-          description: Not Found
+            $ref: '#/definitions/internal_handler_role.RoleResponse'
+      security:
+      - BearerAuth: []
+      summary: Update role
+      tags:
+      - Roles
+  /admin/roles/assign:
+    post:
+      consumes:
+      - application/json
+      description: Assign an RBAC role to a user
+      parameters:
+      - description: Assignment data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_handler_role.AssignRoleRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
           schema:
             properties:
-              error:
+              message:
                 type: string
             type: object
       security:
       - BearerAuth: []
-      summary: Update page
+      summary: Assign role to user
       tags:
-      - Pages (Admin)
-  /admin/pages/{id}/publish:
-    put:
-      description: Set a page's status to published
+      - Roles
+  /admin/roles/unassign:
+    post:
+      consumes:
+      - application/json
+      description: Remove an RBAC role from a user
       parameters:
-      - description: Page ID
+      - description: Unassignment data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_handler_role.UnassignRoleRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              message:
+                type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Remove role from user
+      tags:
+      - Roles
+  /admin/roles/user/{userId}:
+    get:
+      description: Returns all RBAC roles assigned to a user
+      parameters:
+      - description: User ID
         in: path
-        name: id
+        name: userId
         required: true
         type: integer
       produces:
@@ -2225,47 +2266,17 @@ paths:
         "200":
           description: OK
           schema:
-            type: object
-        "404":
-          description: Not Found
-          schema:
             properties:
-              error:
-                type: string
+              items:
+                items:
+                  $ref: '#/definitions/internal_handler_role.RoleResponse'
+                type: array
             type: object
       security:
       - BearerAuth: []
-      summary: Publish page
+      summary: Get user roles
       tags:
-      - Pages (Admin)
-  /admin/pages/{id}/unpublish:
-    put:
-      description: Revert a page's status back to draft
-      parameters:
-      - description: Page ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            type: object
-        "404":
-          description: Not Found
-          schema:
-            properties:
-              error:
-                type: string
-            type: object
-      security:
-      - BearerAuth: []
-      summary: Unpublish page
-      tags:
-      - Pages (Admin)
+      - Roles
   /admin/search/rebuild:
     post:
       description: Rebuild the full-text search index from scratch
@@ -3181,7 +3192,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/internal_handler_comment.createInput'
+          $ref: '#/definitions/internal_modules_comment.createInput'
       produces:
       - application/json
       responses:
@@ -3206,54 +3217,6 @@ paths:
       summary: Create comment
       tags:
       - Comments
-  /public/content/{pageKey}:
-    get:
-      description: Returns published-only content for a given page key with locale
-        support and records page view
-      parameters:
-      - description: Page key (e.g. home, about)
-        in: path
-        name: pageKey
-        required: true
-        type: string
-      - default: zh
-        description: Locale (zh or en)
-        in: query
-        name: locale
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            properties:
-              config:
-                type: object
-              locale:
-                type: string
-              pageKey:
-                type: string
-              version:
-                type: integer
-            type: object
-        "400":
-          description: Bad Request
-          schema:
-            properties:
-              error:
-                type: string
-            type: object
-        "404":
-          description: Not Found
-          schema:
-            properties:
-              error:
-                type: string
-            type: object
-      summary: Get public content by page key
-      tags:
-      - Public Content
   /public/form-submissions:
     post:
       consumes:
@@ -3305,59 +3268,6 @@ paths:
       summary: Get primary menu
       tags:
       - Menus
-  /public/pages:
-    get:
-      description: Returns all published pages with optional locale filtering
-      parameters:
-      - description: Locale (zh or en)
-        in: query
-        name: locale
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            properties:
-              items:
-                items:
-                  type: object
-                type: array
-            type: object
-      summary: List published pages
-      tags:
-      - Pages
-  /public/pages/{slug}:
-    get:
-      description: Returns a single published page with config and SEO data
-      parameters:
-      - description: Page slug
-        in: path
-        name: slug
-        required: true
-        type: string
-      - description: Locale (zh or en)
-        in: query
-        name: locale
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            type: object
-        "404":
-          description: Not Found
-          schema:
-            properties:
-              error:
-                type: string
-            type: object
-      summary: Get page by slug
-      tags:
-      - Pages
   /public/robots.txt:
     get:
       description: Returns the current robots.txt content
@@ -3512,24 +3422,6 @@ paths:
       summary: Get public theme tokens
       tags:
       - Theme Tokens
-  /public/theme-pages:
-    get:
-      description: Returns published pages associated with the currently active theme
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            properties:
-              items:
-                items:
-                  type: object
-                type: array
-            type: object
-      summary: List theme pages
-      tags:
-      - Pages
   /sitemap.xml:
     get:
       description: Returns an XML sitemap with all published pages

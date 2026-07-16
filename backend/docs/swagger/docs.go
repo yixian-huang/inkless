@@ -179,6 +179,65 @@ const docTemplate = `{
                 }
             }
         },
+        "/admin/articles/import": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Accepts multipart form with .md files and creates draft articles",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Articles (Admin)"
+                ],
+                "summary": "Import articles from Markdown",
+                "parameters": [
+                    {
+                        "type": "file",
+                        "description": "Markdown files to import",
+                        "name": "files",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "count": {
+                                    "type": "integer"
+                                },
+                                "imported": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "string"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "error": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/admin/articles/{id}": {
             "get": {
                 "security": [
@@ -992,6 +1051,20 @@ const docTemplate = `{
                 }
             }
         },
+        "/admin/comments/reply": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "tags": [
+                    "Comments (Admin)"
+                ],
+                "summary": "Reply as site author (admin)",
+                "responses": {}
+            }
+        },
         "/admin/comments/{id}": {
             "delete": {
                 "security": [
@@ -1133,57 +1206,26 @@ const docTemplate = `{
                 }
             }
         },
-        "/admin/content/{pageKey}/draft": {
+        "/admin/email-settings": {
             "get": {
                 "security": [
                     {
                         "BearerAuth": []
                     }
                 ],
-                "description": "Returns the draft config for a given page key",
+                "description": "Returns the email configuration with SMTP password masked",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "Content (Admin)"
+                    "Email Settings (Admin)"
                 ],
-                "summary": "Get draft content",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Page key (e.g. home, about)",
-                        "name": "pageKey",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
+                "summary": "Get email settings",
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler_content.GetDraftResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "type": "object",
-                            "properties": {
-                                "error": {
-                                    "type": "string"
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "type": "object",
-                            "properties": {
-                                "error": {
-                                    "type": "string"
-                                }
-                            }
+                            "type": "object"
                         }
                     }
                 }
@@ -1194,7 +1236,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Updates the draft config for a page key with optimistic locking via If-Match header",
+                "description": "Update email SMTP/template configuration (immediate publish)",
                 "consumes": [
                     "application/json"
                 ],
@@ -1202,31 +1244,17 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Content (Admin)"
+                    "Email Settings (Admin)"
                 ],
-                "summary": "Update draft content",
+                "summary": "Update email settings",
                 "parameters": [
                     {
-                        "type": "string",
-                        "description": "Page key",
-                        "name": "pageKey",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "integer",
-                        "description": "Expected draft version for optimistic locking",
-                        "name": "If-Match",
-                        "in": "header",
-                        "required": true
-                    },
-                    {
-                        "description": "Draft content data",
+                        "description": "Email configuration",
                         "name": "body",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_handler_content.UpdateDraftRequest"
+                            "type": "object"
                         }
                     }
                 ],
@@ -1234,7 +1262,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler_content.UpdateDraftResponse"
+                            "type": "object"
                         }
                     },
                     "400": {
@@ -1243,29 +1271,7 @@ const docTemplate = `{
                             "type": "object",
                             "properties": {
                                 "error": {
-                                    "type": "string"
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "type": "object",
-                            "properties": {
-                                "error": {
-                                    "type": "string"
-                                }
-                            }
-                        }
-                    },
-                    "409": {
-                        "description": "Conflict",
-                        "schema": {
-                            "type": "object",
-                            "properties": {
-                                "error": {
-                                    "type": "string"
+                                    "type": "object"
                                 }
                             }
                         }
@@ -1273,14 +1279,14 @@ const docTemplate = `{
                 }
             }
         },
-        "/admin/content/{pageKey}/publish": {
+        "/admin/email-settings/test": {
             "post": {
                 "security": [
                     {
                         "BearerAuth": []
                     }
                 ],
-                "description": "Promotes the current draft to published state with optimistic locking",
+                "description": "Sends a test email to verify SMTP configuration",
                 "consumes": [
                     "application/json"
                 ],
@@ -1288,24 +1294,17 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Content (Admin)"
+                    "Email Settings (Admin)"
                 ],
-                "summary": "Publish content",
+                "summary": "Send test email",
                 "parameters": [
                     {
-                        "type": "string",
-                        "description": "Page key",
-                        "name": "pageKey",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Publish parameters",
+                        "description": "Test email recipient",
                         "name": "body",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_handler_content.PublishRequest"
+                            "type": "object"
                         }
                     }
                 ],
@@ -1313,7 +1312,15 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_handler_content.PublishResponse"
+                            "type": "object",
+                            "properties": {
+                                "message": {
+                                    "type": "string"
+                                },
+                                "success": {
+                                    "type": "boolean"
+                                }
+                            }
                         }
                     },
                     "400": {
@@ -1322,294 +1329,7 @@ const docTemplate = `{
                             "type": "object",
                             "properties": {
                                 "error": {
-                                    "type": "string"
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "type": "object",
-                            "properties": {
-                                "error": {
-                                    "type": "string"
-                                }
-                            }
-                        }
-                    },
-                    "409": {
-                        "description": "Conflict",
-                        "schema": {
-                            "type": "object",
-                            "properties": {
-                                "error": {
-                                    "type": "string"
-                                }
-                            }
-                        }
-                    },
-                    "422": {
-                        "description": "Unprocessable Entity",
-                        "schema": {
-                            "type": "object",
-                            "properties": {
-                                "error": {
-                                    "type": "string"
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/admin/content/{pageKey}/rollback/{version}": {
-            "post": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Rolls back published content to a previous version",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Content (Admin)"
-                ],
-                "summary": "Rollback content",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Page key",
-                        "name": "pageKey",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "integer",
-                        "description": "Source version to rollback to",
-                        "name": "version",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Rollback parameters",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/internal_handler_content.RollbackRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/internal_handler_content.RollbackResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "type": "object",
-                            "properties": {
-                                "error": {
-                                    "type": "string"
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "type": "object",
-                            "properties": {
-                                "error": {
-                                    "type": "string"
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/admin/content/{pageKey}/validate": {
-            "post": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Validates a page config and returns translation status without saving",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Content (Admin)"
-                ],
-                "summary": "Validate content config",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Page key",
-                        "name": "pageKey",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Config to validate",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/internal_handler_content.ValidateRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/internal_handler_content.ValidateResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "type": "object",
-                            "properties": {
-                                "error": {
-                                    "type": "string"
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/admin/content/{pageKey}/versions": {
-            "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Returns a paginated list of published versions for a page key",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Content (Admin)"
-                ],
-                "summary": "List content versions",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Page key",
-                        "name": "pageKey",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "integer",
-                        "default": 1,
-                        "description": "Page number",
-                        "name": "page",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "default": 20,
-                        "description": "Items per page",
-                        "name": "pageSize",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/internal_handler_content.GetVersionsResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "type": "object",
-                            "properties": {
-                                "error": {
-                                    "type": "string"
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/admin/content/{pageKey}/versions/{version}": {
-            "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Returns the config snapshot for a specific published version",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Content (Admin)"
-                ],
-                "summary": "Get version detail",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Page key",
-                        "name": "pageKey",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "integer",
-                        "description": "Version number",
-                        "name": "version",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/internal_handler_content.GetVersionDetailResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "type": "object",
-                            "properties": {
-                                "error": {
-                                    "type": "string"
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "type": "object",
-                            "properties": {
-                                "error": {
-                                    "type": "string"
+                                    "type": "object"
                                 }
                             }
                         }
@@ -1910,6 +1630,401 @@ const docTemplate = `{
                     },
                     "404": {
                         "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "error": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/marketplace/installed": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns all active marketplace items (proxy for installed state)",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Marketplace"
+                ],
+                "summary": "List installed marketplace items",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "object"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/marketplace/items": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns a paginated list of marketplace items with optional filters",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Marketplace"
+                ],
+                "summary": "List marketplace items",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Item type: plugin or theme",
+                        "name": "type",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Category filter",
+                        "name": "category",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Search term",
+                        "name": "search",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page number (default 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page size (default 20, max 100)",
+                        "name": "pageSize",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Adds a new plugin or theme to the marketplace registry",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Marketplace"
+                ],
+                "summary": "Register a marketplace item",
+                "parameters": [
+                    {
+                        "description": "Item data",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "error": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/marketplace/items/{slug}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns details for a marketplace item including all versions",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Marketplace"
+                ],
+                "summary": "Get marketplace item details",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Item slug",
+                        "name": "slug",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "error": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Soft-deletes a marketplace item from the registry",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Marketplace"
+                ],
+                "summary": "Uninstall/remove a marketplace item",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Item slug",
+                        "name": "slug",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "message": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "error": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/marketplace/items/{slug}/install": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Installs a plugin or theme from the marketplace (increments download count and returns download URL)",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Marketplace"
+                ],
+                "summary": "Install a marketplace item",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Item slug",
+                        "name": "slug",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "error": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "error": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/marketplace/items/{slug}/update": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Records an update download for an installed marketplace item",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Marketplace"
+                ],
+                "summary": "Update an installed marketplace item",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Item slug",
+                        "name": "slug",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "error": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "error": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/marketplace/items/{slug}/versions": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Records a new version for a marketplace item",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Marketplace"
+                ],
+                "summary": "Add a version to a marketplace item",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Item slug",
+                        "name": "slug",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Version data",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
                         "schema": {
                             "type": "object",
                             "properties": {
@@ -2743,53 +2858,56 @@ const docTemplate = `{
                 }
             }
         },
-        "/admin/pages": {
+        "/admin/permissions": {
             "get": {
                 "security": [
                     {
                         "BearerAuth": []
                     }
                 ],
-                "description": "Returns pages with optional status, parentId, and themeId filters",
+                "description": "Returns all available permissions",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "Pages (Admin)"
+                    "Roles"
                 ],
-                "summary": "List all pages (admin)",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Status filter (draft/published)",
-                        "name": "status",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "Parent page ID filter",
-                        "name": "parentId",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Theme ID filter",
-                        "name": "themeId",
-                        "in": "query"
-                    }
-                ],
+                "summary": "List permissions",
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "properties": {
-                                "items": {
-                                    "type": "array",
-                                    "items": {
-                                        "type": "object"
-                                    }
-                                }
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/internal_handler_role.PermissionResponse"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/roles": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns all roles with their permissions",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Roles"
+                ],
+                "summary": "List roles",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/internal_handler_role.RoleResponse"
                             }
                         }
                     }
@@ -2801,7 +2919,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Create a new page (draft by default)",
+                "description": "Create a new custom role with permissions",
                 "consumes": [
                     "application/json"
                 ],
@@ -2809,17 +2927,17 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Pages (Admin)"
+                    "Roles"
                 ],
-                "summary": "Create page",
+                "summary": "Create role",
                 "parameters": [
                     {
-                        "description": "Page data",
+                        "description": "Role data",
                         "name": "body",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "type": "object"
+                            "$ref": "#/definitions/internal_handler_role.CreateRequest"
                         }
                     }
                 ],
@@ -2827,74 +2945,20 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "type": "object"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "type": "object",
-                            "properties": {
-                                "error": {
-                                    "type": "string"
-                                }
-                            }
+                            "$ref": "#/definitions/internal_handler_role.RoleResponse"
                         }
                     }
                 }
             }
         },
-        "/admin/pages/{id}": {
-            "get": {
+        "/admin/roles/assign": {
+            "post": {
                 "security": [
                     {
                         "BearerAuth": []
                     }
                 ],
-                "description": "Returns a single page by its database ID",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Pages (Admin)"
-                ],
-                "summary": "Get page by ID (admin)",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Page ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "type": "object",
-                            "properties": {
-                                "error": {
-                                    "type": "string"
-                                }
-                            }
-                        }
-                    }
-                }
-            },
-            "put": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Update an existing page by ID",
+                "description": "Assign an RBAC role to a user",
                 "consumes": [
                     "application/json"
                 ],
@@ -2902,68 +2966,18 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Pages (Admin)"
+                    "Roles"
                 ],
-                "summary": "Update page",
+                "summary": "Assign role to user",
                 "parameters": [
                     {
-                        "type": "integer",
-                        "description": "Page ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Updated page data",
+                        "description": "Assignment data",
                         "name": "body",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "type": "object"
+                            "$ref": "#/definitions/internal_handler_role.AssignRoleRequest"
                         }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "type": "object",
-                            "properties": {
-                                "error": {
-                                    "type": "string"
-                                }
-                            }
-                        }
-                    }
-                }
-            },
-            "delete": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Soft-delete a page by ID",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Pages (Admin)"
-                ],
-                "summary": "Delete page",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Page ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
                     }
                 ],
                 "responses": {
@@ -2977,13 +2991,46 @@ const docTemplate = `{
                                 }
                             }
                         }
-                    },
-                    "404": {
-                        "description": "Not Found",
+                    }
+                }
+            }
+        },
+        "/admin/roles/unassign": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Remove an RBAC role from a user",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Roles"
+                ],
+                "summary": "Remove role from user",
+                "parameters": [
+                    {
+                        "description": "Unassignment data",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler_role.UnassignRoleRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
                         "schema": {
                             "type": "object",
                             "properties": {
-                                "error": {
+                                "message": {
                                     "type": "string"
                                 }
                             }
@@ -2992,25 +3039,67 @@ const docTemplate = `{
                 }
             }
         },
-        "/admin/pages/{id}/publish": {
-            "put": {
+        "/admin/roles/user/{userId}": {
+            "get": {
                 "security": [
                     {
                         "BearerAuth": []
                     }
                 ],
-                "description": "Set a page's status to published",
+                "description": "Returns all RBAC roles assigned to a user",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "Pages (Admin)"
+                    "Roles"
                 ],
-                "summary": "Publish page",
+                "summary": "Get user roles",
                 "parameters": [
                     {
                         "type": "integer",
-                        "description": "Page ID",
+                        "description": "User ID",
+                        "name": "userId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "items": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/definitions/internal_handler_role.RoleResponse"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/roles/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns a single role with its permissions",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Roles"
+                ],
+                "summary": "Get role by ID",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Role ID",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -3020,42 +3109,73 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "type": "object",
-                            "properties": {
-                                "error": {
-                                    "type": "string"
-                                }
-                            }
+                            "$ref": "#/definitions/internal_handler_role.RoleResponse"
                         }
                     }
                 }
-            }
-        },
-        "/admin/pages/{id}/unpublish": {
+            },
             "put": {
                 "security": [
                     {
                         "BearerAuth": []
                     }
                 ],
-                "description": "Revert a page's status back to draft",
+                "description": "Update role details and permissions. System roles can only have permissions updated.",
+                "consumes": [
+                    "application/json"
+                ],
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "Pages (Admin)"
+                    "Roles"
                 ],
-                "summary": "Unpublish page",
+                "summary": "Update role",
                 "parameters": [
                     {
                         "type": "integer",
-                        "description": "Page ID",
+                        "description": "Role ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Updated role data",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler_role.UpdateRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler_role.RoleResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Delete a role (cannot delete system roles or roles with assigned users)",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Roles"
+                ],
+                "summary": "Delete role",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Role ID",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -3065,15 +3185,9 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
                             "type": "object",
                             "properties": {
-                                "error": {
+                                "message": {
                                     "type": "string"
                                 }
                             }
@@ -4524,7 +4638,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_handler_comment.createInput"
+                            "$ref": "#/definitions/internal_modules_comment.createInput"
                         }
                     }
                 ],
@@ -4548,78 +4662,6 @@ const docTemplate = `{
                     },
                     "429": {
                         "description": "Too Many Requests",
-                        "schema": {
-                            "type": "object",
-                            "properties": {
-                                "error": {
-                                    "type": "string"
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/public/content/{pageKey}": {
-            "get": {
-                "description": "Returns published-only content for a given page key with locale support and records page view",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Public Content"
-                ],
-                "summary": "Get public content by page key",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Page key (e.g. home, about)",
-                        "name": "pageKey",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "default": "zh",
-                        "description": "Locale (zh or en)",
-                        "name": "locale",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object",
-                            "properties": {
-                                "config": {
-                                    "type": "object"
-                                },
-                                "locale": {
-                                    "type": "string"
-                                },
-                                "pageKey": {
-                                    "type": "string"
-                                },
-                                "version": {
-                                    "type": "integer"
-                                }
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "type": "object",
-                            "properties": {
-                                "error": {
-                                    "type": "string"
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
                         "schema": {
                             "type": "object",
                             "properties": {
@@ -4703,88 +4745,6 @@ const docTemplate = `{
                                     }
                                 },
                                 "name": {
-                                    "type": "string"
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/public/pages": {
-            "get": {
-                "description": "Returns all published pages with optional locale filtering",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Pages"
-                ],
-                "summary": "List published pages",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Locale (zh or en)",
-                        "name": "locale",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object",
-                            "properties": {
-                                "items": {
-                                    "type": "array",
-                                    "items": {
-                                        "type": "object"
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/public/pages/{slug}": {
-            "get": {
-                "description": "Returns a single published page with config and SEO data",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Pages"
-                ],
-                "summary": "Get page by slug",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Page slug",
-                        "name": "slug",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Locale (zh or en)",
-                        "name": "locale",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "type": "object",
-                            "properties": {
-                                "error": {
                                     "type": "string"
                                 }
                             }
@@ -5025,34 +4985,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/public/theme-pages": {
-            "get": {
-                "description": "Returns published pages associated with the currently active theme",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Pages"
-                ],
-                "summary": "List theme pages",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object",
-                            "properties": {
-                                "items": {
-                                    "type": "array",
-                                    "items": {
-                                        "type": "object"
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
         "/sitemap.xml": {
             "get": {
                 "description": "Returns an XML sitemap with all published pages",
@@ -5078,33 +5010,6 @@ const docTemplate = `{
         "blotting-consultancy_internal_model.JSONMap": {
             "type": "object",
             "additionalProperties": true
-        },
-        "blotting-consultancy_internal_service.TranslationState": {
-            "type": "string",
-            "enum": [
-                "done",
-                "missing",
-                "stale"
-            ],
-            "x-enum-varnames": [
-                "TranslationStateDone",
-                "TranslationStateMissing",
-                "TranslationStateStale"
-            ]
-        },
-        "blotting-consultancy_internal_service.ValidationError": {
-            "type": "object",
-            "properties": {
-                "code": {
-                    "type": "string"
-                },
-                "message": {
-                    "type": "string"
-                },
-                "path": {
-                    "type": "string"
-                }
-            }
         },
         "internal_handler_article.createUpdateInput": {
             "type": "object",
@@ -5150,6 +5055,9 @@ const docTemplate = `{
                 },
                 "pinned": {
                     "type": "boolean"
+                },
+                "scheduledAt": {
+                    "type": "string"
                 },
                 "slug": {
                     "type": "string"
@@ -5276,224 +5184,132 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_handler_comment.createInput": {
+        "internal_handler_role.AssignRoleRequest": {
             "type": "object",
             "required": [
-                "authorName",
-                "content",
-                "contentId",
-                "contentType"
+                "roleId",
+                "userId"
             ],
             "properties": {
-                "authorEmail": {
-                    "type": "string"
-                },
-                "authorName": {
-                    "type": "string"
-                },
-                "authorUrl": {
-                    "type": "string"
-                },
-                "captchaToken": {
-                    "type": "string"
-                },
-                "content": {
-                    "type": "string"
-                },
-                "contentId": {
+                "roleId": {
                     "type": "integer"
                 },
-                "contentType": {
-                    "type": "string"
+                "siteId": {
+                    "type": "integer"
                 },
-                "parentId": {
+                "userId": {
                     "type": "integer"
                 }
             }
         },
-        "internal_handler_content.GetDraftResponse": {
+        "internal_handler_role.CreateRequest": {
             "type": "object",
+            "required": [
+                "displayName",
+                "name"
+            ],
             "properties": {
-                "config": {
-                    "$ref": "#/definitions/blotting-consultancy_internal_model.JSONMap"
-                },
-                "pageKey": {
+                "description": {
                     "type": "string"
                 },
-                "publishedVersion": {
-                    "type": "integer"
-                },
-                "updatedAt": {
+                "displayName": {
                     "type": "string"
                 },
-                "version": {
-                    "type": "integer"
+                "name": {
+                    "type": "string"
+                },
+                "permissionIds": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
                 }
             }
         },
-        "internal_handler_content.GetVersionDetailResponse": {
+        "internal_handler_role.PermissionResponse": {
             "type": "object",
             "properties": {
-                "config": {
-                    "$ref": "#/definitions/blotting-consultancy_internal_model.JSONMap"
+                "action": {
+                    "type": "string"
                 },
-                "createdBy": {
-                    "type": "integer"
+                "description": {
+                    "type": "string"
                 },
                 "id": {
                     "type": "integer"
                 },
-                "pageKey": {
+                "key": {
                     "type": "string"
                 },
-                "publishedAt": {
+                "resource": {
                     "type": "string"
-                },
-                "version": {
-                    "type": "integer"
                 }
             }
         },
-        "internal_handler_content.GetVersionsResponse": {
+        "internal_handler_role.RoleResponse": {
             "type": "object",
             "properties": {
-                "items": {
+                "createdAt": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "displayName": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "isSystem": {
+                    "type": "boolean"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "permissions": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/internal_handler_content.VersionListItem"
+                        "$ref": "#/definitions/internal_handler_role.PermissionResponse"
                     }
-                },
-                "total": {
-                    "type": "integer"
-                }
-            }
-        },
-        "internal_handler_content.PublishRequest": {
-            "type": "object",
-            "required": [
-                "expectedDraftVersion"
-            ],
-            "properties": {
-                "changeNote": {
-                    "type": "string"
-                },
-                "expectedDraftVersion": {
-                    "type": "integer"
-                }
-            }
-        },
-        "internal_handler_content.PublishResponse": {
-            "type": "object",
-            "properties": {
-                "pageKey": {
-                    "type": "string"
-                },
-                "publishedAt": {
-                    "type": "string"
-                },
-                "publishedVersion": {
-                    "type": "integer"
-                }
-            }
-        },
-        "internal_handler_content.RollbackRequest": {
-            "type": "object",
-            "properties": {
-                "changeNote": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_handler_content.RollbackResponse": {
-            "type": "object",
-            "properties": {
-                "pageKey": {
-                    "type": "string"
-                },
-                "publishedAt": {
-                    "type": "string"
-                },
-                "publishedVersion": {
-                    "type": "integer"
-                },
-                "sourceVersion": {
-                    "type": "integer"
-                }
-            }
-        },
-        "internal_handler_content.UpdateDraftRequest": {
-            "type": "object",
-            "required": [
-                "config"
-            ],
-            "properties": {
-                "changeNote": {
-                    "type": "string"
-                },
-                "config": {
-                    "$ref": "#/definitions/blotting-consultancy_internal_model.JSONMap"
-                }
-            }
-        },
-        "internal_handler_content.UpdateDraftResponse": {
-            "type": "object",
-            "properties": {
-                "pageKey": {
-                    "type": "string"
                 },
                 "updatedAt": {
                     "type": "string"
                 },
-                "version": {
+                "userCount": {
                     "type": "integer"
                 }
             }
         },
-        "internal_handler_content.ValidateRequest": {
+        "internal_handler_role.UnassignRoleRequest": {
             "type": "object",
             "required": [
-                "config"
+                "roleId",
+                "userId"
             ],
             "properties": {
-                "config": {
-                    "$ref": "#/definitions/blotting-consultancy_internal_model.JSONMap"
+                "roleId": {
+                    "type": "integer"
+                },
+                "userId": {
+                    "type": "integer"
                 }
             }
         },
-        "internal_handler_content.ValidateResponse": {
+        "internal_handler_role.UpdateRequest": {
             "type": "object",
             "properties": {
-                "errors": {
+                "description": {
+                    "type": "string"
+                },
+                "displayName": {
+                    "type": "string"
+                },
+                "permissionIds": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/blotting-consultancy_internal_service.ValidationError"
+                        "type": "integer"
                     }
-                },
-                "translationStatus": {
-                    "type": "object",
-                    "additionalProperties": {
-                        "$ref": "#/definitions/blotting-consultancy_internal_service.TranslationState"
-                    }
-                },
-                "valid": {
-                    "type": "boolean"
-                }
-            }
-        },
-        "internal_handler_content.VersionListItem": {
-            "type": "object",
-            "properties": {
-                "changeNote": {
-                    "type": "string"
-                },
-                "createdAt": {
-                    "type": "string"
-                },
-                "operator": {
-                    "type": "string"
-                },
-                "version": {
-                    "type": "integer"
                 }
             }
         },
@@ -5571,6 +5387,41 @@ const docTemplate = `{
                     "type": "string"
                 }
             }
+        },
+        "internal_modules_comment.createInput": {
+            "type": "object",
+            "required": [
+                "authorName",
+                "content",
+                "contentId",
+                "contentType"
+            ],
+            "properties": {
+                "authorEmail": {
+                    "type": "string"
+                },
+                "authorName": {
+                    "type": "string"
+                },
+                "authorUrl": {
+                    "type": "string"
+                },
+                "captchaToken": {
+                    "type": "string"
+                },
+                "content": {
+                    "type": "string"
+                },
+                "contentId": {
+                    "type": "integer"
+                },
+                "contentType": {
+                    "type": "string"
+                },
+                "parentId": {
+                    "type": "integer"
+                }
+            }
         }
     },
     "securityDefinitions": {
@@ -5590,7 +5441,7 @@ var SwaggerInfo = &swag.Spec{
 	BasePath:         "/",
 	Schemes:          []string{},
 	Title:            "Impress CMS API",
-	Description:      "Bilingual CMS backend API for Impress (印迹). Supports content management, articles, pages, themes, media, and more.",
+	Description:      "Bilingual CMS backend API for Impress. Supports content management, articles, pages, themes, media, and more.",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 	LeftDelim:        "{{",

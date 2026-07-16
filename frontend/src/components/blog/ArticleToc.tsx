@@ -1,48 +1,5 @@
-import { useEffect, useState, useCallback } from "react";
 import { useTranslation } from "react-i18next";
-import type { RefObject } from "react";
 import type { TocHeading, TocLayout } from "@/utils/articleToc";
-
-export function useActiveHeading(contentRef: RefObject<HTMLElement | null>, headings: TocHeading[]) {
-  const [activeId, setActiveId] = useState<string | null>(headings[0]?.id ?? null);
-
-  useEffect(() => {
-    const root = contentRef.current;
-    if (!root || headings.length === 0) return;
-
-    const elements = headings
-      .map((h) => document.getElementById(h.id))
-      .filter((el): el is HTMLElement => el != null);
-
-    if (elements.length === 0) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const visible = entries
-          .filter((e) => e.isIntersecting)
-          .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
-        if (visible.length > 0 && visible[0].target.id) {
-          setActiveId(visible[0].target.id);
-        }
-      },
-      { rootMargin: "-20% 0px -55% 0px", threshold: 0 },
-    );
-
-    elements.forEach((el) => observer.observe(el));
-    return () => observer.disconnect();
-  }, [contentRef, headings]);
-
-  return activeId;
-}
-
-export function useTocScroll() {
-  return useCallback((id: string) => {
-    const el = document.getElementById(id);
-    if (!el) return;
-    el.scrollIntoView({ behavior: "smooth", block: "start" });
-    history.replaceState(null, "", `#${id}`);
-  }, []);
-}
 
 function TocList({
   headings,

@@ -6,7 +6,7 @@ qb_log_info() { echo "[qb-artifact][INFO] $*"; }
 
 qb_heartbeat_loop() {
   while sleep 60; do
-    echo "[qb-artifact][heartbeat] $(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+    echo "[qb-artifact][heartbeat] $(date -u +"%Y-%m-%dT%H:%M:%SZ")" >&2
   done
 }
 

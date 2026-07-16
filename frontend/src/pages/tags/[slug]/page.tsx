@@ -17,7 +17,7 @@ export default function TagDetailPage() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
   const { t } = useTranslation("common");
-  const { buildTitle, defaultDescription } = useSEODefaults();
+  const { buildTitle } = useSEODefaults();
   const { localeMode, defaultLocale, currentLocale } = useLocaleMode();
 
   const [tag, setTag] = useState<Tag | null>(null);

@@ -29,7 +29,7 @@ jobs:
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: 9
+          version: 9.15.9
 
       - name: Get pnpm store directory
         id: pnpm-cache
@@ -87,17 +87,19 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.24'
+          go-version-file: backend/go.mod
           cache: true
+          cache-dependency-path: backend/go.sum
 
       - name: Verify Go module dependencies
+        working-directory: backend
         run: |
-          cd backend && go mod verify
-          cd backend && go mod tidy
-          git diff --exit-code backend/go.mod backend/go.sum
+          go mod verify
+          go mod tidy
+          git diff --exit-code -- go.mod go.sum
 
       - name: Install swag CLI
-        run: go install github.com/swaggo/swag/cmd/swag@latest
+        run: go install github.com/swaggo/swag/cmd/swag@v1.16.6
 
       - name: Generate Swagger docs
         run: cd backend && swag init -g cmd/server/main.go -o docs/swagger --parseDependency --parseInternal
@@ -141,8 +143,9 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.24'
+          go-version-file: backend/go.mod
           cache: true
+          cache-dependency-path: backend/go.sum
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -152,7 +155,7 @@ jobs:
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: 9
+          version: 9.15.9
 
       - name: Install frontend dependencies
         run: pnpm install --frozen-lockfile

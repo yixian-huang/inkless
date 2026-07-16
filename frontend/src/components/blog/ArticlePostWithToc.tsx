@@ -1,14 +1,9 @@
 import { useMemo } from "react";
 import { useIsReadingLayout } from "@/plugins/hooks";
 import { useArticleTocEnabled } from "@/hooks/useArticleTocEnabled";
+import { useActiveHeading, useTocScroll } from "@/hooks/useArticleTocNavigation";
 import { buildArticleToc, type TocLayout } from "@/utils/articleToc";
-import {
-  ArticleTocInline,
-  ArticleTocSidebar,
-  ArticleTocLayout,
-  useActiveHeading,
-  useTocScroll,
-} from "@/components/blog/ArticleToc";
+import { ArticleTocInline, ArticleTocSidebar, ArticleTocLayout } from "@/components/blog/ArticleToc";
 import ArticlePostBody from "@/components/blog/ArticlePostBody";
 import type { RefObject } from "react";
 

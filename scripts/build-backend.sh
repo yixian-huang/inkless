@@ -41,7 +41,7 @@ go mod tidy
 
 # Run tests
 echo "Running tests..."
-go test -v -race -coverprofile=coverage.out ./...
+go test -v -race ./...
 
 # Run go vet
 echo "Running go vet..."
