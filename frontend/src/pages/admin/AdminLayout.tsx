@@ -3,30 +3,8 @@ import { Outlet, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useBranding } from "@/hooks/useBranding";
 import { useSetupStatus } from "@/hooks/useSetupStatus";
+import { getAdminRoutePermission } from "@/router/adminAccess";
 import AdminSidebar from "./components/AdminSidebar";
-
-// Map admin route prefixes to permission keys
-const routePermissions: Record<string, string> = {
-  "/admin/pages": "pages",
-  "/admin/articles": "articles",
-  "/admin/media": "media",
-  "/admin/form-submissions": "form-submissions",
-  "/admin/menus": "menus",
-  "/admin/theme": "theme",
-  "/admin/analytics": "analytics",
-  "/admin/audit-logs": "audit-logs",
-  "/admin/backups": "backups",
-  "/admin/users": "users",
-};
-
-function getRequiredPermission(pathname: string): string | null {
-  for (const [prefix, perm] of Object.entries(routePermissions)) {
-    if (pathname === prefix || pathname.startsWith(prefix + "/")) {
-      return perm;
-    }
-  }
-  return null; // No permission required (e.g. /admin dashboard, /admin/login)
-}
 
 export default function AdminLayout() {
   const location = useLocation();
@@ -72,7 +50,7 @@ export default function AdminLayout() {
   }
 
   // Check route-level permission
-  const requiredPerm = getRequiredPermission(location.pathname);
+  const requiredPerm = getAdminRoutePermission(location.pathname);
   if (requiredPerm && !hasPermission(requiredPerm)) {
     return <Navigate to="/admin" replace />;
   }

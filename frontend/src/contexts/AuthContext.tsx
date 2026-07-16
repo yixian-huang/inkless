@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from "react";
 import axios from "axios";
 import { http } from "@/api/http";
+import { hasGrantedPermission } from "@/lib/permissions";
 
 interface User {
   id: string;
@@ -151,7 +152,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     (perm: string): boolean => {
       if (!user) return false;
       if (user.isSuperAdmin) return true;
-      return user.permissions?.includes(perm) ?? false;
+      return hasGrantedPermission(user.permissions, perm);
     },
     [user]
   );

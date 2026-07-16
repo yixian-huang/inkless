@@ -1,6 +1,7 @@
 package model
 
 import (
+	"slices"
 	"testing"
 )
 
@@ -109,4 +110,42 @@ func TestUser_Validate(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestUser_EffectivePermissionKeys(t *testing.T) {
+	t.Run("super admin uses wildcard", func(t *testing.T) {
+		user := User{IsSuperAdmin: true}
+		if got := user.EffectivePermissionKeys(); !slices.Equal(got, []string{"*:*"}) {
+			t.Fatalf("EffectivePermissionKeys() = %v, want wildcard", got)
+		}
+	})
+
+	t.Run("loaded RBAC roles are flattened and deduplicated", func(t *testing.T) {
+		read := Permission{Resource: "pages", Action: "read"}
+		update := Permission{Resource: "pages", Action: "update"}
+		user := User{
+			UserRoles: []UserRole{
+				{Role: RBACRole{Permissions: []Permission{update, read}}},
+				{Role: RBACRole{Permissions: []Permission{read}}},
+			},
+		}
+
+		want := []string{"pages:read", "pages:update"}
+		if got := user.EffectivePermissionKeys(); !slices.Equal(got, want) {
+			t.Fatalf("EffectivePermissionKeys() = %v, want %v", got, want)
+		}
+	})
+
+	t.Run("legacy editor cannot publish content", func(t *testing.T) {
+		user := User{Role: RoleEditor}
+		if user.HasRBACPermission("pages", "publish") {
+			t.Fatal("legacy editor unexpectedly has pages:publish")
+		}
+		if user.HasRBACPermission("articles", "publish") {
+			t.Fatal("legacy editor unexpectedly has articles:publish")
+		}
+		if !user.HasRBACPermission("pages", "update") {
+			t.Fatal("legacy editor should retain pages:update")
+		}
+	})
 }

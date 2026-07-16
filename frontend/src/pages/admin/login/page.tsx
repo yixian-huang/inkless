@@ -2,6 +2,7 @@ import { useState, FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
+import { ADMIN_DEFAULT_PATH } from "@/router/adminAccess";
 
 export default function LoginPage() {
   useDocumentTitle("登录");
@@ -19,7 +20,7 @@ export default function LoginPage() {
 
     try {
       await login(username, password);
-      navigate("/admin/content");
+      navigate(ADMIN_DEFAULT_PATH);
     } catch (err) {
       setError(err instanceof Error ? err.message : "登录失败，请重试");
     } finally {

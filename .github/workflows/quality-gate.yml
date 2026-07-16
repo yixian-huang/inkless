@@ -57,6 +57,12 @@ jobs:
       - name: Run frontend tests
         run: pnpm -C frontend test:run
 
+      - name: Install Playwright Chromium
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Run admin release-chain E2E
+        run: pnpm test:e2e
+
       - name: Display test coverage summary
         if: always()
         run: |

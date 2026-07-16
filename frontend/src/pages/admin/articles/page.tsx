@@ -68,7 +68,7 @@ export default function AdminArticlesPage() {
     <div>
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Articles</h1>
+          <h1 className="text-2xl font-bold text-gray-900">文章管理</h1>
           <p className="text-sm text-gray-500 mt-1">Total: {total}</p>
         </div>
         <div className="flex items-center gap-3">

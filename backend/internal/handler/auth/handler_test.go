@@ -2,11 +2,11 @@ package auth
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"net/http"
 	"net/http/httptest"
-	"context"
 	"testing"
 	"time"
 
@@ -356,8 +356,8 @@ func TestMe_Success(t *testing.T) {
 	}
 	c.Set(string(middleware.UserContextKey), userCtx)
 
-	// Me now queries the database for full user info
-	mockUserRepo.On("FindByID", mock.Anything, uint(1)).Return(&model.User{
+	// Me now queries the database for full RBAC user info
+	mockUserRepo.On("FindByIDWithRoles", mock.Anything, uint(1)).Return(&model.User{
 		ID:           1,
 		Username:     "testuser",
 		Role:         model.RoleAdmin,
@@ -375,6 +375,7 @@ func TestMe_Success(t *testing.T) {
 	assert.Equal(t, "testuser", resp.Username)
 	assert.Equal(t, "admin", resp.Role)
 	assert.True(t, resp.IsSuperAdmin)
+	assert.Equal(t, []string{"*:*"}, resp.Permissions)
 	mockUserRepo.AssertExpectations(t)
 }
 

@@ -9,7 +9,7 @@ This directory contains two GitHub Actions workflows:
 
 `quality-gate.yml` is the merge gate. It runs:
 
-- Frontend checks: lint, type-check, tests
+- Frontend checks: lint, type-check, unit tests, and Playwright admin navigation E2E
 - Backend checks: `go mod verify`, `go mod tidy`, `go vet`, `go test -race`
 - Integration smoke: frontend build + backend build
 - Summary job: fails if any upstream job fails

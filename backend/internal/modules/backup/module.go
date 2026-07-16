@@ -34,20 +34,22 @@ func (m *Module) Init(deps module.Dependencies) error {
 
 func (m *Module) RegisterRoutes(_ *gin.RouterGroup, admin *gin.RouterGroup) {
 	// Basic backup management
-	admin.GET("/backups", m.handler.List)
-	admin.POST("/backups/trigger", m.handler.Trigger)
+	admin.GET("/backups", m.requirePermission("read"), m.handler.List)
+	admin.POST("/backups/trigger", m.requirePermission("create"), m.handler.Trigger)
 
 	// Site export/import (requires backups:manage via RBAC)
 	backupGroup := admin.Group("/backups")
-	if m.userRepo != nil && m.rbacCache != nil {
-		backupGroup.Use(middleware.RequirePermission("backups", "manage", m.userRepo, m.rbacCache))
-	}
+	backupGroup.Use(m.requirePermission("manage"))
 	{
 		backupGroup.POST("/export", m.handler.Export)
 		backupGroup.GET("/export/:filename", m.handler.DownloadExport)
 		backupGroup.POST("/import", m.handler.Import)
 		backupGroup.POST("/import/validate", m.handler.ValidateImport)
 	}
+}
+
+func (m *Module) requirePermission(action string) gin.HandlerFunc {
+	return middleware.RequirePermission("backups", action, m.userRepo, m.rbacCache)
 }
 
 // Service returns the underlying backup service (for use in graceful shutdown, etc.)

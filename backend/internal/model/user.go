@@ -4,6 +4,7 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 	"errors"
+	"sort"
 	"time"
 )
 
@@ -91,9 +92,9 @@ type User struct {
 	IsSuperAdmin bool        `gorm:"not null;default:false"`
 	Permissions  StringSlice `gorm:"type:text"`
 	// RBAC: user roles (loaded via Preload)
-	UserRoles    []UserRole  `gorm:"foreignKey:UserID" json:"userRoles,omitempty"`
-	CreatedAt    time.Time   `gorm:"autoCreateTime"`
-	UpdatedAt    time.Time   `gorm:"autoUpdateTime"`
+	UserRoles []UserRole `gorm:"foreignKey:UserID" json:"userRoles,omitempty"`
+	CreatedAt time.Time  `gorm:"autoCreateTime"`
+	UpdatedAt time.Time  `gorm:"autoUpdateTime"`
 }
 
 // TableName overrides the default table name
@@ -154,6 +155,39 @@ func (u *User) HasRBACPermission(resource, action string) bool {
 	return u.legacyRoleHasPermission(resource, action)
 }
 
+// EffectivePermissionKeys returns the permissions enforced by backend RBAC as
+// canonical "resource:action" keys. It intentionally derives legacy users from
+// their role instead of trusting the old UI-only Permissions field.
+func (u *User) EffectivePermissionKeys() []string {
+	if u.IsSuperAdmin {
+		return []string{"*:*"}
+	}
+
+	keys := make(map[string]struct{})
+	if len(u.UserRoles) > 0 {
+		for _, ur := range u.UserRoles {
+			for _, perm := range ur.Role.Permissions {
+				keys[perm.Key()] = struct{}{}
+			}
+		}
+	} else {
+		for _, resource := range BuiltinResources {
+			for _, action := range BuiltinActions {
+				if u.HasRBACPermission(resource, action) {
+					keys[resource+":"+action] = struct{}{}
+				}
+			}
+		}
+	}
+
+	result := make([]string, 0, len(keys))
+	for key := range keys {
+		result = append(result, key)
+	}
+	sort.Strings(result)
+	return result
+}
+
 // legacyRoleHasPermission provides backward compatibility for users who haven't been
 // migrated to the RBAC system yet. Maps the old Role field to permission checks.
 func (u *User) legacyRoleHasPermission(resource, action string) bool {
@@ -164,8 +198,10 @@ func (u *User) legacyRoleHasPermission(resource, action string) bool {
 	case RoleEditor:
 		// Editor has content-related permissions
 		switch resource {
-		case "articles", "pages", "media", "categories", "tags", "comments":
-			return true
+		case "articles", "pages":
+			return action != "publish" && action != "manage"
+		case "media", "categories", "tags", "comments":
+			return action != "publish" && action != "manage"
 		case "menus":
 			return action == "read"
 		case "dashboard":

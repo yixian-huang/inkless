@@ -14,10 +14,17 @@ import (
 // loadUserWithCache loads a user with roles/permissions, using a short-lived cache
 // to avoid hitting the DB on every admin request.
 func loadUserWithCache(c *gin.Context, userID uint, userRepo repository.UserRepository, rbacCache *cache.Cache) (*model.User, error) {
+	if userRepo == nil {
+		return nil, fmt.Errorf("user repository is not configured")
+	}
 	cacheKey := fmt.Sprintf("rbac:%d", userID)
 	if rbacCache != nil {
 		if cached, ok := rbacCache.Get(cacheKey); ok {
-			return cached.(*model.User), nil
+			user, valid := cached.(*model.User)
+			if !valid {
+				return nil, fmt.Errorf("invalid RBAC cache entry for user %d", userID)
+			}
+			return user, nil
 		}
 	}
 	user, err := userRepo.FindByIDWithRoles(c.Request.Context(), userID)

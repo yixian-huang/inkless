@@ -12,6 +12,7 @@
     "type-check": "pnpm -C frontend type-check",
     "test": "pnpm -C frontend test:run",
     "test:run": "pnpm -C frontend test:run",
+    "test:e2e": "node test/e2e/admin-navigation.mjs",
     "agent:init": "node scripts/long-agent.mjs --init-only",
     "agent:run": "node scripts/long-agent.mjs",
     "agent:usage": "node scripts/agent-usage.mjs",

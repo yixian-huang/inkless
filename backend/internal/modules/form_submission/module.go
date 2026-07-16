@@ -5,6 +5,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"blotting-consultancy/internal/cache"
 	"blotting-consultancy/internal/middleware"
 	"blotting-consultancy/internal/model"
 	"blotting-consultancy/internal/module"
@@ -16,6 +17,8 @@ import (
 type Module struct {
 	handler     *Handler
 	siteCfgRepo repository.SiteConfigRepository
+	userRepo    repository.UserRepository
+	rbacCache   *cache.Cache
 }
 
 // New creates a new form submission module.
@@ -32,6 +35,8 @@ func (m *Module) Init(deps module.Dependencies) error {
 	repo := newGormRepository(deps.DB)
 	emailSvc := service.NewEmailService(deps.SiteCfg)
 	m.siteCfgRepo = deps.SiteCfg
+	m.userRepo = deps.UserRepo
+	m.rbacCache = deps.RBACCache
 	m.handler = &Handler{
 		repo:         repo,
 		emailService: emailSvc,
@@ -81,10 +86,14 @@ func (m *Module) RegisterRoutes(public, admin *gin.RouterGroup) {
 	)
 
 	// Admin form submission management
-	admin.GET("/form-submissions/counts", m.handler.HandleAdminCounts)
-	admin.GET("/form-submissions", m.handler.HandleAdminList)
-	admin.GET("/form-submissions/:id", m.handler.HandleAdminGetByID)
-	admin.PATCH("/form-submissions/:id/status", m.handler.HandleAdminUpdateStatus)
-	admin.POST("/form-submissions/bulk-status", m.handler.HandleAdminBulkUpdateStatus)
-	admin.DELETE("/form-submissions/:id", m.handler.HandleAdminDelete)
+	admin.GET("/form-submissions/counts", m.requirePermission("read"), m.handler.HandleAdminCounts)
+	admin.GET("/form-submissions", m.requirePermission("read"), m.handler.HandleAdminList)
+	admin.GET("/form-submissions/:id", m.requirePermission("read"), m.handler.HandleAdminGetByID)
+	admin.PATCH("/form-submissions/:id/status", m.requirePermission("update"), m.handler.HandleAdminUpdateStatus)
+	admin.POST("/form-submissions/bulk-status", m.requirePermission("update"), m.handler.HandleAdminBulkUpdateStatus)
+	admin.DELETE("/form-submissions/:id", m.requirePermission("delete"), m.handler.HandleAdminDelete)
+}
+
+func (m *Module) requirePermission(action string) gin.HandlerFunc {
+	return middleware.RequirePermission("form_submissions", action, m.userRepo, m.rbacCache)
 }

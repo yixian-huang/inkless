@@ -10,6 +10,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	aiHandler "blotting-consultancy/internal/handler/ai"
 	analyticsHandler "blotting-consultancy/internal/handler/analytics"
 	articleHandler "blotting-consultancy/internal/handler/article"
 	auditlogHandler "blotting-consultancy/internal/handler/auditlog"
@@ -18,8 +19,8 @@ import (
 	categoryHandler "blotting-consultancy/internal/handler/category"
 	chunkedUploadHandler "blotting-consultancy/internal/handler/chunked_upload"
 	emailSettingsHandler "blotting-consultancy/internal/handler/email_settings"
-	feedHandler "blotting-consultancy/internal/handler/feed"
 	featuresHandler "blotting-consultancy/internal/handler/features"
+	feedHandler "blotting-consultancy/internal/handler/feed"
 	globalConfigHandler "blotting-consultancy/internal/handler/global_config"
 	installedThemeHandler "blotting-consultancy/internal/handler/installed_theme"
 	marketplaceHandler "blotting-consultancy/internal/handler/marketplace"
@@ -41,9 +42,8 @@ import (
 	themeExportHandler "blotting-consultancy/internal/handler/theme_export"
 	translationHandler "blotting-consultancy/internal/handler/translation"
 	unifiedPageHandler "blotting-consultancy/internal/handler/unified_page"
-	wizardHandler "blotting-consultancy/internal/handler/wizard"
 	userHandler "blotting-consultancy/internal/handler/user"
-	aiHandler "blotting-consultancy/internal/handler/ai"
+	wizardHandler "blotting-consultancy/internal/handler/wizard"
 
 	"blotting-consultancy/internal/cache"
 	"blotting-consultancy/internal/db"
@@ -60,40 +60,40 @@ import (
 
 // Handlers holds all initialized HTTP handlers.
 type Handlers struct {
-	Auth            *authHandler.Handler
-	Article         *articleHandler.Handler
-	Public          *publicHandler.Handler
-	Bootstrap       *bootstrapHandler.Handler
-	Media           *mediaHandler.Handler
-	Analytics       *analyticsHandler.Handler
-	Category        *categoryHandler.Handler
-	Tag             *tagHandler.Handler
-	Menu            *menuHandler.Handler
-	AuditLog        *auditlogHandler.Handler
-	Sitemap         *sitemapHandler.Handler
-	Feed            *feedHandler.Handler
-	Theme           *themeHandler.Handler
-	InstalledTheme  *installedThemeHandler.Handler
-	EmailSettings   *emailSettingsHandler.Handler
-	Features        *featuresHandler.Handler
-	GlobalConfig    *globalConfigHandler.Handler
-	User            *userHandler.Handler
-	SEO             *seoHandler.Handler
-	Search          *searchhandler.Handler
-	Role            *roleHandler.Handler
-	Marketplace     *marketplaceHandler.Handler
-	Wizard          *wizardHandler.Handler
-	AI              *aiHandler.Handler
-	ChunkedUpload   *chunkedUploadHandler.Handler
-	MediaFolder     *mediaFolderHandler.Handler
-	Migration       *migrationHandler.Handler
-	Site            *siteHandler.Handler
-	Storage         *storageHandler.Handler
-	System          *systemHandler.Handler
-	Translation     *translationHandler.Handler
-	UnifiedPage     *unifiedPageHandler.Handler
-	PageTemplate    *pageTemplateHandler.Handler
-	ThemeExport     *themeExportHandler.Handler
+	Auth           *authHandler.Handler
+	Article        *articleHandler.Handler
+	Public         *publicHandler.Handler
+	Bootstrap      *bootstrapHandler.Handler
+	Media          *mediaHandler.Handler
+	Analytics      *analyticsHandler.Handler
+	Category       *categoryHandler.Handler
+	Tag            *tagHandler.Handler
+	Menu           *menuHandler.Handler
+	AuditLog       *auditlogHandler.Handler
+	Sitemap        *sitemapHandler.Handler
+	Feed           *feedHandler.Handler
+	Theme          *themeHandler.Handler
+	InstalledTheme *installedThemeHandler.Handler
+	EmailSettings  *emailSettingsHandler.Handler
+	Features       *featuresHandler.Handler
+	GlobalConfig   *globalConfigHandler.Handler
+	User           *userHandler.Handler
+	SEO            *seoHandler.Handler
+	Search         *searchhandler.Handler
+	Role           *roleHandler.Handler
+	Marketplace    *marketplaceHandler.Handler
+	Wizard         *wizardHandler.Handler
+	AI             *aiHandler.Handler
+	ChunkedUpload  *chunkedUploadHandler.Handler
+	MediaFolder    *mediaFolderHandler.Handler
+	Migration      *migrationHandler.Handler
+	Site           *siteHandler.Handler
+	Storage        *storageHandler.Handler
+	System         *systemHandler.Handler
+	Translation    *translationHandler.Handler
+	UnifiedPage    *unifiedPageHandler.Handler
+	PageTemplate   *pageTemplateHandler.Handler
+	ThemeExport    *themeExportHandler.Handler
 }
 
 // RouteDeps holds dependencies needed by route middleware.
@@ -272,223 +272,232 @@ func registerRoutes(router *gin.Engine, handlers *Handlers, deps *RouteDeps) {
 	// Legacy middleware kept for backward compatibility with existing JWT tokens.
 	// New RBAC permission checks are applied at the route-group level.
 	adminGroup.Use(middleware.RequireAdminOrEditor())
+	require := func(resource, action string) gin.HandlerFunc {
+		return middleware.RequirePermission(resource, action, deps.UserRepo, deps.RBACCache)
+	}
 
 	// Register module routes
 	deps.ModuleMgr.RegisterAllRoutes(publicGroup, adminGroup)
 
 	{
 		// Media management
-		adminGroup.POST("/media/upload", handlers.Media.Upload)
-		adminGroup.GET("/media", handlers.Media.List)
-		adminGroup.DELETE("/media/:id", handlers.Media.Delete)
-		adminGroup.PUT("/media/:id/crop", handlers.Media.Recrop)
-		adminGroup.PUT("/media/:id", handlers.Media.Rename)
-		adminGroup.GET("/media/:id/usages", handlers.Media.GetUsages)
+		adminGroup.POST("/media/upload", require("media", "create"), handlers.Media.Upload)
+		adminGroup.GET("/media", require("media", "read"), handlers.Media.List)
+		adminGroup.DELETE("/media/:id", require("media", "delete"), handlers.Media.Delete)
+		adminGroup.PUT("/media/:id/crop", require("media", "update"), handlers.Media.Recrop)
+		adminGroup.PUT("/media/:id", require("media", "update"), handlers.Media.Rename)
+		adminGroup.GET("/media/:id/usages", require("media", "read"), handlers.Media.GetUsages)
 
 		// Analytics (requires analytics:read via RBAC)
 		adminAnalytics := adminGroup.Group("")
-		adminAnalytics.Use(middleware.RequirePermission("analytics", "read", deps.UserRepo, deps.RBACCache))
+		adminAnalytics.Use(require("analytics", "read"))
 		{
 			adminAnalytics.GET("/analytics/summary", handlers.Analytics.GetSummary)
 		}
 
 		// Article management
-		adminGroup.GET("/articles", handlers.Article.AdminList)
-		adminGroup.GET("/articles/:id", handlers.Article.AdminGetByID)
-		adminGroup.POST("/articles", handlers.Article.AdminCreate)
-		adminGroup.PUT("/articles/:id", handlers.Article.AdminUpdate)
-		adminGroup.DELETE("/articles/:id", handlers.Article.AdminDelete)
-		adminGroup.GET("/articles/:id/export", handlers.Article.AdminExportMarkdown)
-		adminGroup.POST("/articles/import", handlers.Article.AdminImportMarkdown)
+		adminGroup.GET("/articles", require("articles", "read"), handlers.Article.AdminList)
+		adminGroup.GET("/articles/:id", require("articles", "read"), handlers.Article.AdminGetByID)
+		adminGroup.POST("/articles", require("articles", "create"), handlers.Article.AdminCreate)
+		adminGroup.PUT("/articles/:id", require("articles", "update"), handlers.Article.AdminUpdate)
+		adminGroup.DELETE("/articles/:id", require("articles", "delete"), handlers.Article.AdminDelete)
+		adminGroup.GET("/articles/:id/export", require("articles", "read"), handlers.Article.AdminExportMarkdown)
+		adminGroup.POST("/articles/import", require("articles", "create"), handlers.Article.AdminImportMarkdown)
 
 		// Category management
-		adminGroup.GET("/categories", handlers.Category.List)
-		adminGroup.GET("/categories/tree", handlers.Category.ListTree)
-		adminGroup.GET("/categories/:id", handlers.Category.GetByID)
-		adminGroup.POST("/categories", handlers.Category.Create)
-		adminGroup.PUT("/categories/:id", handlers.Category.Update)
-		adminGroup.DELETE("/categories/:id", handlers.Category.Delete)
+		adminGroup.GET("/categories", require("categories", "read"), handlers.Category.List)
+		adminGroup.GET("/categories/tree", require("categories", "read"), handlers.Category.ListTree)
+		adminGroup.GET("/categories/:id", require("categories", "read"), handlers.Category.GetByID)
+		adminGroup.POST("/categories", require("categories", "create"), handlers.Category.Create)
+		adminGroup.PUT("/categories/:id", require("categories", "update"), handlers.Category.Update)
+		adminGroup.DELETE("/categories/:id", require("categories", "delete"), handlers.Category.Delete)
 
 		// Tag management
-		adminGroup.GET("/tags", handlers.Tag.List)
-		adminGroup.POST("/tags", handlers.Tag.Create)
-		adminGroup.PUT("/tags/:id", handlers.Tag.Update)
-		adminGroup.DELETE("/tags/:id", handlers.Tag.Delete)
+		adminGroup.GET("/tags", require("tags", "read"), handlers.Tag.List)
+		adminGroup.POST("/tags", require("tags", "create"), handlers.Tag.Create)
+		adminGroup.PUT("/tags/:id", require("tags", "update"), handlers.Tag.Update)
+		adminGroup.DELETE("/tags/:id", require("tags", "delete"), handlers.Tag.Delete)
 
 		// Menu management
-		adminGroup.GET("/menus", handlers.Menu.ListGroups)
-		adminGroup.POST("/menus", handlers.Menu.CreateGroup)
-		adminGroup.GET("/menus/:id", handlers.Menu.GetGroup)
-		adminGroup.PUT("/menus/:id", handlers.Menu.UpdateGroup)
-		adminGroup.DELETE("/menus/:id", handlers.Menu.DeleteGroup)
-		adminGroup.PUT("/menus/:id/primary", handlers.Menu.SetPrimary)
-		adminGroup.POST("/menus/:id/items", handlers.Menu.CreateItem)
-		adminGroup.PUT("/menus/:id/items/:itemId", handlers.Menu.UpdateItem)
-		adminGroup.DELETE("/menus/:id/items/:itemId", handlers.Menu.DeleteItem)
-		adminGroup.PUT("/menus/:id/items/reorder", handlers.Menu.ReorderItems)
+		adminGroup.GET("/menus", require("menus", "read"), handlers.Menu.ListGroups)
+		adminGroup.POST("/menus", require("menus", "create"), handlers.Menu.CreateGroup)
+		adminGroup.GET("/menus/:id", require("menus", "read"), handlers.Menu.GetGroup)
+		adminGroup.PUT("/menus/:id", require("menus", "update"), handlers.Menu.UpdateGroup)
+		adminGroup.DELETE("/menus/:id", require("menus", "delete"), handlers.Menu.DeleteGroup)
+		adminGroup.PUT("/menus/:id/primary", require("menus", "update"), handlers.Menu.SetPrimary)
+		adminGroup.POST("/menus/:id/items", require("menus", "update"), handlers.Menu.CreateItem)
+		adminGroup.PUT("/menus/:id/items/:itemId", require("menus", "update"), handlers.Menu.UpdateItem)
+		adminGroup.DELETE("/menus/:id/items/:itemId", require("menus", "update"), handlers.Menu.DeleteItem)
+		adminGroup.PUT("/menus/:id/items/reorder", require("menus", "update"), handlers.Menu.ReorderItems)
 
 		// Audit logs (requires audit_logs:read via RBAC)
 		adminAudit := adminGroup.Group("")
-		adminAudit.Use(middleware.RequirePermission("audit_logs", "read", deps.UserRepo, deps.RBACCache))
+		adminAudit.Use(require("audit_logs", "read"))
 		{
 			adminAudit.GET("/audit-logs", handlers.AuditLog.List)
 		}
 
 		// Theme token management (existing)
-		adminGroup.GET("/theme", handlers.Theme.AdminGet)
-		adminGroup.PUT("/theme", handlers.Theme.AdminUpdate)
+		adminGroup.GET("/theme", require("themes", "read"), handlers.Theme.AdminGet)
+		adminGroup.PUT("/theme", require("themes", "update"), handlers.Theme.AdminUpdate)
 
 		// Installed theme management
-		adminGroup.GET("/themes", handlers.InstalledTheme.AdminList)
-		adminGroup.GET("/themes/:id", handlers.InstalledTheme.AdminGetByID)
-		adminGroup.POST("/themes", handlers.InstalledTheme.AdminCreate)
-		adminGroup.PUT("/themes/:id", handlers.InstalledTheme.AdminUpdate)
-		adminGroup.DELETE("/themes/:id", handlers.InstalledTheme.AdminDelete)
-		adminGroup.PUT("/themes/:id/activate", handlers.InstalledTheme.AdminActivate)
+		adminGroup.GET("/themes", require("themes", "read"), handlers.InstalledTheme.AdminList)
+		adminGroup.GET("/themes/:id", require("themes", "read"), handlers.InstalledTheme.AdminGetByID)
+		adminGroup.POST("/themes", require("themes", "create"), handlers.InstalledTheme.AdminCreate)
+		adminGroup.PUT("/themes/:id", require("themes", "update"), handlers.InstalledTheme.AdminUpdate)
+		adminGroup.DELETE("/themes/:id", require("themes", "delete"), handlers.InstalledTheme.AdminDelete)
+		adminGroup.PUT("/themes/:id/activate", require("themes", "manage"), handlers.InstalledTheme.AdminActivate)
 
 		// Email settings management
-		adminGroup.GET("/email-settings", handlers.EmailSettings.HandleGet)
-		adminGroup.PUT("/email-settings", handlers.EmailSettings.HandleUpdate)
-		adminGroup.POST("/email-settings/test", handlers.EmailSettings.HandleTest)
+		adminGroup.GET("/email-settings", require("settings", "read"), handlers.EmailSettings.HandleGet)
+		adminGroup.PUT("/email-settings", require("settings", "manage"), handlers.EmailSettings.HandleUpdate)
+		adminGroup.POST("/email-settings/test", require("settings", "manage"), handlers.EmailSettings.HandleTest)
 
 		// Global config (branding / identity / SEO defaults)
-		handlers.GlobalConfig.RegisterRoutes(adminGroup)
+		globalConfigAdmin := adminGroup.Group("")
+		globalConfigAdmin.Use(require("settings", "manage"))
+		handlers.GlobalConfig.RegisterRoutes(globalConfigAdmin)
 
 		// Features (route gates, blog comments/rss toggles)
-		handlers.Features.RegisterRoutes(adminGroup)
+		featuresAdmin := adminGroup.Group("")
+		featuresAdmin.Use(require("settings", "manage"))
+		handlers.Features.RegisterRoutes(featuresAdmin)
 
-		// User management (requires users:manage via RBAC)
+		// User management
 		adminUsers := adminGroup.Group("/users")
-		adminUsers.Use(middleware.RequirePermission("users", "manage", deps.UserRepo, deps.RBACCache))
 		{
-			adminUsers.GET("", handlers.User.List)
-			adminUsers.GET("/:id", handlers.User.GetByID)
-			adminUsers.POST("", handlers.User.Create)
-			adminUsers.PUT("/:id", handlers.User.Update)
-			adminUsers.DELETE("/:id", handlers.User.Delete)
+			adminUsers.GET("", require("users", "read"), handlers.User.List)
+			adminUsers.GET("/:id", require("users", "read"), handlers.User.GetByID)
+			adminUsers.POST("", require("users", "create"), handlers.User.Create)
+			adminUsers.PUT("/:id", require("users", "update"), handlers.User.Update)
+			adminUsers.DELETE("/:id", require("users", "delete"), handlers.User.Delete)
 		}
 
-		// RBAC Role management (requires roles:manage via RBAC)
+		// RBAC Role management
 		adminRoles := adminGroup.Group("/roles")
-		adminRoles.Use(middleware.RequirePermission("roles", "manage", deps.UserRepo, deps.RBACCache))
 		{
-			adminRoles.GET("", handlers.Role.List)
-			adminRoles.GET("/:id", handlers.Role.GetByID)
-			adminRoles.POST("", handlers.Role.Create)
-			adminRoles.PUT("/:id", handlers.Role.Update)
-			adminRoles.DELETE("/:id", handlers.Role.Delete)
-			adminRoles.POST("/assign", handlers.Role.AssignRole)
-			adminRoles.POST("/unassign", handlers.Role.UnassignRole)
-			adminRoles.GET("/user/:userId", handlers.Role.GetUserRoles)
+			adminRoles.GET("", require("roles", "read"), handlers.Role.List)
+			adminRoles.GET("/:id", require("roles", "read"), handlers.Role.GetByID)
+			adminRoles.POST("", require("roles", "create"), handlers.Role.Create)
+			adminRoles.PUT("/:id", require("roles", "update"), handlers.Role.Update)
+			adminRoles.DELETE("/:id", require("roles", "delete"), handlers.Role.Delete)
+			adminRoles.POST("/assign", require("roles", "manage"), handlers.Role.AssignRole)
+			adminRoles.POST("/unassign", require("roles", "manage"), handlers.Role.UnassignRole)
+			adminRoles.GET("/user/:userId", require("roles", "read"), handlers.Role.GetUserRoles)
 		}
 
 		// Permission listing (requires roles:read via RBAC)
-		adminGroup.GET("/permissions", handlers.Role.ListPermissions)
+		adminGroup.GET("/permissions", require("roles", "read"), handlers.Role.ListPermissions)
 
 		// AI Site Building Wizard
-		adminGroup.POST("/wizard/generate-plan", handlers.Wizard.GeneratePlan)
-		adminGroup.POST("/wizard/apply-plan", handlers.Wizard.ApplyPlan)
-		adminGroup.POST("/wizard/suggest-colors", handlers.Wizard.SuggestColors)
-		adminGroup.POST("/wizard/generate-content", handlers.Wizard.GenerateContent)
+		adminGroup.POST("/wizard/generate-plan", require("pages", "create"), handlers.Wizard.GeneratePlan)
+		adminGroup.POST("/wizard/apply-plan", require("pages", "create"), handlers.Wizard.ApplyPlan)
+		adminGroup.POST("/wizard/suggest-colors", require("pages", "create"), handlers.Wizard.SuggestColors)
+		adminGroup.POST("/wizard/generate-content", require("pages", "create"), handlers.Wizard.GenerateContent)
 
 		// Marketplace (plugin/theme registry)
-		adminGroup.GET("/marketplace/items", handlers.Marketplace.AdminListItems)
-		adminGroup.GET("/marketplace/installed", handlers.Marketplace.AdminListInstalled)
-		adminGroup.POST("/marketplace/items", handlers.Marketplace.AdminRegisterItem)
-		adminGroup.GET("/marketplace/items/:slug", handlers.Marketplace.AdminGetItem)
-		adminGroup.POST("/marketplace/items/:slug/install", handlers.Marketplace.AdminInstallItem)
-		adminGroup.PUT("/marketplace/items/:slug/update", handlers.Marketplace.AdminUpdateItem)
-		adminGroup.DELETE("/marketplace/items/:slug", handlers.Marketplace.AdminUninstallItem)
-		adminGroup.POST("/marketplace/items/:slug/versions", handlers.Marketplace.AdminAddVersion)
+		adminGroup.GET("/marketplace/items", require("plugins", "read"), handlers.Marketplace.AdminListItems)
+		adminGroup.GET("/marketplace/installed", require("plugins", "read"), handlers.Marketplace.AdminListInstalled)
+		adminGroup.POST("/marketplace/items", require("plugins", "manage"), handlers.Marketplace.AdminRegisterItem)
+		adminGroup.GET("/marketplace/items/:slug", require("plugins", "read"), handlers.Marketplace.AdminGetItem)
+		adminGroup.POST("/marketplace/items/:slug/install", require("plugins", "manage"), handlers.Marketplace.AdminInstallItem)
+		adminGroup.PUT("/marketplace/items/:slug/update", require("plugins", "manage"), handlers.Marketplace.AdminUpdateItem)
+		adminGroup.DELETE("/marketplace/items/:slug", require("plugins", "manage"), handlers.Marketplace.AdminUninstallItem)
+		adminGroup.POST("/marketplace/items/:slug/versions", require("plugins", "manage"), handlers.Marketplace.AdminAddVersion)
 
 		// AI provider management
-		adminGroup.POST("/ai/chat", handlers.AI.Chat)
-		adminGroup.POST("/ai/summarize", handlers.AI.Summarize)
-		adminGroup.POST("/ai/suggest-titles", handlers.AI.SuggestTitles)
-		adminGroup.POST("/ai/suggest-tags", handlers.AI.SuggestTags)
-		adminGroup.POST("/ai/complete", handlers.AI.Complete)
-		adminGroup.GET("/ai/config", handlers.AI.GetConfig)
-		adminGroup.PUT("/ai/config", handlers.AI.UpdateConfig)
+		adminGroup.POST("/ai/chat", require("settings", "manage"), handlers.AI.Chat)
+		adminGroup.POST("/ai/summarize", require("settings", "manage"), handlers.AI.Summarize)
+		adminGroup.POST("/ai/suggest-titles", require("settings", "manage"), handlers.AI.SuggestTitles)
+		adminGroup.POST("/ai/suggest-tags", require("settings", "manage"), handlers.AI.SuggestTags)
+		adminGroup.POST("/ai/complete", require("settings", "manage"), handlers.AI.Complete)
+		adminGroup.GET("/ai/config", require("settings", "manage"), handlers.AI.GetConfig)
+		adminGroup.PUT("/ai/config", require("settings", "manage"), handlers.AI.UpdateConfig)
 
 		// Chunked upload
-		adminGroup.POST("/media/upload/init", handlers.ChunkedUpload.InitUpload)
-		adminGroup.POST("/media/upload/:uploadId/chunk", handlers.ChunkedUpload.UploadChunk)
-		adminGroup.POST("/media/upload/:uploadId/complete", handlers.ChunkedUpload.CompleteUpload)
+		adminGroup.POST("/media/upload/init", require("media", "create"), handlers.ChunkedUpload.InitUpload)
+		adminGroup.POST("/media/upload/:uploadId/chunk", require("media", "create"), handlers.ChunkedUpload.UploadChunk)
+		adminGroup.POST("/media/upload/:uploadId/complete", require("media", "create"), handlers.ChunkedUpload.CompleteUpload)
 
 		// Media folders
-		adminGroup.GET("/media/folders", handlers.MediaFolder.ListTree)
-		adminGroup.POST("/media/folders", handlers.MediaFolder.Create)
-		adminGroup.PUT("/media/folders/:id", handlers.MediaFolder.Rename)
-		adminGroup.DELETE("/media/folders/:id", handlers.MediaFolder.Delete)
-		adminGroup.PUT("/media/:id/move", handlers.MediaFolder.MoveMedia)
+		adminGroup.GET("/media/folders", require("media", "read"), handlers.MediaFolder.ListTree)
+		adminGroup.POST("/media/folders", require("media", "create"), handlers.MediaFolder.Create)
+		adminGroup.PUT("/media/folders/:id", require("media", "update"), handlers.MediaFolder.Rename)
+		adminGroup.DELETE("/media/folders/:id", require("media", "delete"), handlers.MediaFolder.Delete)
+		adminGroup.PUT("/media/:id/move", require("media", "update"), handlers.MediaFolder.MoveMedia)
 
 		// Data migration (import from WordPress, Halo, Markdown)
-		adminGroup.POST("/migration/import", handlers.Migration.Import)
-		adminGroup.GET("/migration/jobs", handlers.Migration.ListJobs)
-		adminGroup.GET("/migration/jobs/:jobId", handlers.Migration.GetJob)
-		adminGroup.GET("/migration/jobs/:jobId/stream", handlers.Migration.StreamProgress)
+		adminGroup.POST("/migration/import", require("system", "manage"), handlers.Migration.Import)
+		adminGroup.GET("/migration/jobs", require("system", "manage"), handlers.Migration.ListJobs)
+		adminGroup.GET("/migration/jobs/:jobId", require("system", "manage"), handlers.Migration.GetJob)
+		adminGroup.GET("/migration/jobs/:jobId/stream", require("system", "manage"), handlers.Migration.StreamProgress)
 
 		// Site management
-		adminGroup.GET("/sites", handlers.Site.AdminList)
-		adminGroup.GET("/sites/:id", handlers.Site.AdminGetByID)
-		adminGroup.POST("/sites", handlers.Site.AdminCreate)
-		adminGroup.PUT("/sites/:id", handlers.Site.AdminUpdate)
-		adminGroup.DELETE("/sites/:id", handlers.Site.AdminDelete)
-		adminGroup.GET("/sites/:id/users", handlers.Site.AdminListUsers)
-		adminGroup.POST("/sites/:id/users", handlers.Site.AdminAssignUser)
-		adminGroup.DELETE("/sites/:id/users/:userId", handlers.Site.AdminUnassignUser)
-		adminGroup.GET("/sites/:id/export", handlers.Site.AdminExport)
-		adminGroup.POST("/sites/import", handlers.Site.AdminImport)
+		adminGroup.GET("/sites", require("sites", "read"), handlers.Site.AdminList)
+		adminGroup.GET("/sites/:id", require("sites", "read"), handlers.Site.AdminGetByID)
+		adminGroup.POST("/sites", require("sites", "create"), handlers.Site.AdminCreate)
+		adminGroup.PUT("/sites/:id", require("sites", "update"), handlers.Site.AdminUpdate)
+		adminGroup.DELETE("/sites/:id", require("sites", "delete"), handlers.Site.AdminDelete)
+		adminGroup.GET("/sites/:id/users", require("sites", "manage"), handlers.Site.AdminListUsers)
+		adminGroup.POST("/sites/:id/users", require("sites", "manage"), handlers.Site.AdminAssignUser)
+		adminGroup.DELETE("/sites/:id/users/:userId", require("sites", "manage"), handlers.Site.AdminUnassignUser)
+		adminGroup.GET("/sites/:id/export", require("sites", "manage"), handlers.Site.AdminExport)
+		adminGroup.POST("/sites/import", require("sites", "manage"), handlers.Site.AdminImport)
 
 		// Storage configuration
-		adminGroup.GET("/storage/config", handlers.Storage.GetConfig)
-		adminGroup.PUT("/storage/config", handlers.Storage.UpdateConfig)
-		adminGroup.POST("/storage/test", handlers.Storage.TestConnection)
+		adminGroup.GET("/storage/config", require("settings", "manage"), handlers.Storage.GetConfig)
+		adminGroup.PUT("/storage/config", require("settings", "manage"), handlers.Storage.UpdateConfig)
+		adminGroup.POST("/storage/test", require("settings", "manage"), handlers.Storage.TestConnection)
 
 		// System status
-		adminGroup.GET("/system/status", handlers.System.GetStatus)
+		adminGroup.GET("/system/status", require("system", "read"), handlers.System.GetStatus)
 
 		// Translation & glossary
-		adminGroup.POST("/translate", handlers.Translation.Translate)
-		adminGroup.POST("/translate/batch", handlers.Translation.BatchTranslate)
-		adminGroup.POST("/translate/article/:id", handlers.Translation.TranslateArticle)
-		adminGroup.GET("/glossary", handlers.Translation.GlossaryList)
-		adminGroup.POST("/glossary", handlers.Translation.GlossaryCreate)
-		adminGroup.PUT("/glossary/:id", handlers.Translation.GlossaryUpdate)
-		adminGroup.DELETE("/glossary/:id", handlers.Translation.GlossaryDelete)
+		adminGroup.POST("/translate", require("settings", "manage"), handlers.Translation.Translate)
+		adminGroup.POST("/translate/batch", require("settings", "manage"), handlers.Translation.BatchTranslate)
+		adminGroup.POST("/translate/article/:id", require("settings", "manage"), handlers.Translation.TranslateArticle)
+		adminGroup.GET("/glossary", require("settings", "manage"), handlers.Translation.GlossaryList)
+		adminGroup.POST("/glossary", require("settings", "manage"), handlers.Translation.GlossaryCreate)
+		adminGroup.PUT("/glossary/:id", require("settings", "manage"), handlers.Translation.GlossaryUpdate)
+		adminGroup.DELETE("/glossary/:id", require("settings", "manage"), handlers.Translation.GlossaryDelete)
 
 		// Page management (unified page system)
-		adminGroup.GET("/pages", handlers.UnifiedPage.AdminList)
-		adminGroup.GET("/pages/:id", handlers.UnifiedPage.AdminGetByID)
-		adminGroup.POST("/pages", handlers.UnifiedPage.AdminCreate)
-		adminGroup.GET("/pages/:id/draft", handlers.UnifiedPage.AdminGetDraft)
-		adminGroup.PUT("/pages/:id/draft", handlers.UnifiedPage.AdminUpdateDraft)
-		adminGroup.POST("/pages/:id/publish", handlers.UnifiedPage.AdminPublish)
-		adminGroup.POST("/pages/:id/unpublish", handlers.UnifiedPage.AdminUnpublish)
-		adminGroup.POST("/pages/:id/rollback", handlers.UnifiedPage.AdminRollback)
-		adminGroup.GET("/pages/:id/versions", handlers.UnifiedPage.AdminListVersions)
-		adminGroup.GET("/pages/:id/versions/:version", handlers.UnifiedPage.AdminGetVersionDetail)
-		adminGroup.DELETE("/pages/:id", handlers.UnifiedPage.AdminDelete)
+		adminGroup.GET("/pages", require("pages", "read"), handlers.UnifiedPage.AdminList)
+		adminGroup.GET("/pages/:id", require("pages", "read"), handlers.UnifiedPage.AdminGetByID)
+		adminGroup.POST("/pages", require("pages", "create"), handlers.UnifiedPage.AdminCreate)
+		adminGroup.GET("/pages/:id/draft", require("pages", "read"), handlers.UnifiedPage.AdminGetDraft)
+		adminGroup.PUT("/pages/:id/draft", require("pages", "update"), handlers.UnifiedPage.AdminUpdateDraft)
+		adminGroup.POST("/pages/:id/publish", require("pages", "publish"), handlers.UnifiedPage.AdminPublish)
+		adminGroup.POST("/pages/:id/unpublish", require("pages", "publish"), handlers.UnifiedPage.AdminUnpublish)
+		adminGroup.POST("/pages/:id/rollback", require("pages", "publish"), handlers.UnifiedPage.AdminRollback)
+		adminGroup.GET("/pages/:id/versions", require("pages", "read"), handlers.UnifiedPage.AdminListVersions)
+		adminGroup.GET("/pages/:id/versions/:version", require("pages", "read"), handlers.UnifiedPage.AdminGetVersionDetail)
+		adminGroup.DELETE("/pages/:id", require("pages", "delete"), handlers.UnifiedPage.AdminDelete)
 
 		// Page template management
-		adminGroup.GET("/templates", handlers.PageTemplate.List)
-		adminGroup.POST("/templates", handlers.PageTemplate.Create)
-		adminGroup.PUT("/templates/:id", handlers.PageTemplate.Update)
-		adminGroup.DELETE("/templates/:id", handlers.PageTemplate.Delete)
-		adminGroup.POST("/templates/:id/duplicate", handlers.PageTemplate.Duplicate)
+		adminGroup.GET("/templates", require("pages", "read"), handlers.PageTemplate.List)
+		adminGroup.POST("/templates", require("pages", "create"), handlers.PageTemplate.Create)
+		adminGroup.PUT("/templates/:id", require("pages", "update"), handlers.PageTemplate.Update)
+		adminGroup.DELETE("/templates/:id", require("pages", "delete"), handlers.PageTemplate.Delete)
+		adminGroup.POST("/templates/:id/duplicate", require("pages", "create"), handlers.PageTemplate.Duplicate)
 
 		// Theme export/import
-		adminGroup.POST("/theme-packages/export", handlers.ThemeExport.Export)
-		adminGroup.POST("/theme-packages/import", handlers.ThemeExport.Import)
-		adminGroup.GET("/theme-packages", handlers.ThemeExport.List)
-		adminGroup.PUT("/theme-packages/:id/apply", handlers.ThemeExport.Apply)
+		adminGroup.POST("/theme-packages/export", require("themes", "manage"), handlers.ThemeExport.Export)
+		adminGroup.POST("/theme-packages/import", require("themes", "manage"), handlers.ThemeExport.Import)
+		adminGroup.GET("/theme-packages", require("themes", "manage"), handlers.ThemeExport.List)
+		adminGroup.PUT("/theme-packages/:id/apply", require("themes", "manage"), handlers.ThemeExport.Apply)
 	}
 
 	// SEO routes (public + admin)
-	handlers.SEO.RegisterRoutes(publicGroup, adminGroup)
+	seoAdmin := adminGroup.Group("")
+	seoAdmin.Use(require("settings", "manage"))
+	handlers.SEO.RegisterRoutes(publicGroup, seoAdmin)
 
 	// Search routes (public + admin)
-	handlers.Search.RegisterRoutes(publicGroup, adminGroup)
+	searchAdmin := adminGroup.Group("")
+	searchAdmin.Use(require("settings", "manage"))
+	handlers.Search.RegisterRoutes(publicGroup, searchAdmin)
 
 	// Serve uploaded files statically
 	router.Static("/uploads", cfg.UploadDir)

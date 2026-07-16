@@ -4,7 +4,6 @@ import (
 	"net/http"
 
 	"blotting-consultancy/internal/middleware"
-	"blotting-consultancy/internal/model"
 	"blotting-consultancy/pkg/apierror"
 
 	"github.com/gin-gonic/gin"
@@ -42,21 +41,19 @@ func (h *Handler) Me(c *gin.Context) {
 		return
 	}
 
-	// Fetch full user from database to get permissions
-	fullUser, err := h.userRepo.FindByID(c.Request.Context(), user.UserID)
+	// Fetch roles and permissions so the response reflects backend-enforced RBAC.
+	fullUser, err := h.userRepo.FindByIDWithRoles(c.Request.Context(), user.UserID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, apierror.InternalServerError("Failed to fetch user info"))
-		return
+		// Older installations may not have RBAC tables yet. Keep /auth/me
+		// available during migration and derive permissions from the legacy role.
+		fullUser, err = h.userRepo.FindByID(c.Request.Context(), user.UserID)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, apierror.InternalServerError("Failed to fetch user info"))
+			return
+		}
 	}
 
-	// Build permissions list
-	permissions := fullUser.Permissions
-	if fullUser.IsSuperAdmin {
-		permissions = model.ValidPermissions
-	}
-	if permissions == nil {
-		permissions = []string{}
-	}
+	permissions := fullUser.EffectivePermissionKeys()
 
 	c.JSON(http.StatusOK, MeResponse{
 		ID:           fullUser.ID,

@@ -5,6 +5,7 @@ import { getAdminArticles } from "@/api/articles";
 import { listMedia } from "@/api/media";
 import { listUnifiedPages } from "@/api/unifiedPages";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
+import { ADMIN_PAGES_PATH } from "@/router/adminAccess";
 
 interface StatCard {
   label: string;
@@ -148,7 +149,7 @@ export default function AdminDashboardPage() {
     },
     {
       label: "编辑首页",
-      path: "/admin/content/editor/home",
+      path: ADMIN_PAGES_PATH,
       color: "bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200",
       icon: (
         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>

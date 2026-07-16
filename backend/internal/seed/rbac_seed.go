@@ -51,8 +51,8 @@ var BuiltinRoles = []RBACSeedConfig{
 		DisplayName: "Editor",
 		Description: "Content editing access for articles, pages, media, and related resources",
 		Permissions: []string{
-			"articles:create", "articles:read", "articles:update", "articles:delete", "articles:publish",
-			"pages:create", "pages:read", "pages:update", "pages:delete", "pages:publish",
+			"articles:create", "articles:read", "articles:update", "articles:delete",
+			"pages:create", "pages:read", "pages:update", "pages:delete",
 			"media:create", "media:read", "media:update", "media:delete",
 			"comments:create", "comments:read", "comments:update", "comments:delete",
 			"categories:create", "categories:read", "categories:update", "categories:delete",
@@ -151,22 +151,22 @@ func seedPermissions(ctx context.Context, roleRepo repository.RoleRepository) (m
 // seedRole creates a built-in role if it doesn't exist and assigns permissions
 func seedRole(ctx context.Context, roleRepo repository.RoleRepository, cfg RBACSeedConfig, permMap map[string]uint) error {
 	existing, err := roleRepo.FindByName(ctx, cfg.Name)
-	if err == nil && existing != nil {
-		log.Printf("Role %s already exists (id=%d), skipping", cfg.Name, existing.ID)
-		return nil
-	}
+	role := existing
+	if err != nil || role == nil {
+		role = &model.RBACRole{
+			Name:        cfg.Name,
+			DisplayName: cfg.DisplayName,
+			Description: cfg.Description,
+			IsSystem:    true,
+		}
 
-	role := &model.RBACRole{
-		Name:        cfg.Name,
-		DisplayName: cfg.DisplayName,
-		Description: cfg.Description,
-		IsSystem:    true,
+		if err := roleRepo.Create(ctx, role); err != nil {
+			return fmt.Errorf("create role: %w", err)
+		}
+		log.Printf("Created role: %s (id=%d)", cfg.Name, role.ID)
+	} else {
+		log.Printf("Synchronizing permissions for role %s (id=%d)", cfg.Name, role.ID)
 	}
-
-	if err := roleRepo.Create(ctx, role); err != nil {
-		return fmt.Errorf("create role: %w", err)
-	}
-	log.Printf("Created role: %s (id=%d)", cfg.Name, role.ID)
 
 	// Collect permission IDs for this role
 	var permIDs []uint
