@@ -105,6 +105,17 @@ deploy_frontend() {
   ssh "${DEPLOY_USER}@${DEPLOY_HOST}" bash <<EOF
 set -euo pipefail
 
+run_privileged() {
+  if [ "\$(id -u)" -eq 0 ]; then
+    "\$@"
+  elif command -v sudo >/dev/null 2>&1; then
+    sudo "\$@"
+  else
+    echo "ERROR: Root privileges are required to run: \$*"
+    return 1
+  fi
+}
+
 # Create version directory
 mkdir -p "${FRONTEND_PATH}/versions/${VERSION}"
 
@@ -124,7 +135,7 @@ mv -Tf "${FRONTEND_PATH}/current_tmp" "${FRONTEND_PATH}/current"
 
 # Reload web server (if using nginx)
 if command -v nginx &> /dev/null && systemctl is-active --quiet nginx; then
-  sudo systemctl reload nginx
+  run_privileged systemctl reload nginx
 fi
 
 # Cleanup old artifact
@@ -149,6 +160,17 @@ deploy_backend() {
   ssh "${DEPLOY_USER}@${DEPLOY_HOST}" bash <<EOF
 set -euo pipefail
 
+run_privileged() {
+  if [ "\$(id -u)" -eq 0 ]; then
+    "\$@"
+  elif command -v sudo >/dev/null 2>&1; then
+    sudo "\$@"
+  else
+    echo "ERROR: Root privileges are required to run: \$*"
+    return 1
+  fi
+}
+
 # Create version directory
 mkdir -p "${BACKEND_PATH}/versions/${VERSION}"
 
@@ -172,14 +194,14 @@ if [ -L "${BACKEND_PATH}/current" ]; then
 fi
 
 # Stop service
-sudo systemctl stop "${BACKEND_SERVICE}" || true
+run_privileged systemctl stop "${BACKEND_SERVICE}" || true
 
 # Atomic symlink swap
 ln -snf "${BACKEND_PATH}/versions/${VERSION}" "${BACKEND_PATH}/current_tmp"
 mv -Tf "${BACKEND_PATH}/current_tmp" "${BACKEND_PATH}/current"
 
 # Start service
-sudo systemctl start "${BACKEND_SERVICE}"
+run_privileged systemctl start "${BACKEND_SERVICE}"
 
 # Wait for health check
 sleep 3
@@ -221,8 +243,19 @@ EOF
 
   # Check backend service
   ssh "${DEPLOY_USER}@${DEPLOY_HOST}" bash <<EOF
+run_privileged() {
+  if [ "\$(id -u)" -eq 0 ]; then
+    "\$@"
+  elif command -v sudo >/dev/null 2>&1; then
+    sudo "\$@"
+  else
+    echo "ERROR: Root privileges are required to run: \$*"
+    return 1
+  fi
+}
+
 echo "Backend service status:"
-sudo systemctl status "${BACKEND_SERVICE}" --no-pager || true
+run_privileged systemctl status "${BACKEND_SERVICE}" --no-pager || true
 
 if [ -f "${BACKEND_PATH}/current/build-info.json" ]; then
   echo "Backend build info:"
