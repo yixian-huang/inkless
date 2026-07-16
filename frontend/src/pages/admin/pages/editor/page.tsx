@@ -18,6 +18,7 @@ import {
 import SectionPicker from "./SectionPicker";
 import SectionListItem from "./SectionList";
 import { VersionHistoryPanel, ConflictDialog } from "./VersionHistoryPanel";
+import { useAuth } from "@/contexts/AuthContext";
 import { useBootstrap } from "@/contexts/BootstrapContext";
 
 // ---------------------------------------------------------------------------
@@ -30,6 +31,10 @@ export default function PageEditorPage() {
   const pageId = id ? Number(id) : 0;
   const { metas: sectionMetas } = useSectionRegistry();
   const { refetch: refetchBootstrap } = useBootstrap();
+  const { hasPermission } = useAuth();
+  const canCreate = hasPermission("pages:create");
+  const canUpdate = hasPermission("pages:update");
+  const canPublish = hasPermission("pages:publish");
 
   // -- page metadata --
   const [slug, setSlug] = useState("");
@@ -190,6 +195,7 @@ export default function PageEditorPage() {
 
   // -- create new page --
   const handleCreate = async () => {
+    if (!canCreate) return;
     clearMessages();
     if (!slug.trim()) { setError("请输入 URL 路径"); return; }
     setSaving(true);
@@ -218,6 +224,7 @@ export default function PageEditorPage() {
 
   // -- save draft --
   const handleSave = async () => {
+    if (!canUpdate) return;
     clearMessages();
     setSaving(true);
     try {
@@ -252,6 +259,7 @@ export default function PageEditorPage() {
 
   // -- save live route/navigation metadata --
   const handleSaveMetadata = async () => {
+    if (!canUpdate) return;
     clearMessages();
     setMetadataSaving(true);
     try {
@@ -277,6 +285,7 @@ export default function PageEditorPage() {
 
   // -- publish --
   const handlePublish = async () => {
+    if (!canPublish) return;
     clearMessages();
     if (metadataDirty) {
       setError("页面信息尚未保存；请先保存页面信息，再发布内容");
@@ -309,6 +318,7 @@ export default function PageEditorPage() {
 
   // -- unpublish --
   const handleUnpublish = async () => {
+    if (!canPublish) return;
     clearMessages();
     try {
       await unpublishUnifiedPage(pageId);
@@ -324,6 +334,7 @@ export default function PageEditorPage() {
 
   // -- rollback --
   const handleRollback = async (version: number) => {
+    if (!canPublish) return;
     if (!window.confirm(`确定回滚到版本 ${version}？`)) return;
     clearMessages();
     try {
@@ -400,7 +411,7 @@ export default function PageEditorPage() {
             </button>
           )}
 
-          {isNew ? (
+          {isNew && canCreate ? (
             <button
               onClick={handleCreate}
               disabled={saving || !slug.trim()}
@@ -408,33 +419,37 @@ export default function PageEditorPage() {
             >
               {saving ? "创建中..." : "创建"}
             </button>
-          ) : (
+          ) : !isNew ? (
             <>
-              <button
-                onClick={handleSave}
-                disabled={saving}
-                className="px-4 py-1.5 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 disabled:opacity-50"
-              >
-                {saving ? "保存中..." : "保存草稿"}
-              </button>
-              {status === "published" ? (
+              {canUpdate && (
                 <button
-                  onClick={handleUnpublish}
-                  className="px-4 py-1.5 text-sm border border-orange-400 text-orange-600 rounded-md hover:bg-orange-50"
+                  onClick={handleSave}
+                  disabled={saving}
+                  className="px-4 py-1.5 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 disabled:opacity-50"
                 >
-                  下线
-                </button>
-              ) : (
-                <button
-                  onClick={handlePublish}
-                  disabled={publishing}
-                  className="px-4 py-1.5 bg-green-600 text-white text-sm rounded-md hover:bg-green-700 disabled:opacity-50"
-                >
-                  {publishing ? "发布中..." : "发布"}
+                  {saving ? "保存中..." : "保存草稿"}
                 </button>
               )}
+              {canPublish && (
+                status === "published" ? (
+                  <button
+                    onClick={handleUnpublish}
+                    className="px-4 py-1.5 text-sm border border-orange-400 text-orange-600 rounded-md hover:bg-orange-50"
+                  >
+                    下线
+                  </button>
+                ) : (
+                  <button
+                    onClick={handlePublish}
+                    disabled={publishing}
+                    className="px-4 py-1.5 bg-green-600 text-white text-sm rounded-md hover:bg-green-700 disabled:opacity-50"
+                  >
+                    {publishing ? "发布中..." : "发布"}
+                  </button>
+                )
+              )}
             </>
-          )}
+          ) : null}
         </div>
       </div>
 
@@ -464,7 +479,7 @@ export default function PageEditorPage() {
                 </p>
               )}
             </div>
-            {!isNew && (
+            {!isNew && canUpdate && (
               <button
                 onClick={handleSaveMetadata}
                 disabled={metadataSaving || !metadataDirty || !slug.trim()}
@@ -696,6 +711,7 @@ export default function PageEditorPage() {
           pageId={pageId}
           onClose={() => setShowHistory(false)}
           onRollback={handleRollback}
+          canRollback={canPublish}
         />
       )}
       {conflictVersion !== null && (

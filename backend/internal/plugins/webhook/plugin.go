@@ -71,10 +71,10 @@ type WebhookPayload struct {
 
 // Plugin subscribes to EventBus events and forwards them to configured webhook endpoints.
 type Plugin struct {
-	config         Config
-	bus            eventbus.EventBus
+	config          Config
+	bus             eventbus.EventBus
 	subscriptionIDs map[string]uint64 // eventType -> subscriptionID
-	httpClient     *http.Client
+	httpClient      *http.Client
 }
 
 // New creates a new Webhook plugin with the provided configuration.
@@ -264,7 +264,10 @@ func standardEvents() []string {
 	return []string{
 		eventbus.ContentCreated,
 		eventbus.ContentUpdated,
+		eventbus.ContentDraftUpdated,
 		eventbus.ContentPublished,
+		eventbus.ContentUnpublished,
+		eventbus.ContentRolledBack,
 		eventbus.ContentDeleted,
 		eventbus.CommentCreated,
 		eventbus.CommentApproved,

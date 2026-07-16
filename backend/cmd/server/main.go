@@ -321,9 +321,9 @@ func main() {
 	schedulerService := service.NewSchedulerService(database.DB)
 	schedulerService.Start()
 
-	// Initialize audit logger (kept for future use)
-	auditDbWriter := audit.NewDbWriter(auditEventRepo)
-	_ = auditDbWriter // available for future use
+	// Initialize database-backed audit writer. Audit failures are best-effort
+	// for the request but are emitted to the application logger.
+	auditDbWriter := audit.NewDbWriter(auditEventRepo, log)
 
 	log.Info("Audit logger initialized")
 
@@ -448,7 +448,8 @@ func main() {
 	storageHandlerInst := storageHandler.NewHandler(storageConfigRepo)
 	systemHandlerInst := systemHandler.NewHandler(database.DB, cfg.UploadDir)
 	translationHandlerInst := translationHandler.NewHandler(translationProvider, glossaryRepo, articleRepo)
-	unifiedPageSvc := service.NewUnifiedPageService(unifiedPageRepo, pageVersionRepo)
+	unifiedPageSvc := service.NewUnifiedPageService(unifiedPageRepo, pageVersionRepo, bus).
+		WithAuditWriter(auditDbWriter)
 	unifiedPageHdl := unifiedPageHandler.NewHandler(unifiedPageRepo, pageVersionRepo, unifiedPageSvc, publicCache, bus)
 	pageTemplateHdl := pageTemplateHandler.NewHandler(pageTemplateRepo)
 	themeExportSvc := service.NewThemeExportService(pageTemplateRepo, siteConfigRepo)
@@ -466,6 +467,7 @@ func main() {
 	router.Use(gin.Recovery())                     // Panic recovery
 	router.Use(ginLogger(log))                     // Request logging
 	router.Use(gzip.Gzip(gzip.DefaultCompression)) // Gzip compression
+	router.Use(middleware.AuditContext())          // Request metadata for audit events
 
 	corsConfig := cors.Config{
 		AllowMethods: []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
@@ -525,6 +527,7 @@ func main() {
 		Database:       database,
 		ModuleMgr:      mgr,
 		ContentDocRepo: contentDocRepo,
+		AuditWriter:    auditDbWriter,
 	}
 	registerRoutes(router, handlers, routeDeps)
 	setupHandlerInst.RegisterRoutes(router, middleware.LoginRateLimit())

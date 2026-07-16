@@ -3,6 +3,8 @@
 > 本文档由 5 位 PM 从不同方向头脑风暴产出，并对标 Halo CMS 开源框架进行核心/插件边界划分。
 >
 > 创建时间：2026-02-18
+>
+> 事实状态更新：2026-07-16（Wave 1-B）
 
 ---
 
@@ -21,27 +23,30 @@
 
 ## 一、项目现状
 
-印迹官网（Blotting Consultancy）是一个双语（zh/en）React SPA + Go/Gin CMS 后端的咨询公司官网。
+Impress 是一个双语（zh/en）React SPA + Go/Gin CMS。下表以当前仓库行为为准；后续章节保留原始需求池和产品推演，不再作为实现状态依据。
 
 ### 已有能力
 
-| 模块 | 能力 |
-|------|------|
-| 内容管理 | 8 个固定页面的 JSON 配置编辑、草稿/发布/版本回滚 |
-| 媒体管理 | 图片上传、裁剪、列表管理 |
-| 用户角色 | admin / editor 两级权限，JWT 认证 |
-| 访问统计 | 页面级 PV 统计（今日/7天/30天） |
-| 编辑器 | Schema-driven 表单 + JSON 双模式编辑 |
-| 部署 | Docker + SSH/systemd，支持 SQLite / PostgreSQL |
+| 模块 | 当前状态 | 能力 |
+|------|----------|------|
+| 统一页面 | production | `unified_pages` 统一承载草稿、版本、发布内容、公开 slug、导航与 SEO 元数据；支持发布、下线和回滚 |
+| 文章内容 | production | 文章 CRUD、分类、标签、Markdown/Tiptap 编辑和公开读取 |
+| 公开站点 | production | Bootstrap、统一页面动态路由、主题兼容补位、自动导航、Sitemap、RSS |
+| 权限 | production | JWT + 细粒度 RBAC；主要后台 API 按 read/create/update/delete/publish/manage 收口 |
+| 审计 | production | 登录和后台写操作写入数据库；发布、下线、回滚记录成功/失败、actor、resource 与请求元数据 |
+| 事件/Webhook | production | 内容创建、更新、草稿更新、发布、下线、回滚、删除均有明确事件 |
+| 媒体与备份 | production | 媒体上传/裁剪/目录管理；备份、导入导出接口与权限边界 |
+| 管理端质量门禁 | production | lint、typecheck、前后端测试、Go race test、构建及 Playwright 核心发布链路 |
+| 部署 | production | Docker + SSH/systemd，支持 SQLite / PostgreSQL |
 
-### 缺失能力
+### 受限或未完成能力
 
-- 无博客/文章内容类型
-- 无 SEO 元数据管理（SPA 无 title/description/OG）
-- 无线索获取闭环（无表单、无询价）
-- 编辑体验粗糙（无预览、无拖拽、富文本是纯 textarea）
-- 无数据备份机制
-- 无插件扩展体系
+- `scheduledAt` 和旧调度器尚未接入统一页面 service，定时发布仍不属于发布承诺（Wave 1-C）。
+- migration 与 system status 后端能力已存在，但正式产品入口、审计摘要和验收仍待 Wave 1-D。
+- AI 向导、QA、翻译和远端存储配置仍存在运行时断链，保持 experimental/hidden。
+- 多站点只有管理壳，核心内容尚未完成 `site_id` 数据隔离。
+- Marketplace/Plugin 仍是骨架，尚未形成可安装、启停、升级、卸载的真实生命周期。
+- 线索管理、预约咨询和商业化流程尚未形成完整产品闭环。
 
 ---
 

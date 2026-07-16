@@ -5,6 +5,7 @@ import {
   deleteUnifiedPage,
   type UnifiedPageItem,
 } from "@/api/unifiedPages";
+import { useAuth } from "@/contexts/AuthContext";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 
 export default function AdminPagesPage() {
@@ -15,6 +16,10 @@ export default function AdminPagesPage() {
   const [modeFilter, setModeFilter] = useState("");
 
   const navigate = useNavigate();
+  const { hasPermission } = useAuth();
+  const canCreate = hasPermission("pages:create");
+  const canUpdate = hasPermission("pages:update");
+  const canDelete = hasPermission("pages:delete");
 
   const fetchPages = useCallback(async () => {
     setLoading(true);
@@ -68,12 +73,14 @@ export default function AdminPagesPage() {
             <option value="template">模板</option>
             <option value="composable">自由组合</option>
           </select>
-          <button
-            onClick={() => navigate("/admin/pages/new")}
-            className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm hover:bg-blue-700"
-          >
-            新建页面
-          </button>
+          {canCreate && (
+            <button
+              onClick={() => navigate("/admin/pages/new")}
+              className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm hover:bg-blue-700"
+            >
+              新建页面
+            </button>
+          )}
         </div>
       </div>
 
@@ -147,14 +154,16 @@ export default function AdminPagesPage() {
                       onClick={() => navigate(`/admin/pages/edit/${page.id}`)}
                       className="text-blue-600 hover:text-blue-800"
                     >
-                      编辑
+                      {canUpdate ? "编辑" : "查看"}
                     </button>
-                    <button
-                      onClick={() => handleDelete(page.id)}
-                      className="text-red-600 hover:text-red-800"
-                    >
-                      删除
-                    </button>
+                    {canDelete && (
+                      <button
+                        onClick={() => handleDelete(page.id)}
+                        className="text-red-600 hover:text-red-800"
+                      >
+                        删除
+                      </button>
+                    )}
                   </td>
                 </tr>
               ))}

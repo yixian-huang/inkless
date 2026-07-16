@@ -51,6 +51,7 @@ import (
 	"blotting-consultancy/internal/module"
 	"blotting-consultancy/internal/repository"
 	"blotting-consultancy/internal/seo"
+	"blotting-consultancy/pkg/audit"
 	"blotting-consultancy/pkg/config"
 	"blotting-consultancy/pkg/metrics"
 
@@ -104,6 +105,7 @@ type RouteDeps struct {
 	Database       *db.DB
 	ModuleMgr      *module.Manager
 	ContentDocRepo repository.ContentDocumentRepository
+	AuditWriter    audit.Writer
 }
 
 // registerRoutes sets up all route groups, middleware, and endpoint registrations
@@ -227,7 +229,7 @@ func registerRoutes(router *gin.Engine, handlers *Handlers, deps *RouteDeps) {
 	// Auth routes (no auth middleware, but handlers validate credentials)
 	authGroup := router.Group("/auth")
 	{
-		authGroup.POST("/login", middleware.LoginRateLimit(), handlers.Auth.Login)
+		authGroup.POST("/login", middleware.AuditLogin(deps.AuditWriter), middleware.LoginRateLimit(), handlers.Auth.Login)
 		authGroup.POST("/refresh", handlers.Auth.Refresh)
 		authGroup.POST("/logout", handlers.Auth.Logout)
 
@@ -269,6 +271,7 @@ func registerRoutes(router *gin.Engine, handlers *Handlers, deps *RouteDeps) {
 		})
 	}
 	adminGroup.Use(middleware.Auth(cfg.JWTSecret))
+	adminGroup.Use(middleware.AuditMutations(deps.AuditWriter))
 	// Legacy middleware kept for backward compatibility with existing JWT tokens.
 	// New RBAC permission checks are applied at the route-group level.
 	adminGroup.Use(middleware.RequireAdminOrEditor())

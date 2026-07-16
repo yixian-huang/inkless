@@ -52,14 +52,20 @@ func (h *Handler) List(c *gin.Context) {
 
 	var from, to *time.Time
 	if fromStr := c.Query("from"); fromStr != "" {
-		if t, err := time.Parse(time.RFC3339, fromStr); err == nil {
-			from = &t
+		t, err := parseAuditTime(fromStr, false)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": gin.H{"message": "from 必须是 RFC3339 时间或 YYYY-MM-DD 日期"}})
+			return
 		}
+		from = &t
 	}
 	if toStr := c.Query("to"); toStr != "" {
-		if t, err := time.Parse(time.RFC3339, toStr); err == nil {
-			to = &t
+		t, err := parseAuditTime(toStr, true)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": gin.H{"message": "to 必须是 RFC3339 时间或 YYYY-MM-DD 日期"}})
+			return
 		}
+		to = &t
 	}
 
 	items, total, err := h.auditEventRepo.List(c.Request.Context(), offset, pageSize, action, actor, from, to)
@@ -74,4 +80,18 @@ func (h *Handler) List(c *gin.Context) {
 		"page":     page,
 		"pageSize": pageSize,
 	})
+}
+
+func parseAuditTime(value string, endOfDay bool) (time.Time, error) {
+	if parsed, err := time.Parse(time.RFC3339, value); err == nil {
+		return parsed, nil
+	}
+	parsed, err := time.Parse("2006-01-02", value)
+	if err != nil {
+		return time.Time{}, err
+	}
+	if endOfDay {
+		return parsed.Add(24*time.Hour - time.Nanosecond), nil
+	}
+	return parsed, nil
 }

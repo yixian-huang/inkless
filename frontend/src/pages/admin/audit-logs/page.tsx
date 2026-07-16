@@ -4,13 +4,22 @@ import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 
 const ACTION_OPTIONS = [
   { value: "", label: "全部操作" },
-  { value: "content.publish", label: "发布内容" },
-  { value: "content.rollback", label: "回滚内容" },
-  { value: "content.validate", label: "验证内容" },
+  { value: "content.create", label: "创建内容" },
+  { value: "content.update", label: "更新内容" },
   { value: "content.save_draft", label: "保存草稿" },
+  { value: "content.publish", label: "发布内容" },
+  { value: "content.unpublish", label: "下线内容" },
+  { value: "content.rollback", label: "回滚内容" },
+  { value: "content.delete", label: "删除内容" },
+  { value: "content.validate", label: "验证内容" },
+  { value: "auth.login", label: "登录" },
+  { value: "permissions.assign", label: "分配权限" },
+  { value: "permissions.unassign", label: "取消权限" },
+  { value: "migration.import", label: "数据迁移" },
   { value: "media.upload", label: "上传媒体" },
   { value: "media.delete", label: "删除媒体" },
   { value: "backup.create", label: "创建备份" },
+  { value: "backup.restore", label: "恢复备份" },
 ];
 
 const PAGE_SIZE = 20;
@@ -33,6 +42,8 @@ function formatDetailsSummary(details: string): string {
   if (parsed.filename) parts.push(`文件: ${parsed.filename}`);
   if (parsed.reason) parts.push(`原因: ${parsed.reason}`);
   if (parsed.error) parts.push(`错误: ${parsed.error}`);
+  if (parsed.status) parts.push(`状态码: ${parsed.status}`);
+  if (parsed.request_id) parts.push(`请求: ${parsed.request_id}`);
 
   return parts.length > 0 ? parts.join(", ") : JSON.stringify(parsed).slice(0, 80);
 }

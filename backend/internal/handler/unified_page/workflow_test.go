@@ -10,10 +10,14 @@ import (
 	"time"
 
 	"blotting-consultancy/internal/cache"
+	"blotting-consultancy/internal/eventbus"
+	auditlogHandler "blotting-consultancy/internal/handler/auditlog"
 	bootstrapHandler "blotting-consultancy/internal/handler/bootstrap"
+	"blotting-consultancy/internal/middleware"
 	"blotting-consultancy/internal/model"
 	"blotting-consultancy/internal/repository"
 	"blotting-consultancy/internal/service"
+	"blotting-consultancy/pkg/audit"
 
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/require"
@@ -34,20 +38,38 @@ func TestUnifiedPagePublishWorkflowUpdatesBootstrapAndPublicRoute(t *testing.T) 
 		&model.UnifiedPage{},
 		&model.PageVersion{},
 		&model.SiteConfig{},
+		&model.AuditEvent{},
 	))
 
 	pageRepo := repository.NewGormUnifiedPageRepository(db)
 	versionRepo := repository.NewGormPageVersionRepository(db)
+	auditRepo := repository.NewGormAuditEventRepository(db)
+	auditWriter := audit.NewDbWriter(auditRepo)
 	publicCache := cache.New(time.Minute)
 	defer publicCache.Stop()
+	bus := eventbus.New()
+	var lifecycleEvents []string
+	for _, eventType := range []string{
+		eventbus.ContentCreated,
+		eventbus.ContentUpdated,
+		eventbus.ContentDraftUpdated,
+		eventbus.ContentPublished,
+		eventbus.ContentUnpublished,
+		eventbus.ContentDeleted,
+	} {
+		bus.Subscribe(eventType, eventbus.SyncHandler(func(event eventbus.Event) {
+			lifecycleEvents = append(lifecycleEvents, event.Type)
+		}))
+	}
 
 	pageHandler := NewHandler(
 		pageRepo,
 		versionRepo,
-		service.NewUnifiedPageService(pageRepo, versionRepo),
+		service.NewUnifiedPageService(pageRepo, versionRepo, bus).WithAuditWriter(auditWriter),
 		publicCache,
-		nil,
+		bus,
 	)
+	auditHandler := auditlogHandler.NewHandler(auditRepo)
 	bootstrap := bootstrapHandler.NewHandler(
 		repository.NewGormContentDocumentRepository(db),
 		repository.NewGormInstalledThemeRepository(db),
@@ -59,10 +81,23 @@ func TestUnifiedPagePublishWorkflowUpdatesBootstrapAndPublicRoute(t *testing.T) 
 
 	gin.SetMode(gin.TestMode)
 	router := gin.New()
+	router.Use(middleware.AuditContext())
+	router.Use(func(c *gin.Context) {
+		c.Set(string(middleware.UserContextKey), &middleware.UserContext{
+			UserID:   9,
+			Username: "publisher",
+			Role:     model.RoleAdmin,
+		})
+		c.Next()
+	})
+	router.Use(middleware.AuditMutations(auditWriter))
 	router.POST("/admin/pages", pageHandler.AdminCreate)
+	router.PUT("/admin/pages/:id", pageHandler.AdminUpdate)
 	router.PUT("/admin/pages/:id/draft", pageHandler.AdminUpdateDraft)
 	router.POST("/admin/pages/:id/publish", pageHandler.AdminPublish)
 	router.POST("/admin/pages/:id/unpublish", pageHandler.AdminUnpublish)
+	router.DELETE("/admin/pages/:id", pageHandler.AdminDelete)
+	router.GET("/admin/audit-logs", auditHandler.List)
 	router.GET("/public/bootstrap", bootstrap.PublicBootstrap)
 	router.GET("/public/pages/:slug", pageHandler.PublicGetBySlug)
 
@@ -87,6 +122,22 @@ func TestUnifiedPagePublishWorkflowUpdatesBootstrapAndPublicRoute(t *testing.T) 
 	require.NoError(t, json.Unmarshal(create.Body.Bytes(), &created))
 	require.NotZero(t, created.ID)
 	require.Equal(t, 1, created.DraftVersion)
+
+	updateMetadata := performJSONRequest(
+		t,
+		router,
+		http.MethodPut,
+		fmt.Sprintf("/admin/pages/%d", created.ID),
+		map[string]any{
+			"slug":      "launch-page",
+			"zhTitle":   "发布页",
+			"enTitle":   "Launch Page",
+			"showInNav": true,
+			"sortOrder": 4,
+		},
+		nil,
+	)
+	require.Equal(t, http.StatusOK, updateMetadata.Code, updateMetadata.Body.String())
 
 	updateDraft := performJSONRequest(
 		t,
@@ -120,6 +171,25 @@ func TestUnifiedPagePublishWorkflowUpdatesBootstrapAndPublicRoute(t *testing.T) 
 	)
 	require.Equal(t, http.StatusOK, publish.Code, publish.Body.String())
 
+	publishAudit := performJSONRequest(
+		t,
+		router,
+		http.MethodGet,
+		"/admin/audit-logs?action=content.publish&actor=publisher",
+		nil,
+		nil,
+	)
+	require.Equal(t, http.StatusOK, publishAudit.Code, publishAudit.Body.String())
+	var auditPayload struct {
+		Items []model.AuditEvent `json:"items"`
+		Total int64              `json:"total"`
+	}
+	require.NoError(t, json.Unmarshal(publishAudit.Body.Bytes(), &auditPayload))
+	require.Equal(t, int64(1), auditPayload.Total)
+	require.Len(t, auditPayload.Items, 1)
+	require.Equal(t, "success", auditPayload.Items[0].Result)
+	require.Equal(t, fmt.Sprintf("pages:%d", created.ID), auditPayload.Items[0].Resource)
+
 	publishedBootstrap := performJSONRequest(t, router, http.MethodGet, "/public/bootstrap?locale=zh", nil, nil)
 	require.Equal(t, http.StatusOK, publishedBootstrap.Code)
 	publishedFacts := decodeUnifiedPageFacts(t, publishedBootstrap.Body.Bytes())
@@ -150,6 +220,24 @@ func TestUnifiedPagePublishWorkflowUpdatesBootstrapAndPublicRoute(t *testing.T) 
 
 	unpublishedPublicPage := performJSONRequest(t, router, http.MethodGet, "/public/pages/launch-page?locale=zh", nil, nil)
 	require.Equal(t, http.StatusNotFound, unpublishedPublicPage.Code, unpublishedPublicPage.Body.String())
+
+	deleted := performJSONRequest(
+		t,
+		router,
+		http.MethodDelete,
+		fmt.Sprintf("/admin/pages/%d", created.ID),
+		nil,
+		nil,
+	)
+	require.Equal(t, http.StatusOK, deleted.Code, deleted.Body.String())
+	require.Equal(t, []string{
+		eventbus.ContentCreated,
+		eventbus.ContentUpdated,
+		eventbus.ContentDraftUpdated,
+		eventbus.ContentPublished,
+		eventbus.ContentUnpublished,
+		eventbus.ContentDeleted,
+	}, lifecycleEvents)
 }
 
 func performJSONRequest(

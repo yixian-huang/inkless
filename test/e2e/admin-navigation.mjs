@@ -69,7 +69,13 @@ function publicPageFacts(page) {
   };
 }
 
-async function mockAdminAPI(page, state) {
+async function mockAdminAPI(page, state, currentUser = {
+  id: "1",
+  username: "admin",
+  role: "admin",
+  isSuperAdmin: true,
+  permissions: ["*:*"],
+}) {
   await page.route("**/*", async (route) => {
     const request = route.request();
     const url = new URL(request.url());
@@ -115,13 +121,7 @@ async function mockAdminAPI(page, state) {
       return;
     }
     if (path === "/auth/me") {
-      await json(route, {
-        id: "1",
-        username: "admin",
-        role: "admin",
-        isSuperAdmin: true,
-        permissions: ["*:*"],
-      });
+      await json(route, currentUser);
       return;
     }
     if (path === "/admin/analytics/summary") {
@@ -231,6 +231,23 @@ async function mockAdminAPI(page, state) {
       item.publishedConfig = null;
       item.updatedAt = new Date().toISOString();
       await json(route, { message: "unpublished" });
+      return;
+    }
+
+    const versionsMatch = path.match(/^\/admin\/pages\/(\d+)\/versions$/);
+    if (versionsMatch && method === "GET") {
+      const item = state.pages.find((candidate) => candidate.id === Number(versionsMatch[1]));
+      await json(route, {
+        items: item ? [{
+          id: 1,
+          pageId: item.id,
+          version: 1,
+          createdAt: item.updatedAt,
+        }] : [],
+        total: item ? 1 : 0,
+        page: 1,
+        pageSize: 20,
+      });
       return;
     }
 
@@ -391,6 +408,35 @@ async function run() {
     await page.getByRole("heading", { name: "404", exact: true }).waitFor();
 
     assert.equal(pageErrors.length, 0, `Unexpected page errors: ${pageErrors.join("\n")}`);
+
+    const editorPage = await browser.newPage();
+    await mockAdminAPI(editorPage, state, {
+      id: "2",
+      username: "editor",
+      role: "editor",
+      isSuperAdmin: false,
+      permissions: ["pages:read", "pages:update"],
+    });
+    await editorPage.goto(`${baseURL}/admin`);
+    await editorPage.getByLabel("用户名").fill("editor");
+    await editorPage.getByLabel("密码").fill("editor123");
+    await editorPage.getByRole("button", { name: "登录", exact: true }).click();
+    await editorPage.waitForURL(`${baseURL}/admin`);
+
+    await editorPage.goto(`${baseURL}/admin/pages`);
+    await editorPage.getByRole("heading", { name: "页面管理" }).waitFor();
+    assert.equal(await editorPage.getByRole("button", { name: "新建页面" }).count(), 0);
+    assert.equal(await editorPage.getByRole("button", { name: "删除" }).count(), 0);
+    await editorPage.getByRole("button", { name: "编辑" }).click();
+    await editorPage.waitForURL(`${baseURL}/admin/pages/edit/101`);
+    await editorPage.getByRole("button", { name: "保存草稿" }).waitFor();
+    assert.equal(await editorPage.getByRole("button", { name: "发布", exact: true }).count(), 0);
+    assert.equal(await editorPage.getByRole("button", { name: "下线", exact: true }).count(), 0);
+    await editorPage.getByRole("button", { name: "版本历史" }).click();
+    await editorPage.getByRole("heading", { name: "版本历史" }).waitFor();
+    assert.equal(await editorPage.getByRole("button", { name: "回滚", exact: true }).count(), 0);
+    await editorPage.close();
+
     console.log("Admin navigation and unified-page release-chain E2E passed");
   } finally {
     await browser.close();

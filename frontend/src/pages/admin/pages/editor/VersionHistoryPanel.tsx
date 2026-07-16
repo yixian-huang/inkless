@@ -8,10 +8,12 @@ export function VersionHistoryPanel({
   pageId,
   onClose,
   onRollback,
+  canRollback,
 }: {
   pageId: number;
   onClose: () => void;
   onRollback: (version: number) => void;
+  canRollback: boolean;
 }) {
   const [versions, setVersions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -52,12 +54,14 @@ export function VersionHistoryPanel({
                       {v.createdAt ? new Date(v.createdAt).toLocaleString() : ""}
                     </div>
                   </div>
-                  <button
-                    onClick={() => onRollback(v.version ?? v.id)}
-                    className="text-xs px-3 py-1 border border-blue-500 text-blue-600 rounded hover:bg-blue-50"
-                  >
-                    回滚
-                  </button>
+                  {canRollback && (
+                    <button
+                      onClick={() => onRollback(v.version ?? v.id)}
+                      className="text-xs px-3 py-1 border border-blue-500 text-blue-600 rounded hover:bg-blue-50"
+                    >
+                      回滚
+                    </button>
+                  )}
                 </div>
               ))}
             </div>

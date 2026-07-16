@@ -161,6 +161,7 @@ func GetUserContext(c *gin.Context) *UserContext {
 
 // respondWithError writes an APIError to the response and aborts the request
 func respondWithError(c *gin.Context, err *apierror.APIError) {
+	c.Set(auditFailureReasonKey, err.ErrorResponse.Message)
 	c.JSON(err.HTTPStatus, gin.H{"error": err.ErrorResponse})
 	c.Abort()
 }

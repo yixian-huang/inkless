@@ -348,6 +348,19 @@ func (h *Handler) AdminCreate(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create page: " + err.Error()})
 		return
 	}
+	if h.eventBus != nil {
+		h.eventBus.Publish(eventbus.Event{
+			Type: eventbus.ContentCreated,
+			Payload: eventbus.ContentEventPayload{
+				ContentType: "page",
+				ContentID:   page.ID,
+				Slug:        page.Slug,
+				Title:       page.ZhTitle,
+				ActorID:     getUserID(c),
+				Action:      eventbus.ContentCreated,
+			},
+		})
+	}
 	c.JSON(http.StatusCreated, page)
 }
 
@@ -463,6 +476,8 @@ func (h *Handler) AdminUpdate(c *gin.Context) {
 				ContentType: "page",
 				ContentID:   page.ID,
 				Slug:        page.Slug,
+				Title:       page.ZhTitle,
+				ActorID:     getUserID(c),
 				Action:      eventbus.ContentUpdated,
 			},
 		})
@@ -526,6 +541,23 @@ func (h *Handler) AdminUpdateDraft(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to update draft: " + err.Error()})
 		return
 	}
+	if h.eventBus != nil {
+		page, fetchErr := h.pageRepo.FindByID(c.Request.Context(), id)
+		if fetchErr == nil {
+			h.eventBus.Publish(eventbus.Event{
+				Type: eventbus.ContentDraftUpdated,
+				Payload: eventbus.ContentEventPayload{
+					ContentType: "page",
+					ContentID:   page.ID,
+					Slug:        page.Slug,
+					Title:       page.ZhTitle,
+					ActorID:     getUserID(c),
+					Version:     newVersion,
+					Action:      eventbus.ContentDraftUpdated,
+				},
+			})
+		}
+	}
 
 	c.JSON(http.StatusOK, gin.H{
 		"id":           id,
@@ -551,6 +583,9 @@ func (h *Handler) AdminPublish(c *gin.Context) {
 	}
 
 	userID := getUserID(c)
+	if h.pageSvc.HandlesAudit() {
+		middleware.MarkAuditHandled(c)
+	}
 	if err := h.pageSvc.Publish(c.Request.Context(), id, input.ExpectedDraftVersion, userID); err != nil {
 		if errors.Is(err, service.ErrPageVersionConflict) {
 			c.JSON(http.StatusConflict, gin.H{"error": "draft version conflict"})
@@ -571,18 +606,6 @@ func (h *Handler) AdminPublish(c *gin.Context) {
 		return
 	}
 
-	// Publish content published event
-	if h.eventBus != nil {
-		h.eventBus.Publish(eventbus.Event{
-			Type: eventbus.ContentPublished,
-			Payload: eventbus.ContentEventPayload{
-				ContentType: "page",
-				ContentID:   page.ID,
-				Slug:        page.Slug,
-				Action:      eventbus.ContentPublished,
-			},
-		})
-	}
 	h.invalidatePublicPageCaches(page.Slug)
 
 	c.JSON(http.StatusOK, page)
@@ -595,12 +618,11 @@ func (h *Handler) AdminUnpublish(c *gin.Context) {
 		return
 	}
 
-	page, err := h.pageRepo.FindByID(c.Request.Context(), id)
-	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "page not found"})
-		return
+	if h.pageSvc.HandlesAudit() {
+		middleware.MarkAuditHandled(c)
 	}
-	if err := h.pageSvc.Unpublish(c.Request.Context(), id); err != nil {
+	page, err := h.pageSvc.Unpublish(c.Request.Context(), id, getUserID(c))
+	if err != nil {
 		if errors.Is(err, service.ErrUnifiedPageNotFound) {
 			c.JSON(http.StatusNotFound, gin.H{"error": "page not found"})
 			return
@@ -609,17 +631,6 @@ func (h *Handler) AdminUnpublish(c *gin.Context) {
 		return
 	}
 	h.invalidatePublicPageCaches(page.Slug)
-	if h.eventBus != nil {
-		h.eventBus.Publish(eventbus.Event{
-			Type: eventbus.ContentUpdated,
-			Payload: eventbus.ContentEventPayload{
-				ContentType: "page",
-				ContentID:   page.ID,
-				Slug:        page.Slug,
-				Action:      "content.unpublished",
-			},
-		})
-	}
 	c.JSON(http.StatusOK, gin.H{"message": "unpublished"})
 }
 
@@ -641,6 +652,9 @@ func (h *Handler) AdminRollback(c *gin.Context) {
 	}
 
 	userID := getUserID(c)
+	if h.pageSvc.HandlesAudit() {
+		middleware.MarkAuditHandled(c)
+	}
 	if err := h.pageSvc.Rollback(c.Request.Context(), id, input.TargetVersion, userID); err != nil {
 		if errors.Is(err, service.ErrPageVersionRecNotFound) {
 			c.JSON(http.StatusNotFound, gin.H{"error": "version not found"})
@@ -656,17 +670,6 @@ func (h *Handler) AdminRollback(c *gin.Context) {
 		return
 	}
 	h.invalidatePublicPageCaches(page.Slug)
-	if h.eventBus != nil {
-		h.eventBus.Publish(eventbus.Event{
-			Type: eventbus.ContentPublished,
-			Payload: eventbus.ContentEventPayload{
-				ContentType: "page",
-				ContentID:   page.ID,
-				Slug:        page.Slug,
-				Action:      "content.rolled_back",
-			},
-		})
-	}
 	c.JSON(http.StatusOK, page)
 }
 
@@ -694,6 +697,9 @@ func (h *Handler) AdminDelete(c *gin.Context) {
 			Payload: eventbus.ContentEventPayload{
 				ContentType: "page",
 				ContentID:   uint(id),
+				Slug:        page.Slug,
+				Title:       page.ZhTitle,
+				ActorID:     getUserID(c),
 				Action:      eventbus.ContentDeleted,
 			},
 		})

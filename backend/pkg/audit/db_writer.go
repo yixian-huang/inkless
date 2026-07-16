@@ -3,29 +3,48 @@ package audit
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"time"
 
 	"blotting-consultancy/internal/model"
 	"blotting-consultancy/internal/repository"
+	"blotting-consultancy/pkg/logger"
 )
+
+// Writer persists structured audit events.
+type Writer interface {
+	Write(ctx context.Context, event Event) error
+}
 
 // DbWriter persists audit events to the database
 type DbWriter struct {
 	repo repository.AuditEventRepository
+	log  *logger.Logger
 }
 
 // NewDbWriter creates a new database-backed audit writer
-func NewDbWriter(repo repository.AuditEventRepository) *DbWriter {
-	return &DbWriter{repo: repo}
+func NewDbWriter(repo repository.AuditEventRepository, logs ...*logger.Logger) *DbWriter {
+	var log *logger.Logger
+	if len(logs) > 0 {
+		log = logs[0]
+	}
+	return &DbWriter{repo: repo, log: log}
 }
 
-// Log persists a structured audit event to the database
-func (w *DbWriter) Log(event Event) {
+// Write persists a structured audit event to the database.
+func (w *DbWriter) Write(ctx context.Context, event Event) error {
+	if w == nil || w.repo == nil {
+		return errors.New("audit repository is not configured")
+	}
+
 	detailsJSON := ""
 	if event.Details != nil {
-		if b, err := json.Marshal(event.Details); err == nil {
-			detailsJSON = string(b)
+		b, err := json.Marshal(event.Details)
+		if err != nil {
+			w.reportError(event, err)
+			return err
 		}
+		detailsJSON = string(b)
 	}
 
 	ae := &model.AuditEvent{
@@ -36,11 +55,36 @@ func (w *DbWriter) Log(event Event) {
 		Details:  detailsJSON,
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	ctx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 5*time.Second)
 	defer cancel()
 
-	// Best-effort: if DB write fails, the event is lost (caller should also use Logger for file-based backup)
-	_ = w.repo.Create(ctx, ae)
+	if err := w.repo.Create(ctx, ae); err != nil {
+		w.reportError(event, err)
+		return err
+	}
+	return nil
+}
+
+// Log preserves the original best-effort API for existing callers.
+func (w *DbWriter) Log(event Event) {
+	_ = w.Write(context.Background(), event)
+}
+
+func (w *DbWriter) reportError(event Event, err error) {
+	if w.log == nil {
+		return
+	}
+	w.log.Error(
+		"failed to persist audit event",
+		"action", event.Action,
+		"actor", event.Actor,
+		"resource", event.Resource,
+		"result", event.Result,
+		"error", err,
+	)
 }
 
 // LogPublishSuccess records a successful publish operation
