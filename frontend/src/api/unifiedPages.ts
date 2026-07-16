@@ -20,6 +20,19 @@ export interface UnifiedPageItem {
   updatedAt: string;
 }
 
+export interface PublicUnifiedPageItem {
+  id: number;
+  slug: string;
+  title: { zh?: string; en?: string };
+  description?: { zh?: string; en?: string };
+  mode: "template" | "composable";
+  sortOrder: number;
+  showInNav: boolean;
+  parentId?: number;
+  status: string;
+  publishedVersion: number;
+}
+
 export interface UnifiedPageDraft {
   id: number;
   slug: string;
@@ -38,7 +51,24 @@ export interface CreateUnifiedPageRequest {
   draftConfig?: JSONMap;
   sortOrder?: number;
   showInNav?: boolean;
+  parentId?: number | null;
+}
+
+export interface UpdateUnifiedPageRequest {
+  slug: string;
+  zhTitle?: string;
+  enTitle?: string;
+  zhDescription?: string;
+  enDescription?: string;
+  sortOrder?: number;
+  showInNav?: boolean;
   parentId?: number;
+  zhMetaTitle?: string;
+  enMetaTitle?: string;
+  zhMetaDescription?: string;
+  enMetaDescription?: string;
+  zhMetaKeywords?: string;
+  enMetaKeywords?: string;
 }
 
 // Admin CRUD
@@ -54,6 +84,9 @@ export const getUnifiedPage = (id: number) =>
 
 export const createUnifiedPage = (data: CreateUnifiedPageRequest) =>
   http.post<UnifiedPageItem>("/admin/pages", data, {}).then((r) => r.data);
+
+export const updateUnifiedPage = (id: number, data: UpdateUnifiedPageRequest) =>
+  http.put<UnifiedPageItem>(`/admin/pages/${id}`, data, {}).then((r) => r.data);
 
 export const deleteUnifiedPage = (id: number) =>
   http.delete(`/admin/pages/${id}`, {});

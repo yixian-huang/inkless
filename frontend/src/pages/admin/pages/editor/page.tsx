@@ -9,6 +9,7 @@ import {
   getUnifiedPage,
   getUnifiedPageDraft,
   createUnifiedPage,
+  updateUnifiedPage,
   updateUnifiedPageDraft,
   publishUnifiedPage,
   unpublishUnifiedPage,
@@ -17,6 +18,7 @@ import {
 import SectionPicker from "./SectionPicker";
 import SectionListItem from "./SectionList";
 import { VersionHistoryPanel, ConflictDialog } from "./VersionHistoryPanel";
+import { useBootstrap } from "@/contexts/BootstrapContext";
 
 // ---------------------------------------------------------------------------
 // Main page component
@@ -27,6 +29,7 @@ export default function PageEditorPage() {
   const isNew = !id;
   const pageId = id ? Number(id) : 0;
   const { metas: sectionMetas } = useSectionRegistry();
+  const { refetch: refetchBootstrap } = useBootstrap();
 
   // -- page metadata --
   const [slug, setSlug] = useState("");
@@ -36,6 +39,7 @@ export default function PageEditorPage() {
   const [showInNav, setShowInNav] = useState(false);
   const [sortOrder, setSortOrder] = useState(0);
   const [status, setStatus] = useState("draft");
+  const [metadataDirty, setMetadataDirty] = useState(false);
 
   // -- section editor state --
   const [sections, setSections] = useState<SectionData[]>([]);
@@ -48,6 +52,7 @@ export default function PageEditorPage() {
 
   // -- UI state --
   const [saving, setSaving] = useState(false);
+  const [metadataSaving, setMetadataSaving] = useState(false);
   const [publishing, setPublishing] = useState(false);
   const [error, setError] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
@@ -73,6 +78,7 @@ export default function PageEditorPage() {
       setStatus(meta.status);
       setPublishedVersion(meta.publishedVersion);
       setDraftVersion(draft.draftVersion);
+      setMetadataDirty(false);
 
       const config = draft.draftConfig as { sections?: any[] } | null;
       // Backend stores content in "props"; frontend SectionData uses "data" — normalize.
@@ -188,6 +194,11 @@ export default function PageEditorPage() {
     if (!slug.trim()) { setError("请输入 URL 路径"); return; }
     setSaving(true);
     try {
+      let sectionsToCreate = sections;
+      if (editorMode === "json") {
+        const parsed = JSON.parse(sectionJson);
+        sectionsToCreate = Array.isArray(parsed) ? parsed : [];
+      }
       const result = await createUnifiedPage({
         slug,
         zhTitle,
@@ -195,7 +206,7 @@ export default function PageEditorPage() {
         mode,
         showInNav,
         sortOrder,
-        draftConfig: { sections },
+        draftConfig: { sections: sectionsToCreate },
       });
       navigate(`/admin/pages/edit/${result.id}`, { replace: true });
     } catch (err: any) {
@@ -239,14 +250,54 @@ export default function PageEditorPage() {
     }
   };
 
+  // -- save live route/navigation metadata --
+  const handleSaveMetadata = async () => {
+    clearMessages();
+    setMetadataSaving(true);
+    try {
+      await updateUnifiedPage(pageId, {
+        slug,
+        zhTitle,
+        enTitle,
+        sortOrder,
+        showInNav,
+      });
+      setMetadataDirty(false);
+      if (status === "published") {
+        await refetchBootstrap();
+      }
+      setSuccessMsg(status === "published" ? "页面信息已保存并立即生效" : "页面信息已保存");
+      setTimeout(() => setSuccessMsg(""), 3000);
+    } catch (err: any) {
+      setError(err?.response?.data?.error || err?.message || "页面信息保存失败");
+    } finally {
+      setMetadataSaving(false);
+    }
+  };
+
   // -- publish --
   const handlePublish = async () => {
     clearMessages();
+    if (metadataDirty) {
+      setError("页面信息尚未保存；请先保存页面信息，再发布内容");
+      return;
+    }
     setPublishing(true);
     try {
-      await publishUnifiedPage(pageId, draftVersion);
+      let sectionsToPublish = sections;
+      if (editorMode === "json") {
+        const parsed = JSON.parse(sectionJson);
+        sectionsToPublish = Array.isArray(parsed) ? parsed : [];
+      }
+      const saved = await updateUnifiedPageDraft(pageId, draftVersion, {
+        sections: sectionsToPublish,
+      });
+      const publishedDraftVersion = saved.draftVersion ?? draftVersion + 1;
+      await publishUnifiedPage(pageId, publishedDraftVersion);
+      setDraftVersion(publishedDraftVersion);
       setStatus("published");
-      setPublishedVersion(draftVersion);
+      setPublishedVersion(publishedDraftVersion);
+      await refetchBootstrap();
       setSuccessMsg("已发布");
       setTimeout(() => setSuccessMsg(""), 3000);
     } catch (err: any) {
@@ -263,6 +314,7 @@ export default function PageEditorPage() {
       await unpublishUnifiedPage(pageId);
       setStatus("draft");
       setPublishedVersion(0);
+      await refetchBootstrap();
       setSuccessMsg("已下线");
       setTimeout(() => setSuccessMsg(""), 3000);
     } catch (err: any) {
@@ -278,6 +330,7 @@ export default function PageEditorPage() {
       await rollbackUnifiedPage(pageId, version);
       setShowHistory(false);
       await loadPage();
+      await refetchBootstrap();
       setSuccessMsg(`已回滚到版本 ${version}`);
       setTimeout(() => setSuccessMsg(""), 3000);
     } catch (err: any) {
@@ -398,49 +451,82 @@ export default function PageEditorPage() {
         </div>
       )}
 
-      {/* -- metadata section (collapsed for existing, expanded for new) -- */}
-      {isNew && (
-        <div className="bg-white rounded-lg shadow p-5 mb-4 flex-shrink-0">
-          <h3 className="text-sm font-semibold text-gray-700 mb-3">页面信息</h3>
+      {/* -- route and navigation metadata -- */}
+      <div className="bg-white rounded-lg shadow p-5 mb-4 flex-shrink-0">
+          <div className="flex items-start justify-between gap-4 mb-3">
+            <div>
+              <h3 className="text-sm font-semibold text-gray-700">页面信息</h3>
+              {!isNew && (
+                <p className="text-xs text-gray-500 mt-1">
+                  {status === "published"
+                    ? "路径与导航信息独立于内容版本，保存后会立即更新线上页面。"
+                    : "页面发布前不会出现在公开路由；页面信息与内容草稿分别保存。"}
+                </p>
+              )}
+            </div>
+            {!isNew && (
+              <button
+                onClick={handleSaveMetadata}
+                disabled={metadataSaving || !metadataDirty || !slug.trim()}
+                className="px-3 py-1.5 text-xs border border-blue-300 text-blue-700 rounded-md hover:bg-blue-50 disabled:opacity-50"
+              >
+                {metadataSaving ? "保存中..." : "保存页面信息"}
+              </button>
+            )}
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">URL 路径 (slug)</label>
+              <label htmlFor="page-slug" className="block text-xs font-medium text-gray-600 mb-1">URL 路径 (slug)</label>
               <div className="flex items-center">
                 <span className="text-gray-400 text-sm mr-1">/</span>
                 <input
+                  id="page-slug"
                   type="text"
                   value={slug}
-                  onChange={(e) => setSlug(e.target.value)}
+                  onChange={(e) => {
+                    setSlug(e.target.value);
+                    setMetadataDirty(true);
+                  }}
                   placeholder="about-us"
                   className="flex-1 border border-gray-300 rounded-md px-3 py-1.5 text-sm"
                 />
               </div>
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">标题 (中文)</label>
+              <label htmlFor="page-title-zh" className="block text-xs font-medium text-gray-600 mb-1">标题 (中文)</label>
               <input
+                id="page-title-zh"
                 type="text"
                 value={zhTitle}
-                onChange={(e) => setZhTitle(e.target.value)}
+                onChange={(e) => {
+                  setZhTitle(e.target.value);
+                  setMetadataDirty(true);
+                }}
                 className="w-full border border-gray-300 rounded-md px-3 py-1.5 text-sm"
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">标题 (English)</label>
+              <label htmlFor="page-title-en" className="block text-xs font-medium text-gray-600 mb-1">标题 (English)</label>
               <input
+                id="page-title-en"
                 type="text"
                 value={enTitle}
-                onChange={(e) => setEnTitle(e.target.value)}
+                onChange={(e) => {
+                  setEnTitle(e.target.value);
+                  setMetadataDirty(true);
+                }}
                 className="w-full border border-gray-300 rounded-md px-3 py-1.5 text-sm"
               />
             </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-3">
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">页面模式</label>
+              <label htmlFor="page-mode" className="block text-xs font-medium text-gray-600 mb-1">页面模式</label>
               <select
+                id="page-mode"
                 value={mode}
                 onChange={(e) => setMode(e.target.value as "template" | "composable")}
+                disabled={!isNew}
                 className="w-full border border-gray-300 rounded-md px-3 py-1.5 text-sm"
               >
                 <option value="composable">自由组合 (Composable)</option>
@@ -448,11 +534,15 @@ export default function PageEditorPage() {
               </select>
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">排序</label>
+              <label htmlFor="page-sort-order" className="block text-xs font-medium text-gray-600 mb-1">排序</label>
               <input
+                id="page-sort-order"
                 type="number"
                 value={sortOrder}
-                onChange={(e) => setSortOrder(Number(e.target.value))}
+                onChange={(e) => {
+                  setSortOrder(Number(e.target.value));
+                  setMetadataDirty(true);
+                }}
                 className="w-full border border-gray-300 rounded-md px-3 py-1.5 text-sm"
               />
             </div>
@@ -461,7 +551,10 @@ export default function PageEditorPage() {
                 <input
                   type="checkbox"
                   checked={showInNav}
-                  onChange={(e) => setShowInNav(e.target.checked)}
+                  onChange={(e) => {
+                    setShowInNav(e.target.checked);
+                    setMetadataDirty(true);
+                  }}
                   className="rounded border-gray-300"
                 />
                 显示在导航
@@ -469,14 +562,13 @@ export default function PageEditorPage() {
             </div>
           </div>
         </div>
-      )}
 
       {/* -- editor body -- */}
       {editorMode === "json" ? (
         /* JSON mode */
         <div className="bg-white rounded-lg shadow p-5 flex-1 flex flex-col min-h-0">
           <div className="flex items-center justify-between mb-2">
-            <label className="text-sm font-medium text-gray-700">
+            <label htmlFor="page-sections-json" className="text-sm font-medium text-gray-700">
               区块配置 (JSON 数组)
             </label>
             <span className="text-xs text-gray-400">
@@ -484,6 +576,7 @@ export default function PageEditorPage() {
             </span>
           </div>
           <textarea
+            id="page-sections-json"
             value={sectionJson}
             onChange={(e) => setSectionJson(e.target.value)}
             rows={20}

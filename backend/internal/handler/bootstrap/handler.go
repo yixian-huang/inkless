@@ -15,11 +15,12 @@ import (
 // Handler aggregates multiple public endpoints into a single response
 // to minimize round-trips for SPA initial load.
 type Handler struct {
-	contentDocRepo repository.ContentDocumentRepository
-	themeRepo      repository.InstalledThemeRepository
-	pageRepo       repository.PageRepository
-	siteCfgRepo    repository.SiteConfigRepository
-	cache          *cache.Cache
+	contentDocRepo  repository.ContentDocumentRepository
+	themeRepo       repository.InstalledThemeRepository
+	pageRepo        repository.PageRepository
+	unifiedPageRepo repository.UnifiedPageRepository
+	siteCfgRepo     repository.SiteConfigRepository
+	cache           *cache.Cache
 }
 
 // NewHandler creates a new bootstrap handler
@@ -27,15 +28,17 @@ func NewHandler(
 	contentDocRepo repository.ContentDocumentRepository,
 	themeRepo repository.InstalledThemeRepository,
 	pageRepo repository.PageRepository,
+	unifiedPageRepo repository.UnifiedPageRepository,
 	siteCfgRepo repository.SiteConfigRepository,
 	cache *cache.Cache,
 ) *Handler {
 	return &Handler{
-		contentDocRepo: contentDocRepo,
-		themeRepo:      themeRepo,
-		pageRepo:       pageRepo,
-		siteCfgRepo:    siteCfgRepo,
-		cache:          cache,
+		contentDocRepo:  contentDocRepo,
+		themeRepo:       themeRepo,
+		pageRepo:        pageRepo,
+		unifiedPageRepo: unifiedPageRepo,
+		siteCfgRepo:     siteCfgRepo,
+		cache:           cache,
 	}
 }
 
@@ -55,11 +58,11 @@ func defaultThemeConfig() model.JSONMap {
 			"heading": "system-ui, -apple-system, sans-serif",
 		},
 		"layout": map[string]interface{}{
-			"maxWidth":        "1200px",
-			"borderRadius":    "0.5rem",
-			"contentPadding":  "1.5rem",
-			"sectionSpacing":  "5rem",
-			"contentGap":      "2rem",
+			"maxWidth":       "1200px",
+			"borderRadius":   "0.5rem",
+			"contentPadding": "1.5rem",
+			"sectionSpacing": "5rem",
+			"contentGap":     "2rem",
 		},
 	}
 }
@@ -71,7 +74,7 @@ func defaultThemeConfig() model.JSONMap {
 // @Produce      json
 // @Param        locale  query string false "Locale (zh or en)" default(zh)
 // @Param        pageKey query string false "Optional page key to include content"
-// @Success      200 {object} object{activeTheme=object,themeTokens=object,themePages=[]object,globalConfig=object}
+// @Success      200 {object} object{activeTheme=object,themeTokens=object,themePages=[]object,unifiedPages=[]object,globalConfig=object}
 // @Router       /public/bootstrap [get]
 func (h *Handler) PublicBootstrap(c *gin.Context) {
 	ctx := c.Request.Context()
@@ -130,7 +133,34 @@ func (h *Handler) PublicBootstrap(c *gin.Context) {
 		themePages = []gin.H{}
 	}
 
-	// 4. Global config
+	// 4. Published unified pages are the editable source of truth for public
+	// routes and automatic navigation. Theme pages remain a compatibility and
+	// rendering-component source for older installations.
+	unifiedPages := make([]gin.H, 0)
+	if h.unifiedPageRepo != nil {
+		pages, err := h.unifiedPageRepo.ListPublished(ctx)
+		if err == nil {
+			for _, p := range pages {
+				if len(p.PublishedConfig) == 0 {
+					continue
+				}
+				unifiedPages = append(unifiedPages, gin.H{
+					"id":               p.ID,
+					"slug":             p.Slug,
+					"title":            gin.H{"zh": p.ZhTitle, "en": p.EnTitle},
+					"description":      gin.H{"zh": p.ZhDescription, "en": p.EnDescription},
+					"mode":             p.Mode,
+					"sortOrder":        p.SortOrder,
+					"showInNav":        p.ShowInNav,
+					"parentId":         p.ParentID,
+					"status":           p.Status,
+					"publishedVersion": p.PublishedVersion,
+				})
+			}
+		}
+	}
+
+	// 5. Global config
 	var globalConfig interface{}
 	globalDoc, err := h.contentDocRepo.FindByPageKey(ctx, model.PageKey("global"))
 	if err != nil {
@@ -144,7 +174,7 @@ func (h *Handler) PublicBootstrap(c *gin.Context) {
 		}
 	}
 
-	// 5. Features config
+	// 6. Features config
 	var features interface{}
 	featuresCfg, err := h.siteCfgRepo.FindByKey(ctx, model.SiteConfigKeyFeatures)
 	if err != nil || featuresCfg == nil || featuresCfg.ID == 0 || featuresCfg.PublishedConfig == nil {
@@ -153,7 +183,7 @@ func (h *Handler) PublicBootstrap(c *gin.Context) {
 		features = featurespkg.MergePublishedDefaults(featuresCfg.PublishedConfig)
 	}
 
-	// 6. Page content (optional, only if pageKey is provided)
+	// 7. Page content (optional, only if pageKey is provided)
 	var pageContent interface{}
 	if pageKey != "" {
 		pk := model.PageKey(pageKey)
@@ -174,6 +204,7 @@ func (h *Handler) PublicBootstrap(c *gin.Context) {
 		"activeTheme":  activeThemeData,
 		"themeTokens":  themeTokens,
 		"themePages":   themePages,
+		"unifiedPages": unifiedPages,
 		"globalConfig": globalConfig,
 		"features":     features,
 	}

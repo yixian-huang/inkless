@@ -17,60 +17,60 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 
+	_ "blotting-consultancy/docs/swagger" // swagger docs
 	"blotting-consultancy/internal/cache"
 	"blotting-consultancy/internal/db"
 	"blotting-consultancy/internal/db/migrations"
-	_ "blotting-consultancy/docs/swagger" // swagger docs
 	"blotting-consultancy/internal/eventbus"
+	aiHandler "blotting-consultancy/internal/handler/ai"
 	analyticsHandler "blotting-consultancy/internal/handler/analytics"
 	articleHandler "blotting-consultancy/internal/handler/article"
-	roleHandler "blotting-consultancy/internal/handler/role"
-	wizardHandler "blotting-consultancy/internal/handler/wizard"
 	auditlogHandler "blotting-consultancy/internal/handler/auditlog"
 	authHandler "blotting-consultancy/internal/handler/auth"
-	categoryHandler "blotting-consultancy/internal/handler/category"
-	mediaHandler "blotting-consultancy/internal/handler/media"
-	publicHandler "blotting-consultancy/internal/handler/public"
-	feedHandler "blotting-consultancy/internal/handler/feed"
-	sitemapHandler "blotting-consultancy/internal/handler/sitemap"
-	tagHandler "blotting-consultancy/internal/handler/tag"
 	bootstrapHandler "blotting-consultancy/internal/handler/bootstrap"
+	categoryHandler "blotting-consultancy/internal/handler/category"
+	chunkedUploadHandler "blotting-consultancy/internal/handler/chunked_upload"
 	emailSettingsHandler "blotting-consultancy/internal/handler/email_settings"
 	featuresHandler "blotting-consultancy/internal/handler/features"
+	feedHandler "blotting-consultancy/internal/handler/feed"
 	globalConfigHandler "blotting-consultancy/internal/handler/global_config"
 	installedThemeHandler "blotting-consultancy/internal/handler/installed_theme"
 	marketplaceHandler "blotting-consultancy/internal/handler/marketplace"
+	mediaHandler "blotting-consultancy/internal/handler/media"
+	mediaFolderHandler "blotting-consultancy/internal/handler/media_folder"
 	menuHandler "blotting-consultancy/internal/handler/menu"
-	themeHandler "blotting-consultancy/internal/handler/theme"
+	migrationHandler "blotting-consultancy/internal/handler/migration"
+	pageTemplateHandler "blotting-consultancy/internal/handler/page_template"
+	publicHandler "blotting-consultancy/internal/handler/public"
+	roleHandler "blotting-consultancy/internal/handler/role"
 	searchhandler "blotting-consultancy/internal/handler/search"
 	seoHandler "blotting-consultancy/internal/handler/seo"
+	setupHandler "blotting-consultancy/internal/handler/setup"
+	siteHandler "blotting-consultancy/internal/handler/site"
+	sitemapHandler "blotting-consultancy/internal/handler/sitemap"
+	storageHandler "blotting-consultancy/internal/handler/storage"
+	systemHandler "blotting-consultancy/internal/handler/system"
+	tagHandler "blotting-consultancy/internal/handler/tag"
+	themeHandler "blotting-consultancy/internal/handler/theme"
+	themeExportHandler "blotting-consultancy/internal/handler/theme_export"
+	translationHandler "blotting-consultancy/internal/handler/translation"
+	unifiedPageHandler "blotting-consultancy/internal/handler/unified_page"
 	userHandler "blotting-consultancy/internal/handler/user"
-	aiHandler "blotting-consultancy/internal/handler/ai"
-	chunkedUploadHandler "blotting-consultancy/internal/handler/chunked_upload"
-	mediaFolderHandler "blotting-consultancy/internal/handler/media_folder"
-	migrationHandler "blotting-consultancy/internal/handler/migration"
+	wizardHandler "blotting-consultancy/internal/handler/wizard"
+	"blotting-consultancy/internal/middleware"
+	"blotting-consultancy/internal/migration"
+	"blotting-consultancy/internal/model"
 	"blotting-consultancy/internal/module"
 	backupMod "blotting-consultancy/internal/modules/backup"
 	commentMod "blotting-consultancy/internal/modules/comment"
 	formSubmissionMod "blotting-consultancy/internal/modules/form_submission"
 	qa "blotting-consultancy/internal/modules/qa"
-	siteHandler "blotting-consultancy/internal/handler/site"
-	storageHandler "blotting-consultancy/internal/handler/storage"
-	setupHandler "blotting-consultancy/internal/handler/setup"
-	install "blotting-consultancy/internal/setup"
-	systemHandler "blotting-consultancy/internal/handler/system"
-	translationHandler "blotting-consultancy/internal/handler/translation"
-	unifiedPageHandler "blotting-consultancy/internal/handler/unified_page"
-	pageTemplateHandler "blotting-consultancy/internal/handler/page_template"
-	themeExportHandler "blotting-consultancy/internal/handler/theme_export"
-	"blotting-consultancy/internal/middleware"
-	"blotting-consultancy/internal/migration"
-	"blotting-consultancy/internal/model"
 	"blotting-consultancy/internal/provider"
 	"blotting-consultancy/internal/repository"
 	"blotting-consultancy/internal/seed"
-	"blotting-consultancy/internal/service"
 	"blotting-consultancy/internal/seo"
+	"blotting-consultancy/internal/service"
+	install "blotting-consultancy/internal/setup"
 	"blotting-consultancy/pkg/apierror"
 	"blotting-consultancy/pkg/audit"
 	"blotting-consultancy/pkg/config"
@@ -427,7 +427,7 @@ func main() {
 	feedHandlerInst := feedHandler.NewHandler(articleRepo, siteConfigRepo, cfg.BaseURL, "Blog", "Latest posts")
 	themeHandlerInst := themeHandler.NewHandler(siteConfigRepo, publicCache)
 	installedThemeHandlerInst := installedThemeHandler.NewHandler(installedThemeRepo, themePageService, publicCache)
-	bootstrapHandlerInst := bootstrapHandler.NewHandler(contentDocRepo, installedThemeRepo, pageRepo, siteConfigRepo, publicCache)
+	bootstrapHandlerInst := bootstrapHandler.NewHandler(contentDocRepo, installedThemeRepo, pageRepo, unifiedPageRepo, siteConfigRepo, publicCache)
 	globalConfigHandlerInst := globalConfigHandler.NewHandler(contentDocRepo, publicCache)
 	featuresHandlerInst := featuresHandler.NewHandler(siteConfigRepo, publicCache)
 	emailSvc := service.NewEmailService(siteConfigRepo)
@@ -463,8 +463,8 @@ func main() {
 	router := gin.New()
 
 	// Global middleware (order matters!)
-	router.Use(gin.Recovery())                      // Panic recovery
-	router.Use(ginLogger(log))                      // Request logging
+	router.Use(gin.Recovery())                     // Panic recovery
+	router.Use(ginLogger(log))                     // Request logging
 	router.Use(gzip.Gzip(gzip.DefaultCompression)) // Gzip compression
 
 	corsConfig := cors.Config{

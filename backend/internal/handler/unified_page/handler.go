@@ -1,9 +1,13 @@
 package unified_page
 
 import (
+	"context"
+	"encoding/json"
 	"errors"
 	"net/http"
+	"regexp"
 	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 
@@ -14,6 +18,30 @@ import (
 	"blotting-consultancy/internal/repository"
 	"blotting-consultancy/internal/service"
 )
+
+var publicPageSlugPattern = regexp.MustCompile(`^[a-z0-9]+(?:-[a-z0-9]+)*$`)
+
+var reservedPublicPageSlugs = map[string]struct{}{
+	"admin":      {},
+	"setup":      {},
+	"blog":       {},
+	"categories": {},
+	"tags":       {},
+	"search":     {},
+	"p":          {},
+	"public":     {},
+	"auth":       {},
+	"uploads":    {},
+	"assets":     {},
+	"images":     {},
+	"health":     {},
+	"version":    {},
+	"metrics":    {},
+	"api-docs":   {},
+	"sitemap":    {},
+	"feed":       {},
+	"robots":     {},
+}
 
 // Handler handles unified page HTTP requests.
 type Handler struct {
@@ -64,6 +92,68 @@ func localizedField(c *gin.Context, zh, en string) string {
 	return zh
 }
 
+func validatePublicPageSlug(slug string) error {
+	if !publicPageSlugPattern.MatchString(slug) {
+		return errors.New("slug must contain only lowercase letters, numbers, and hyphens")
+	}
+	if _, reserved := reservedPublicPageSlugs[slug]; reserved {
+		return errors.New("slug is reserved by the application")
+	}
+	return nil
+}
+
+func normalizePublicPageSlug(slug string) string {
+	return strings.Trim(strings.TrimSpace(slug), "/")
+}
+
+func (h *Handler) invalidatePublicPageCaches(slugs ...string) {
+	if h.cache == nil {
+		return
+	}
+	h.cache.DeletePrefix("bootstrap:")
+	h.cache.DeletePrefix("pages:list:")
+	for _, slug := range slugs {
+		if slug != "" {
+			h.cache.DeletePrefix("page:" + slug + ":")
+			h.cache.DeletePrefix("content:" + slug + ":")
+		}
+	}
+}
+
+func (h *Handler) validateParent(ctx context.Context, pageID uint, parentID *uint) error {
+	if parentID == nil {
+		return nil
+	}
+	if *parentID == 0 {
+		return errors.New("parent page not found")
+	}
+	if *parentID == pageID && pageID != 0 {
+		return errors.New("page cannot be its own parent")
+	}
+
+	visited := map[uint]struct{}{}
+	currentID := *parentID
+	for currentID != 0 {
+		if currentID == pageID && pageID != 0 {
+			return errors.New("parent relationship would create a cycle")
+		}
+		if _, seen := visited[currentID]; seen {
+			return errors.New("parent relationship contains a cycle")
+		}
+		visited[currentID] = struct{}{}
+
+		parent, err := h.pageRepo.FindByID(ctx, currentID)
+		if err != nil {
+			return errors.New("parent page not found")
+		}
+		if parent.ParentID == nil {
+			return nil
+		}
+		currentID = *parent.ParentID
+	}
+	return nil
+}
+
 // --- Public endpoints ---
 
 // PublicList returns all published unified pages.
@@ -85,6 +175,9 @@ func (h *Handler) PublicList(c *gin.Context) {
 
 	items := make([]gin.H, 0, len(pages))
 	for _, p := range pages {
+		if len(p.PublishedConfig) == 0 {
+			continue
+		}
 		items = append(items, gin.H{
 			"id":              p.ID,
 			"slug":            p.Slug,
@@ -125,7 +218,7 @@ func (h *Handler) PublicGetBySlug(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "page not found"})
 		return
 	}
-	if page.PublishedConfig == nil {
+	if page.Status != "published" || len(page.PublishedConfig) == 0 {
 		c.JSON(http.StatusNotFound, gin.H{"error": "page not found"})
 		return
 	}
@@ -188,29 +281,43 @@ func (h *Handler) AdminGetByID(c *gin.Context) {
 }
 
 type createInput struct {
-	Slug          string    `json:"slug" binding:"required"`
-	ZhTitle       string    `json:"zhTitle"`
-	EnTitle       string    `json:"enTitle"`
-	ZhDescription string    `json:"zhDescription"`
-	EnDescription string    `json:"enDescription"`
-	Mode          string    `json:"mode"`
-	TemplateID    *uint     `json:"templateId"`
-	DraftConfig   model.JSONMap `json:"draftConfig"`
-	SortOrder     int       `json:"sortOrder"`
-	ShowInNav     bool      `json:"showInNav"`
-	ParentID      *uint     `json:"parentId"`
-	ZhMetaTitle       string `json:"zhMetaTitle"`
-	EnMetaTitle       string `json:"enMetaTitle"`
-	ZhMetaDescription string `json:"zhMetaDescription"`
-	EnMetaDescription string `json:"enMetaDescription"`
-	ZhMetaKeywords    string `json:"zhMetaKeywords"`
-	EnMetaKeywords    string `json:"enMetaKeywords"`
+	Slug              string        `json:"slug" binding:"required"`
+	ZhTitle           string        `json:"zhTitle"`
+	EnTitle           string        `json:"enTitle"`
+	ZhDescription     string        `json:"zhDescription"`
+	EnDescription     string        `json:"enDescription"`
+	Mode              string        `json:"mode"`
+	TemplateID        *uint         `json:"templateId"`
+	DraftConfig       model.JSONMap `json:"draftConfig"`
+	SortOrder         int           `json:"sortOrder"`
+	ShowInNav         bool          `json:"showInNav"`
+	ParentID          *uint         `json:"parentId"`
+	ZhMetaTitle       string        `json:"zhMetaTitle"`
+	EnMetaTitle       string        `json:"enMetaTitle"`
+	ZhMetaDescription string        `json:"zhMetaDescription"`
+	EnMetaDescription string        `json:"enMetaDescription"`
+	ZhMetaKeywords    string        `json:"zhMetaKeywords"`
+	EnMetaKeywords    string        `json:"enMetaKeywords"`
 }
 
 // AdminCreate creates a new unified page.
 func (h *Handler) AdminCreate(c *gin.Context) {
 	var input createInput
 	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	input.Slug = normalizePublicPageSlug(input.Slug)
+	if err := validatePublicPageSlug(input.Slug); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	if existing, err := h.pageRepo.FindBySlug(c.Request.Context(), input.Slug); err == nil && existing != nil {
+		c.JSON(http.StatusConflict, gin.H{"error": "slug already exists"})
+		return
+	}
+	if err := h.validateParent(c.Request.Context(), 0, input.ParentID); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
@@ -242,6 +349,125 @@ func (h *Handler) AdminCreate(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusCreated, page)
+}
+
+type updateInput struct {
+	Slug              string          `json:"slug" binding:"required"`
+	ZhTitle           *string         `json:"zhTitle"`
+	EnTitle           *string         `json:"enTitle"`
+	ZhDescription     *string         `json:"zhDescription"`
+	EnDescription     *string         `json:"enDescription"`
+	SortOrder         *int            `json:"sortOrder"`
+	ShowInNav         *bool           `json:"showInNav"`
+	ParentID          json.RawMessage `json:"parentId"`
+	ZhMetaTitle       *string         `json:"zhMetaTitle"`
+	EnMetaTitle       *string         `json:"enMetaTitle"`
+	ZhMetaDescription *string         `json:"zhMetaDescription"`
+	EnMetaDescription *string         `json:"enMetaDescription"`
+	ZhMetaKeywords    *string         `json:"zhMetaKeywords"`
+	EnMetaKeywords    *string         `json:"enMetaKeywords"`
+}
+
+// AdminUpdate updates public route, navigation, titles, hierarchy, and SEO metadata.
+func (h *Handler) AdminUpdate(c *gin.Context) {
+	id, ok := parseID(c)
+	if !ok {
+		return
+	}
+
+	var input updateInput
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	input.Slug = normalizePublicPageSlug(input.Slug)
+	if err := validatePublicPageSlug(input.Slug); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	page, err := h.pageRepo.FindByID(c.Request.Context(), id)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "page not found"})
+		return
+	}
+	if existing, findErr := h.pageRepo.FindBySlug(c.Request.Context(), input.Slug); findErr == nil && existing.ID != id {
+		c.JSON(http.StatusConflict, gin.H{"error": "slug already exists"})
+		return
+	}
+
+	oldSlug := page.Slug
+	page.Slug = input.Slug
+	if input.ZhTitle != nil {
+		page.ZhTitle = *input.ZhTitle
+	}
+	if input.EnTitle != nil {
+		page.EnTitle = *input.EnTitle
+	}
+	if input.ZhDescription != nil {
+		page.ZhDescription = *input.ZhDescription
+	}
+	if input.EnDescription != nil {
+		page.EnDescription = *input.EnDescription
+	}
+	if input.SortOrder != nil {
+		page.SortOrder = *input.SortOrder
+	}
+	if input.ShowInNav != nil {
+		page.ShowInNav = *input.ShowInNav
+	}
+	if len(input.ParentID) > 0 {
+		var parentID *uint
+		if string(input.ParentID) != "null" {
+			var parsedParentID uint
+			if err := json.Unmarshal(input.ParentID, &parsedParentID); err != nil {
+				c.JSON(http.StatusBadRequest, gin.H{"error": "parentId must be a page id or null"})
+				return
+			}
+			parentID = &parsedParentID
+		}
+		if err := h.validateParent(c.Request.Context(), id, parentID); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+		page.ParentID = parentID
+	}
+	if input.ZhMetaTitle != nil {
+		page.ZhMetaTitle = *input.ZhMetaTitle
+	}
+	if input.EnMetaTitle != nil {
+		page.EnMetaTitle = *input.EnMetaTitle
+	}
+	if input.ZhMetaDescription != nil {
+		page.ZhMetaDescription = *input.ZhMetaDescription
+	}
+	if input.EnMetaDescription != nil {
+		page.EnMetaDescription = *input.EnMetaDescription
+	}
+	if input.ZhMetaKeywords != nil {
+		page.ZhMetaKeywords = *input.ZhMetaKeywords
+	}
+	if input.EnMetaKeywords != nil {
+		page.EnMetaKeywords = *input.EnMetaKeywords
+	}
+
+	if err := h.pageRepo.Update(c.Request.Context(), page); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to update page: " + err.Error()})
+		return
+	}
+	h.invalidatePublicPageCaches(oldSlug, page.Slug)
+	if h.eventBus != nil {
+		h.eventBus.Publish(eventbus.Event{
+			Type: eventbus.ContentUpdated,
+			Payload: eventbus.ContentEventPayload{
+				ContentType: "page",
+				ContentID:   page.ID,
+				Slug:        page.Slug,
+				Action:      eventbus.ContentUpdated,
+			},
+		})
+	}
+	c.JSON(http.StatusOK, page)
 }
 
 // AdminGetDraft returns the draft config for a page.
@@ -357,6 +583,7 @@ func (h *Handler) AdminPublish(c *gin.Context) {
 			},
 		})
 	}
+	h.invalidatePublicPageCaches(page.Slug)
 
 	c.JSON(http.StatusOK, page)
 }
@@ -368,6 +595,11 @@ func (h *Handler) AdminUnpublish(c *gin.Context) {
 		return
 	}
 
+	page, err := h.pageRepo.FindByID(c.Request.Context(), id)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "page not found"})
+		return
+	}
 	if err := h.pageSvc.Unpublish(c.Request.Context(), id); err != nil {
 		if errors.Is(err, service.ErrUnifiedPageNotFound) {
 			c.JSON(http.StatusNotFound, gin.H{"error": "page not found"})
@@ -375,6 +607,18 @@ func (h *Handler) AdminUnpublish(c *gin.Context) {
 		}
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to unpublish: " + err.Error()})
 		return
+	}
+	h.invalidatePublicPageCaches(page.Slug)
+	if h.eventBus != nil {
+		h.eventBus.Publish(eventbus.Event{
+			Type: eventbus.ContentUpdated,
+			Payload: eventbus.ContentEventPayload{
+				ContentType: "page",
+				ContentID:   page.ID,
+				Slug:        page.Slug,
+				Action:      "content.unpublished",
+			},
+		})
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "unpublished"})
 }
@@ -411,6 +655,18 @@ func (h *Handler) AdminRollback(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"message": "rolled back"})
 		return
 	}
+	h.invalidatePublicPageCaches(page.Slug)
+	if h.eventBus != nil {
+		h.eventBus.Publish(eventbus.Event{
+			Type: eventbus.ContentPublished,
+			Payload: eventbus.ContentEventPayload{
+				ContentType: "page",
+				ContentID:   page.ID,
+				Slug:        page.Slug,
+				Action:      "content.rolled_back",
+			},
+		})
+	}
 	c.JSON(http.StatusOK, page)
 }
 
@@ -421,6 +677,11 @@ func (h *Handler) AdminDelete(c *gin.Context) {
 		return
 	}
 
+	page, err := h.pageRepo.FindByID(c.Request.Context(), id)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "page not found"})
+		return
+	}
 	if err := h.pageRepo.Delete(c.Request.Context(), id); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to delete page"})
 		return
@@ -437,6 +698,7 @@ func (h *Handler) AdminDelete(c *gin.Context) {
 			},
 		})
 	}
+	h.invalidatePublicPageCaches(page.Slug)
 
 	c.JSON(http.StatusOK, gin.H{"message": "deleted"})
 }

@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
+
 	"blotting-consultancy/internal/model"
 	"gorm.io/gorm"
 )
@@ -88,12 +90,57 @@ func (r *GormUnifiedPageRepository) UpdateDraft(ctx context.Context, id uint, ex
 	return page.DraftVersion, nil
 }
 
-func (r *GormUnifiedPageRepository) UpdatePublished(ctx context.Context, id uint, publishedConfig model.JSONMap, publishedVersion int) error {
-	return r.db.WithContext(ctx).Table("unified_pages").Where("id = ?", id).Updates(map[string]interface{}{
+func (r *GormUnifiedPageRepository) UpdatePublished(
+	ctx context.Context,
+	id uint,
+	publishedConfig model.JSONMap,
+	publishedVersion int,
+	publishedAt time.Time,
+) error {
+	result := r.db.WithContext(ctx).Table("unified_pages").Where("id = ?", id).Updates(map[string]interface{}{
 		"published_config":  publishedConfig,
 		"published_version": publishedVersion,
 		"status":            "published",
-	}).Error
+		"published_at":      publishedAt,
+	})
+	if result.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound
+	}
+	return result.Error
+}
+
+func (r *GormUnifiedPageRepository) UpdateRollback(
+	ctx context.Context,
+	id uint,
+	draftConfig model.JSONMap,
+	draftVersion int,
+	publishedConfig model.JSONMap,
+	publishedVersion int,
+	publishedAt time.Time,
+) error {
+	result := r.db.WithContext(ctx).Table("unified_pages").Where("id = ?", id).Updates(map[string]interface{}{
+		"draft_config":      draftConfig,
+		"draft_version":     draftVersion,
+		"published_config":  publishedConfig,
+		"published_version": publishedVersion,
+		"status":            "published",
+		"published_at":      publishedAt,
+	})
+	if result.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound
+	}
+	return result.Error
+}
+
+func (r *GormUnifiedPageRepository) ClearPublished(ctx context.Context, id uint) error {
+	result := r.db.WithContext(ctx).Table("unified_pages").Where("id = ?", id).Updates(map[string]interface{}{
+		"published_config": nil,
+		"status":           "draft",
+	})
+	if result.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound
+	}
+	return result.Error
 }
 
 func (r *GormUnifiedPageRepository) UpdateSortOrder(ctx context.Context, id uint, sortOrder int) error {

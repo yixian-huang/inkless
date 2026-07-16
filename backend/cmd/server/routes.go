@@ -466,6 +466,7 @@ func registerRoutes(router *gin.Engine, handlers *Handlers, deps *RouteDeps) {
 		adminGroup.GET("/pages", require("pages", "read"), handlers.UnifiedPage.AdminList)
 		adminGroup.GET("/pages/:id", require("pages", "read"), handlers.UnifiedPage.AdminGetByID)
 		adminGroup.POST("/pages", require("pages", "create"), handlers.UnifiedPage.AdminCreate)
+		adminGroup.PUT("/pages/:id", require("pages", "update"), handlers.UnifiedPage.AdminUpdate)
 		adminGroup.GET("/pages/:id/draft", require("pages", "read"), handlers.UnifiedPage.AdminGetDraft)
 		adminGroup.PUT("/pages/:id/draft", require("pages", "update"), handlers.UnifiedPage.AdminUpdateDraft)
 		adminGroup.POST("/pages/:id/publish", require("pages", "publish"), handlers.UnifiedPage.AdminPublish)

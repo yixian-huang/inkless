@@ -43,11 +43,38 @@ function json(route, body, status = 200) {
   });
 }
 
-async function mockAdminAPI(page) {
+function clone(value) {
+  return JSON.parse(JSON.stringify(value));
+}
+
+function createMockState() {
+  return {
+    nextPageId: 101,
+    pages: [],
+  };
+}
+
+function publicPageFacts(page) {
+  return {
+    id: page.id,
+    slug: page.slug,
+    title: { zh: page.zhTitle, en: page.enTitle },
+    description: { zh: page.zhDescription || "", en: page.enDescription || "" },
+    mode: page.mode,
+    sortOrder: page.sortOrder,
+    showInNav: page.showInNav,
+    parentId: page.parentId,
+    status: page.status,
+    publishedVersion: page.publishedVersion,
+  };
+}
+
+async function mockAdminAPI(page, state) {
   await page.route("**/*", async (route) => {
     const request = route.request();
     const url = new URL(request.url());
     const path = url.pathname;
+    const method = request.method();
 
     if (request.resourceType() === "document" || url.origin !== baseURL) {
       await route.continue();
@@ -63,8 +90,23 @@ async function mockAdminAPI(page) {
         activeTheme: {},
         themeTokens: {},
         themePages: [],
+        unifiedPages: state.pages
+          .filter((item) => item.status === "published" && item.publishedConfig)
+          .map(publicPageFacts),
         globalConfig: { config: { site: { name: { zh: "Impress" } } } },
         features: {},
+      });
+      return;
+    }
+    if (path === "/public/menu") {
+      await json(route, {
+        id: 1,
+        name: "Primary",
+        slug: "primary",
+        isPrimary: true,
+        items: [],
+        createdAt: "2026-07-16T00:00:00Z",
+        updatedAt: "2026-07-16T00:00:00Z",
       });
       return;
     }
@@ -89,10 +131,150 @@ async function mockAdminAPI(page) {
       });
       return;
     }
-    if (path === "/admin/pages") {
-      await json(route, { items: [] });
+    if (path === "/admin/pages" && method === "GET") {
+      await json(route, { items: state.pages });
       return;
     }
+    if (path === "/admin/pages" && method === "POST") {
+      const input = request.postDataJSON();
+      const now = new Date().toISOString();
+      const item = {
+        id: state.nextPageId++,
+        slug: input.slug,
+        zhTitle: input.zhTitle || "",
+        enTitle: input.enTitle || "",
+        zhDescription: "",
+        enDescription: "",
+        mode: input.mode || "composable",
+        templateId: input.templateId,
+        status: "draft",
+        sortOrder: input.sortOrder || 0,
+        showInNav: Boolean(input.showInNav),
+        parentId: input.parentId,
+        publishedVersion: 0,
+        draftVersion: 1,
+        draftConfig: input.draftConfig || { sections: [] },
+        publishedConfig: null,
+        createdAt: now,
+        updatedAt: now,
+      };
+      state.pages.push(item);
+      await json(route, item, 201);
+      return;
+    }
+
+    const draftMatch = path.match(/^\/admin\/pages\/(\d+)\/draft$/);
+    if (draftMatch) {
+      const item = state.pages.find((candidate) => candidate.id === Number(draftMatch[1]));
+      if (!item) {
+        await json(route, { error: "page not found" }, 404);
+        return;
+      }
+      if (method === "GET") {
+        await json(route, {
+          id: item.id,
+          slug: item.slug,
+          draftConfig: item.draftConfig,
+          draftVersion: item.draftVersion,
+          publishedVersion: item.publishedVersion,
+          updatedAt: item.updatedAt,
+        });
+        return;
+      }
+      if (method === "PUT") {
+        const expectedVersion = Number(request.headers()["if-match"]);
+        if (expectedVersion !== item.draftVersion) {
+          await json(route, {
+            error: "draft version conflict",
+            currentVersion: item.draftVersion,
+          }, 409);
+          return;
+        }
+        const input = request.postDataJSON();
+        item.draftConfig = input.draftConfig;
+        item.draftVersion += 1;
+        item.updatedAt = new Date().toISOString();
+        await json(route, { id: item.id, draftVersion: item.draftVersion });
+        return;
+      }
+    }
+
+    const publishMatch = path.match(/^\/admin\/pages\/(\d+)\/publish$/);
+    if (publishMatch && method === "POST") {
+      const item = state.pages.find((candidate) => candidate.id === Number(publishMatch[1]));
+      const input = request.postDataJSON();
+      if (!item) {
+        await json(route, { error: "page not found" }, 404);
+        return;
+      }
+      if (input.expectedDraftVersion !== item.draftVersion) {
+        await json(route, { error: "draft version conflict" }, 409);
+        return;
+      }
+      item.status = "published";
+      item.publishedVersion += 1;
+      item.publishedConfig = clone(item.draftConfig);
+      item.updatedAt = new Date().toISOString();
+      await json(route, item);
+      return;
+    }
+
+    const unpublishMatch = path.match(/^\/admin\/pages\/(\d+)\/unpublish$/);
+    if (unpublishMatch && method === "POST") {
+      const item = state.pages.find((candidate) => candidate.id === Number(unpublishMatch[1]));
+      if (!item) {
+        await json(route, { error: "page not found" }, 404);
+        return;
+      }
+      item.status = "draft";
+      item.publishedVersion = 0;
+      item.publishedConfig = null;
+      item.updatedAt = new Date().toISOString();
+      await json(route, { message: "unpublished" });
+      return;
+    }
+
+    const pageMatch = path.match(/^\/admin\/pages\/(\d+)$/);
+    if (pageMatch) {
+      const item = state.pages.find((candidate) => candidate.id === Number(pageMatch[1]));
+      if (!item) {
+        await json(route, { error: "page not found" }, 404);
+        return;
+      }
+      if (method === "GET") {
+        await json(route, item);
+        return;
+      }
+      if (method === "PUT") {
+        Object.assign(item, request.postDataJSON(), {
+          updatedAt: new Date().toISOString(),
+        });
+        await json(route, item);
+        return;
+      }
+    }
+
+    const publicPageMatch = path.match(/^\/public\/pages\/([^/]+)$/);
+    if (publicPageMatch && method === "GET") {
+      const item = state.pages.find(
+        (candidate) =>
+          candidate.slug === publicPageMatch[1] &&
+          candidate.status === "published" &&
+          candidate.publishedConfig,
+      );
+      if (!item) {
+        await json(route, { error: "page not found" }, 404);
+        return;
+      }
+      await json(route, {
+        ...publicPageFacts(item),
+        title: item.zhTitle,
+        description: item.zhDescription,
+        publishedConfig: item.publishedConfig,
+      });
+      return;
+    }
+
     if (path === "/admin/articles") {
       await json(route, { items: [], total: 0, page: 1, pageSize: 10 });
       return;
@@ -121,8 +303,9 @@ async function run() {
   try {
     const page = await browser.newPage();
     const pageErrors = [];
+    const state = createMockState();
     page.on("pageerror", (error) => pageErrors.push(error));
-    await mockAdminAPI(page);
+    await mockAdminAPI(page, state);
 
     await page.goto(`${baseURL}/admin`);
     await page.waitForURL(`${baseURL}/admin/login`);
@@ -148,8 +331,67 @@ async function run() {
     await page.waitForURL(`${baseURL}/admin/migration`);
     await page.getByRole("heading", { name: "数据迁移" }).waitFor();
 
+    await page.goto(`${baseURL}/admin/pages`);
+    await page.getByRole("button", { name: "新建页面" }).click();
+    await page.waitForURL(`${baseURL}/admin/pages/new`);
+    await page.getByLabel("URL 路径 (slug)").fill("launch-page");
+    await page.getByLabel("标题 (中文)").fill("发布页");
+    await page.getByLabel("标题 (English)").fill("Launch Page");
+    await page.getByLabel("显示在导航").check();
+    await page.getByRole("button", { name: "JSON 模式" }).click();
+    await page.getByRole("textbox", { name: "区块配置 (JSON 数组)" }).fill(JSON.stringify([
+      {
+        id: "launch-copy",
+        type: "rich-text",
+        variant: "default",
+        locked: false,
+        data: { content: "Wave 1 published page" },
+        settings: {},
+      },
+    ]));
+    await page.getByRole("button", { name: "创建", exact: true }).click();
+    await page.waitForURL(`${baseURL}/admin/pages/edit/101`);
+
+    await page.getByRole("button", { name: "发布", exact: true }).click();
+    await page.getByText("已发布", { exact: true }).waitFor();
+
+    await page.goto(`${baseURL}/launch-page`);
+    await page.getByText("Wave 1 published page", { exact: true }).waitFor();
+    await page.getByRole("navigation").getByRole("link", { name: "发布页" }).waitFor();
+
+    await page.goto(`${baseURL}/admin/pages/edit/101`);
+    await page.getByLabel("显示在导航").uncheck();
+    await Promise.all([
+      page.waitForResponse((response) =>
+        response.url().endsWith("/admin/pages/101") &&
+        response.request().method() === "PUT" &&
+        response.ok()
+      ),
+      page.getByRole("button", { name: "保存页面信息", exact: true }).click(),
+    ]);
+    assert.equal(state.pages[0].showInNav, false);
+
+    await page.goto(`${baseURL}/launch-page`);
+    await page.getByText("Wave 1 published page", { exact: true }).waitFor();
+    assert.equal(await page.getByRole("link", { name: "发布页" }).count(), 0);
+
+    await page.goto(`${baseURL}/admin/pages/edit/101`);
+    await Promise.all([
+      page.waitForResponse((response) =>
+        response.url().endsWith("/admin/pages/101/unpublish") &&
+        response.request().method() === "POST" &&
+        response.ok()
+      ),
+      page.getByRole("button", { name: "下线", exact: true }).click(),
+    ]);
+    assert.equal(state.pages[0].status, "draft");
+    await page.getByRole("button", { name: "发布", exact: true }).waitFor();
+
+    await page.goto(`${baseURL}/launch-page`);
+    await page.getByRole("heading", { name: "404", exact: true }).waitFor();
+
     assert.equal(pageErrors.length, 0, `Unexpected page errors: ${pageErrors.join("\n")}`);
-    console.log("Admin release-chain E2E passed");
+    console.log("Admin navigation and unified-page release-chain E2E passed");
   } finally {
     await browser.close();
   }

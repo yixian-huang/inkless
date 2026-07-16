@@ -9,9 +9,9 @@ import { useThemePages } from "@/contexts/ThemePagesContext";
 import { useBootstrap } from "@/contexts/BootstrapContext";
 import ThemePageWrapper from "@/plugins/ThemePageWrapper";
 import type { ThemePageDefinition } from "@/plugins/types";
-import type { ThemePageItem } from "@/api/themePages";
 import { FeatureGate } from "@/components/feature/FeatureGate";
 import { routeFeatureMap } from "@/router/featureMap";
+import { resolvePublicRoutingPages } from "./publicPages";
 
 declare global {
   interface Window {
@@ -21,7 +21,11 @@ declare global {
 
 export function AppRoutes() {
   const { activeTheme, isLoading: themeLoading } = useThemeManager();
-  const { pages: themePages, isLoading: themePagesLoading } = useThemePages();
+  const {
+    pages: themePages,
+    unifiedPages,
+    isLoading: themePagesLoading,
+  } = useThemePages();
   const { data: bootstrapData } = useBootstrap();
   const navigate = useNavigate();
   const activeThemeId = bootstrapData?.activeTheme?.themeId ?? activeTheme?.manifest.id;
@@ -42,26 +46,15 @@ export function AppRoutes() {
     return map;
   }, [activeTheme]);
 
-  const routingPages = useMemo((): ThemePageItem[] => {
-    const published = themePages.filter(
-      (p) => p.status === "published" && (!activeThemeId || p.themeId === activeThemeId),
-    );
-    if (published.length > 0) return published;
-
-    // Backend has no rows for this theme (e.g. seed not run yet) — use plugin manifest.
-    return (activeTheme?.pages ?? []).map((p, index) => ({
-      id: index,
-      slug: p.slug,
-      title: { zh: p.nav.labelZh, en: p.nav.label },
-      contentKey: p.contentKey ?? p.slug,
-      renderMode: p.renderMode,
-      isThemePage: true,
-      themeId: activeThemeId ?? "",
-      navConfig: { showInHeader: p.nav.showInHeader, showInFooter: p.nav.showInFooter },
-      sortOrder: p.nav.order,
-      status: "published",
-    }));
-  }, [themePages, activeTheme, activeThemeId]);
+  const routingPages = useMemo(
+    () => resolvePublicRoutingPages({
+      unifiedPages,
+      themePages,
+      manifestPages: activeTheme?.pages ?? [],
+      activeThemeId,
+    }),
+    [unifiedPages, themePages, activeTheme, activeThemeId],
+  );
 
   const wrapWithFeatureGate = (path: string, element: ReactElement) => {
     const key = routeFeatureMap[path];

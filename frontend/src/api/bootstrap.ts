@@ -1,5 +1,6 @@
 import { http } from "./http";
 import type { ThemePageItem } from "./themePages";
+import type { PublicUnifiedPageItem } from "./unifiedPages";
 import type { SiteConfigFeatures } from "@/types/siteConfig";
 
 export interface ActiveThemeData {
@@ -27,6 +28,7 @@ export interface BootstrapData {
   activeTheme: ActiveThemeData;
   themeTokens: Record<string, unknown>;
   themePages: ThemePageItem[];
+  unifiedPages?: PublicUnifiedPageItem[];
   globalConfig: GlobalConfigData;
   pageContent?: PageContentData;
   features?: SiteConfigFeatures;

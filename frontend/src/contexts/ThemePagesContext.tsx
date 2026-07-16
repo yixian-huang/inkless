@@ -1,10 +1,12 @@
 import { createContext, useContext, useState, useEffect, useMemo, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import type { ThemePageItem } from "@/api/themePages";
+import type { PublicUnifiedPageItem } from "@/api/unifiedPages";
 import { useBootstrap } from "@/contexts/BootstrapContext";
 import { getPublicMenu } from "@/api/menus";
 import type { MenuGroup, MenuItem } from "@/api/menus";
 import { resolveLocale } from "@/utils/locale";
+import { resolveAutomaticNavigation } from "@/router/publicPages";
 
 interface NavItem {
   label: string;
@@ -15,6 +17,7 @@ interface NavItem {
 
 interface ThemePagesContextValue {
   pages: ThemePageItem[];
+  unifiedPages: PublicUnifiedPageItem[];
   headerNavItems: NavItem[];
   footerNavItems: NavItem[];
   menuNavItems: NavItem[];
@@ -23,6 +26,7 @@ interface ThemePagesContextValue {
 
 const ThemePagesContext = createContext<ThemePagesContextValue>({
   pages: [],
+  unifiedPages: [],
   headerNavItems: [],
   footerNavItems: [],
   menuNavItems: [],
@@ -70,6 +74,10 @@ export function ThemePagesProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const pages = useMemo(() => bootstrapData?.themePages ?? [], [bootstrapData]);
+  const unifiedPages = useMemo(
+    () => bootstrapData?.unifiedPages ?? [],
+    [bootstrapData],
+  );
   const isLoading = bootstrapLoading;
   const locale = resolveLocale(i18n.language);
 
@@ -82,34 +90,21 @@ export function ThemePagesProvider({ children }: { children: ReactNode }) {
   }, [menuGroup, locale]);
 
   const headerNavItems = useMemo(() => {
-    return pages
-      .filter((p) => p.status === "published" && p.navConfig?.showInHeader)
-      .sort((a, b) => a.sortOrder - b.sortOrder)
-      .map((p) => ({
-        label: (locale === "en" ? p.title.en : p.title.zh) || p.title.zh || p.slug,
-        path: p.slug === "home" ? "/" : `/${p.slug}`,
-        sortOrder: p.sortOrder,
-      }));
-  }, [pages, locale]);
+    return resolveAutomaticNavigation(unifiedPages, pages, locale, "header");
+  }, [pages, unifiedPages, locale]);
 
   const footerNavItems = useMemo(() => {
-    return pages
-      .filter((p) => p.status === "published" && p.navConfig?.showInFooter)
-      .sort((a, b) => a.sortOrder - b.sortOrder)
-      .map((p) => ({
-        label: (locale === "en" ? p.title.en : p.title.zh) || p.title.zh || p.slug,
-        path: p.slug === "home" ? "/" : `/${p.slug}`,
-        sortOrder: p.sortOrder,
-      }));
-  }, [pages, locale]);
+    return resolveAutomaticNavigation(unifiedPages, pages, locale, "footer");
+  }, [pages, unifiedPages, locale]);
 
   const value = useMemo(() => ({
     pages,
+    unifiedPages,
     headerNavItems,
     footerNavItems,
     menuNavItems,
     isLoading,
-  }), [pages, headerNavItems, footerNavItems, menuNavItems, isLoading]);
+  }), [pages, unifiedPages, headerNavItems, footerNavItems, menuNavItems, isLoading]);
 
   return (
     <ThemePagesContext.Provider value={value}>

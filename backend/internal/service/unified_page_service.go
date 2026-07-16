@@ -53,13 +53,10 @@ func (s *UnifiedPageService) Publish(ctx context.Context, pageID uint, expectedD
 		return fmt.Errorf("create version: %w", err)
 	}
 
-	// Update page: published config + status + publishedAt
+	// Update publication fields only so concurrent live route/navigation edits
+	// cannot be overwritten by this publish operation.
 	now := time.Now()
-	page.PublishedConfig = model.NullableJSONMap(page.DraftConfig)
-	page.PublishedVersion = newVersion
-	page.Status = "published"
-	page.PublishedAt = &now
-	return s.pageRepo.Update(ctx, page)
+	return s.pageRepo.UpdatePublished(ctx, page.ID, page.DraftConfig, newVersion, now)
 }
 
 // Rollback loads a historical version and publishes it as a new version.
@@ -92,14 +89,16 @@ func (s *UnifiedPageService) Rollback(ctx context.Context, pageID uint, targetVe
 		return fmt.Errorf("find page: %w", err)
 	}
 
-	page.DraftConfig = historicalVersion.Config
-	page.DraftVersion = page.DraftVersion + 1
-	page.PublishedConfig = model.NullableJSONMap(historicalVersion.Config)
-	page.PublishedVersion = newVersion
-	page.Status = "published"
 	now := time.Now()
-	page.PublishedAt = &now
-	return s.pageRepo.Update(ctx, page)
+	return s.pageRepo.UpdateRollback(
+		ctx,
+		page.ID,
+		historicalVersion.Config,
+		page.DraftVersion+1,
+		historicalVersion.Config,
+		newVersion,
+		now,
+	)
 }
 
 // Unpublish sets page back to draft. Sets PublishedConfig to nil (SQL NULL via NullableJSONMap).
@@ -108,7 +107,5 @@ func (s *UnifiedPageService) Unpublish(ctx context.Context, pageID uint) error {
 	if err != nil {
 		return fmt.Errorf("%w: %v", ErrUnifiedPageNotFound, err)
 	}
-	page.Status = "draft"
-	page.PublishedConfig = nil // NullableJSONMap nil → SQL NULL
-	return s.pageRepo.Update(ctx, page)
+	return s.pageRepo.ClearPublished(ctx, page.ID)
 }

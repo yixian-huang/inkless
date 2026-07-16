@@ -45,16 +45,17 @@ import (
 
 // s1TestHarness holds the focused router and database for S1 tests.
 type s1TestHarness struct {
-	router    *gin.Engine
-	database  *db.DB
+	router      *gin.Engine
+	database    *db.DB
 	sharedCache *cache.Cache
 }
 
 // newS1Harness builds a minimal test router wiring only the routes exercised by the S1 tests:
-//   /auth/login
-//   /admin/global-config (GET, PUT /draft, POST /publish)
-//   /admin/features      (GET, PUT /draft, POST /publish)
-//   /public/bootstrap
+//
+//	/auth/login
+//	/admin/global-config (GET, PUT /draft, POST /publish)
+//	/admin/features      (GET, PUT /draft, POST /publish)
+//	/public/bootstrap
 //
 // The SiteConfig table is migrated but NOT seeded — tests control the initial state.
 func newS1Harness(t *testing.T) *s1TestHarness {
@@ -113,7 +114,7 @@ func newS1Harness(t *testing.T) *s1TestHarness {
 	authH := authHandler.NewHandler(userRepo, refreshTokenRepo, cfg)
 	globalCfgH := globalConfigHandler.NewHandler(contentDocRepo, sharedCache)
 	featuresH := featuresHandler.NewHandler(siteConfigRepo, sharedCache)
-	bootstrapH := bootstrapHandler.NewHandler(contentDocRepo, installedThemeRepo, pageRepo, siteConfigRepo, sharedCache)
+	bootstrapH := bootstrapHandler.NewHandler(contentDocRepo, installedThemeRepo, pageRepo, unifiedPageRepo, siteConfigRepo, sharedCache)
 
 	// Router setup.
 	gin.SetMode(gin.TestMode)
@@ -231,7 +232,9 @@ func validFeaturesPayload(expectedDraftVersion int) map[string]interface{} {
 // ─── Test 1 ────────────────────────────────────────────────────────────────
 
 // TestS1_GlobalConfig_PublishRoundTrip verifies the full:
-//   PUT /admin/global-config/draft → POST /admin/global-config/publish → GET /public/bootstrap
+//
+//	PUT /admin/global-config/draft → POST /admin/global-config/publish → GET /public/bootstrap
+//
 // round-trip, including verifying that the bilingual identity.name structure
 // is preserved intact in the bootstrap response (not flattened to a single locale).
 func TestS1_GlobalConfig_PublishRoundTrip(t *testing.T) {
