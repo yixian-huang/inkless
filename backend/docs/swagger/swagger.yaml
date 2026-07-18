@@ -122,9 +122,6 @@ definitions:
         type: integer
       userId:
         type: integer
-    required:
-    - roleId
-    - userId
     type: object
   internal_handler_role.CreateRequest:
     properties:
@@ -3076,6 +3073,10 @@ paths:
                 type: array
               themeTokens:
                 type: object
+              unifiedPages:
+                items:
+                  type: object
+                type: array
             type: object
       summary: Bootstrap SPA
       tags:

@@ -4462,6 +4462,12 @@ const docTemplate = `{
                                 },
                                 "themeTokens": {
                                     "type": "object"
+                                },
+                                "unifiedPages": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "object"
+                                    }
                                 }
                             }
                         }
@@ -5186,10 +5192,6 @@ const docTemplate = `{
         },
         "internal_handler_role.AssignRoleRequest": {
             "type": "object",
-            "required": [
-                "roleId",
-                "userId"
-            ],
             "properties": {
                 "roleId": {
                     "type": "integer"
