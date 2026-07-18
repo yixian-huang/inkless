@@ -161,3 +161,47 @@ func TestFindByIDWithRolesHidesLegacySitePermissions(t *testing.T) {
 		Count(&stored).Error)
 	assert.EqualValues(t, 1, stored)
 }
+
+func TestFindByIDWithRolesIgnoresLegacyScopedAssignments(t *testing.T) {
+	database := setupTestDB(t)
+	defer database.Close()
+	require.NoError(t, database.AutoMigrate(
+		&model.RBACRole{},
+		&model.Permission{},
+		&model.UserRole{},
+	))
+	require.NoError(t, database.Exec("ALTER TABLE roles ADD COLUMN site_id INTEGER").Error)
+	require.NoError(t, database.Exec("ALTER TABLE user_roles ADD COLUMN site_id INTEGER").Error)
+
+	ctx := context.Background()
+	repo := NewGormUserRepository(database.DB)
+	user := &model.User{Username: "legacy-scope-user", PasswordHash: "hash", Role: model.RoleAdmin}
+	require.NoError(t, repo.Create(ctx, user))
+
+	globalRole := &model.RBACRole{Name: "global_role", DisplayName: "Global Role"}
+	legacyRole := &model.RBACRole{Name: "legacy_role", DisplayName: "Legacy Role"}
+	require.NoError(t, database.Create(globalRole).Error)
+	require.NoError(t, database.Create(legacyRole).Error)
+	require.NoError(t, database.Model(&model.RBACRole{}).
+		Where("id = ?", legacyRole.ID).
+		Update("site_id", 42).Error)
+
+	globalPermission := &model.Permission{Resource: "settings", Action: "read"}
+	legacyPermission := &model.Permission{Resource: "users", Action: "delete"}
+	require.NoError(t, database.Create(globalPermission).Error)
+	require.NoError(t, database.Create(legacyPermission).Error)
+	require.NoError(t, database.Model(globalRole).Association("Permissions").Append(globalPermission))
+	require.NoError(t, database.Model(legacyRole).Association("Permissions").Append(legacyPermission))
+
+	require.NoError(t, database.Create(&model.UserRole{UserID: user.ID, RoleID: globalRole.ID}).Error)
+	require.NoError(t, database.Create(&model.UserRole{UserID: user.ID, RoleID: legacyRole.ID}).Error)
+	require.NoError(t, database.Model(&model.UserRole{}).
+		Where("user_id = ? AND role_id = ?", user.ID, legacyRole.ID).
+		Update("site_id", 42).Error)
+
+	found, err := repo.FindByIDWithRoles(ctx, user.ID)
+	require.NoError(t, err)
+	assert.Equal(t, []string{"settings:read"}, found.EffectivePermissionKeys())
+	require.Len(t, found.UserRoles, 1)
+	assert.Equal(t, globalRole.ID, found.UserRoles[0].RoleID)
+}

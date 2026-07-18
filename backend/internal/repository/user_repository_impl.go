@@ -10,12 +10,13 @@ import (
 
 // GormUserRepository implements UserRepository using GORM
 type GormUserRepository struct {
-	db *gorm.DB
+	db        *gorm.DB
+	rbacScope legacyRBACScope
 }
 
 // NewGormUserRepository creates a new GormUserRepository
 func NewGormUserRepository(db *gorm.DB) UserRepository {
-	return &GormUserRepository{db: db}
+	return &GormUserRepository{db: db, rbacScope: detectLegacyRBACScope(db)}
 }
 
 // Create creates a new user
@@ -112,8 +113,8 @@ func (r *GormUserRepository) CountSuperAdmins(ctx context.Context) (int64, error
 func (r *GormUserRepository) FindByIDWithRoles(ctx context.Context, id uint) (*model.User, error) {
 	var user model.User
 	err := r.db.WithContext(ctx).
-		Preload("UserRoles").
-		Preload("UserRoles.Role").
+		Preload("UserRoles", r.rbacScope.currentUserRoles).
+		Preload("UserRoles.Role", r.rbacScope.currentRoles).
 		Preload("UserRoles.Role.Permissions", "resource <> ?", model.LegacyResourceSites).
 		First(&user, id).Error
 	if err != nil {

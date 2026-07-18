@@ -247,6 +247,32 @@ func TestRetiredAdminSitesHTMLPathIsRejectedBeforeSPAFallback(t *testing.T) {
 	}
 }
 
+func TestFrontendFallbackReturns404ForRetiredAdminSites(t *testing.T) {
+	frontendDir := t.TempDir()
+	indexPath := frontendDir + "/index.html"
+	require.NoError(t, os.WriteFile(indexPath, []byte("<html>spa</html>"), 0o600))
+
+	router := gin.New()
+	registerFrontendFallback(router, indexPath, nil, "https://example.com", nil)
+
+	for _, path := range []string{"/admin/sites", "/admin/sites/1"} {
+		response := httptest.NewRecorder()
+		request := httptest.NewRequest(http.MethodGet, path, nil)
+		request.Header.Set("Accept", "text/html,application/xhtml+xml")
+		router.ServeHTTP(response, request)
+
+		assert.Equal(t, http.StatusNotFound, response.Code)
+		assert.NotContains(t, response.Body.String(), "<html>spa</html>")
+	}
+
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/admin/dashboard", nil)
+	request.Header.Set("Accept", "text/html,application/xhtml+xml")
+	router.ServeHTTP(response, request)
+	assert.Equal(t, http.StatusOK, response.Code)
+	assert.Contains(t, response.Body.String(), "<html>spa</html>")
+}
+
 func TestGracefulShutdownSetup(t *testing.T) {
 	// This test just verifies the test setup works
 	// Actual graceful shutdown is tested in integration tests

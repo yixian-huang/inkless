@@ -10,12 +10,13 @@ import (
 
 // GormRoleRepository implements RoleRepository using GORM
 type GormRoleRepository struct {
-	db *gorm.DB
+	db        *gorm.DB
+	rbacScope legacyRBACScope
 }
 
 // NewGormRoleRepository creates a new GormRoleRepository
 func NewGormRoleRepository(db *gorm.DB) RoleRepository {
-	return &GormRoleRepository{db: db}
+	return &GormRoleRepository{db: db, rbacScope: detectLegacyRBACScope(db)}
 }
 
 // Create creates a new role
@@ -29,7 +30,7 @@ func (r *GormRoleRepository) Create(ctx context.Context, role *model.RBACRole) e
 // FindByID finds a role by ID, including its permissions
 func (r *GormRoleRepository) FindByID(ctx context.Context, id uint) (*model.RBACRole, error) {
 	var role model.RBACRole
-	err := r.db.WithContext(ctx).
+	err := r.rbacScope.currentRoles(r.db.WithContext(ctx)).
 		Preload("Permissions", "resource <> ?", model.LegacyResourceSites).
 		First(&role, id).Error
 	if err != nil {
@@ -44,7 +45,7 @@ func (r *GormRoleRepository) FindByID(ctx context.Context, id uint) (*model.RBAC
 // FindByName finds a role by name, including its permissions
 func (r *GormRoleRepository) FindByName(ctx context.Context, name string) (*model.RBACRole, error) {
 	var role model.RBACRole
-	err := r.db.WithContext(ctx).
+	err := r.rbacScope.currentRoles(r.db.WithContext(ctx)).
 		Preload("Permissions", "resource <> ?", model.LegacyResourceSites).
 		Where("name = ?", name).
 		First(&role).Error
@@ -81,11 +82,11 @@ func (r *GormRoleRepository) Delete(ctx context.Context, id uint) error {
 			return err
 		}
 		// Delete user_roles entries
-		if err := tx.Where("role_id = ?", id).Delete(&model.UserRole{}).Error; err != nil {
+		if err := r.rbacScope.currentUserRoles(tx).Where("role_id = ?", id).Delete(&model.UserRole{}).Error; err != nil {
 			return err
 		}
 		// Delete the role itself
-		result := tx.Delete(&model.RBACRole{}, id)
+		result := r.rbacScope.currentRoles(tx).Delete(&model.RBACRole{}, id)
 		if result.Error != nil {
 			return result.Error
 		}
@@ -99,7 +100,7 @@ func (r *GormRoleRepository) Delete(ctx context.Context, id uint) error {
 // List returns all roles with their permissions
 func (r *GormRoleRepository) List(ctx context.Context) ([]*model.RBACRole, error) {
 	var roles []*model.RBACRole
-	err := r.db.WithContext(ctx).
+	err := r.rbacScope.currentRoles(r.db.WithContext(ctx)).
 		Preload("Permissions", "resource <> ?", model.LegacyResourceSites).
 		Order("id ASC").
 		Find(&roles).Error
@@ -112,6 +113,14 @@ func (r *GormRoleRepository) List(ctx context.Context) ([]*model.RBACRole, error
 // SetPermissions replaces all permissions for a role
 func (r *GormRoleRepository) SetPermissions(ctx context.Context, roleID uint, permissionIDs []uint) error {
 	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		var count int64
+		if err := r.rbacScope.currentRoles(tx.Model(&model.RBACRole{})).Where("id = ?", roleID).Count(&count).Error; err != nil {
+			return err
+		}
+		if count == 0 {
+			return errors.New("role not found")
+		}
+
 		// Clear existing permissions
 		if err := tx.Exec("DELETE FROM role_permissions WHERE rbac_role_id = ?", roleID).Error; err != nil {
 			return err
@@ -161,12 +170,19 @@ func (r *GormRoleRepository) FindPermissionByResourceAction(ctx context.Context,
 // CountUsersWithRole returns the number of users assigned to a role
 func (r *GormRoleRepository) CountUsersWithRole(ctx context.Context, roleID uint) (int64, error) {
 	var count int64
-	err := r.db.WithContext(ctx).Model(&model.UserRole{}).Where("role_id = ?", roleID).Count(&count).Error
+	err := r.rbacScope.currentUserRoles(r.db.WithContext(ctx).Model(&model.UserRole{})).Where("role_id = ?", roleID).Count(&count).Error
 	return count, err
 }
 
 // AssignRoleToUser assigns a role to a user
 func (r *GormRoleRepository) AssignRoleToUser(ctx context.Context, userID, roleID uint) error {
+	var count int64
+	if err := r.rbacScope.currentRoles(r.db.WithContext(ctx).Model(&model.RBACRole{})).Where("id = ?", roleID).Count(&count).Error; err != nil {
+		return err
+	}
+	if count == 0 {
+		return errors.New("role not found")
+	}
 	ur := model.UserRole{
 		UserID: userID,
 		RoleID: roleID,
@@ -176,7 +192,7 @@ func (r *GormRoleRepository) AssignRoleToUser(ctx context.Context, userID, roleI
 
 // RemoveRoleFromUser removes a role from a user
 func (r *GormRoleRepository) RemoveRoleFromUser(ctx context.Context, userID, roleID uint) error {
-	result := r.db.WithContext(ctx).Where("user_id = ? AND role_id = ?", userID, roleID).Delete(&model.UserRole{})
+	result := r.rbacScope.currentUserRoles(r.db.WithContext(ctx)).Where("user_id = ? AND role_id = ?", userID, roleID).Delete(&model.UserRole{})
 	if result.Error != nil {
 		return result.Error
 	}
@@ -189,8 +205,8 @@ func (r *GormRoleRepository) RemoveRoleFromUser(ctx context.Context, userID, rol
 // GetUserRoles returns all roles assigned to a user (with permissions preloaded)
 func (r *GormRoleRepository) GetUserRoles(ctx context.Context, userID uint) ([]model.UserRole, error) {
 	var userRoles []model.UserRole
-	err := r.db.WithContext(ctx).
-		Preload("Role").
+	err := r.rbacScope.currentUserRoles(r.db.WithContext(ctx)).
+		Preload("Role", r.rbacScope.currentRoles).
 		Preload("Role.Permissions", "resource <> ?", model.LegacyResourceSites).
 		Where("user_id = ?", userID).
 		Find(&userRoles).Error

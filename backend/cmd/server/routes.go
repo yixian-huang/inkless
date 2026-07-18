@@ -540,26 +540,40 @@ func registerRoutes(router *gin.Engine, handlers *Handlers, deps *RouteDeps) {
 
 		// SPA fallback: non-API GET requests return index.html with SEO meta
 		indexHTML := filepath.Join(cfg.FrontendDir, "index.html")
-		router.NoRoute(func(c *gin.Context) {
-			path := c.Request.URL.Path
-			if c.Request.Method == "GET" &&
-				!strings.HasPrefix(path, "/public/") &&
-				!strings.HasPrefix(path, "/auth/") &&
-				!strings.HasPrefix(path, "/uploads/") &&
-				path != "/health" &&
-				path != "/version" &&
-				path != "/metrics" &&
-				path != "/sitemap.xml" &&
-				path != "/robots.txt" {
-				if !serveSPAWithMeta(c, seoRenderer, cfg.BaseURL, deps.ContentDocRepo) {
-					http.ServeFile(c.Writer, c.Request, indexHTML)
-					c.Abort()
-				}
-				return
-			}
-			c.JSON(404, gin.H{"error": "not found"})
-		})
+		registerFrontendFallback(router, indexHTML, seoRenderer, cfg.BaseURL, deps.ContentDocRepo)
 	}
+}
+
+func registerFrontendFallback(
+	router *gin.Engine,
+	indexHTML string,
+	renderer *seo.Renderer,
+	baseURL string,
+	contentDocRepo repository.ContentDocumentRepository,
+) {
+	router.NoRoute(func(c *gin.Context) {
+		path := c.Request.URL.Path
+		if isRetiredAdminSitesPath(path) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "not found"})
+			return
+		}
+		if c.Request.Method == http.MethodGet &&
+			!strings.HasPrefix(path, "/public/") &&
+			!strings.HasPrefix(path, "/auth/") &&
+			!strings.HasPrefix(path, "/uploads/") &&
+			path != "/health" &&
+			path != "/version" &&
+			path != "/metrics" &&
+			path != "/sitemap.xml" &&
+			path != "/robots.txt" {
+			if !serveSPAWithMeta(c, renderer, baseURL, contentDocRepo) {
+				http.ServeFile(c.Writer, c.Request, indexHTML)
+				c.Abort()
+			}
+			return
+		}
+		c.JSON(http.StatusNotFound, gin.H{"error": "not found"})
+	})
 }
 
 func isRetiredAdminSitesPath(path string) bool {
