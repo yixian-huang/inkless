@@ -1,5 +1,7 @@
 # Phase 4 Implementation Plan: Platform Capabilities (平台能力)
 
+> 历史设计（2026-07-18 标记）：本计划记录早期共享数据库多站点设想，不再代表当前 Roadmap 或产品承诺。当前决策是一个实例服务一个逻辑站点，多个独立站点部署多个实例；不要据此为核心内容模型增加 `site_id`。参见 `docs/adr/0001-single-instance-single-site.md`。
+
 **Date**: 2026-03-11
 **Design Spec**: `docs/superpowers/specs/2026-03-11-open-source-evolution-design.md`
 **Prerequisites**: Phase 0-3 complete (migrations via goose, provider registry, event bus, plugin architecture)

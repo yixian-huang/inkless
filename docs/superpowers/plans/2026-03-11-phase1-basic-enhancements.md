@@ -1,5 +1,7 @@
 # Phase 1: Basic Enhancements Implementation Plan
 
+> 历史实施计划：本文保留早期“为未来 multi-site 预留 site_id”的注释用于追溯，该方向已由 2026-07-18 的单实例单站点 ADR 否决，不得作为当前实现要求。参见 `docs/adr/0001-single-instance-single-site.md`。
+
 > **For agentic workers:** REQUIRED: Use superpowers:subagent-driven-development (if subagents available) or superpowers:executing-plans to implement this plan. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Add full-text search, comments, scheduled publishing, Markdown editor, SEO enhancements, and misc improvements to make the product competitive with Halo for self-hosted users.

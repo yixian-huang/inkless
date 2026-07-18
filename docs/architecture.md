@@ -27,6 +27,19 @@ flowchart LR
   C --> H
 ```
 
+## 2.1 实例与站点边界
+
+Impress 的当前架构是“一个实例服务一个逻辑站点”，不是共享数据库多租户平台。
+
+- `BASE_URL` 是实例唯一的 canonical origin。Sitemap、RSS、canonical 和对外 URL 均以它为准。
+- 同一站点的其它域名是部署层别名，默认由反向代理 301 到 `BASE_URL`。
+- 多个独立站点运行多个 Impress 实例；各实例隔离数据库、上传、插件、备份、JWT secret 和后台会话。
+- 核心内容模型不包含租户 `site_id`，Repository 不注入站点 Scope。
+- `SiteConfig` 是当前实例的全局配置，必须保留；它不是多租户 `Site`。
+- 历史 `sites`、`site_users` 和角色表中的 `site_id` 在当前兼容窗口只停止使用，不自动 DROP。
+
+详细决策与后果见 [ADR-0001：单实例单逻辑站点](adr/0001-single-instance-single-site.md)。
+
 ## 3. 发布链路（同步发布 zh/en）
 
 ```mermaid

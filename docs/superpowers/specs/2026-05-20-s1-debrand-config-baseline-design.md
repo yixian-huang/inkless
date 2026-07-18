@@ -1,5 +1,7 @@
 # S1 · 去品牌化与可配置基线 (Generic-ize impress)
 
+> 历史设计更新：本文关于“保留 sites 脚手架”的判断已被 2026-07-18 单实例单站点 ADR 取代；`SiteConfig` 继续保留，但多租户 `Site`/`SiteUser` 脚手架撤销。参见 `docs/adr/0001-single-instance-single-site.md`。
+
 **Status:** Draft — pending user review
 **Date:** 2026-05-20
 **Owner:** Isian

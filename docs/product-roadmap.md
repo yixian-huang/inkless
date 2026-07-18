@@ -4,7 +4,7 @@
 >
 > 创建时间：2026-02-18
 >
-> 事实状态更新：2026-07-17（Wave 2 / R2 + 外部插件生命周期）
+> 事实状态更新：2026-07-18（单实例单站点架构收敛，本地分支待合并/发布）
 
 ---
 
@@ -46,13 +46,14 @@ Impress 是一个双语（zh/en）React SPA + Go/Gin CMS。下表以当前仓库
 | 外部插件运行时 | beta | 公开 Go SDK/proto；zip 按实际解压字节限额并原子安装、独立进程启停、在途 RPC 有界排空、provider 注册/恢复、启动恢复、可回滚卸载和管理 API 已闭环；启用态卸载提交前始终保留 DB enabled 真相，失败或进程崩溃后可恢复文件、进程与 provider；`file-notifier` 已通过黑盒验证；默认关闭，仅系统管理员可显式启用 |
 | 管理端质量门禁 | production | lint、typecheck、前后端测试、Go race test、构建及 Playwright 页面发布、定时发布、系统状态和迁移链路 |
 | 部署 | production | Docker + SSH/systemd，支持 SQLite / PostgreSQL |
+| 实例边界 | local verified / unpublished | 一个实例服务一个逻辑站点；`BASE_URL` 是 canonical；域名别名由代理层处理；多个独立站点部署多个隔离实例。收敛改动和双实例 smoke 已在本地分支验证，不等同于已合并或发布 |
 
 ### 受限或未完成能力
 
 - migration 任务和失败文章状态目前保存在应用进程内，服务重启后不会恢复历史任务；大规模迁移前仍需补持久化任务模型与文件大小限制。
 - QA 已动态读取当前 AI provider，但向量索引仍为进程内存实现，重启会丢失，保持 experimental。
 - 远端存储切换不迁移历史对象；媒体保留 provider/key，历史 provider 必须仍可访问。
-- 多站点只有管理壳，核心内容尚未完成 `site_id` 数据隔离。
+- experimental 多站点管理壳已在当前本地分支撤销；产品不建设共享数据库多租户，核心内容不引入 `site_id`。多个独立站点以多个隔离实例运行；该状态尚未合并或发布。
 - Marketplace 仍只提供登记/下载信息，尚未接入真实包分发、签名、升级和管理 UI；本地外部插件可通过管理 API 安装、启停、重启恢复和卸载，但二进制按可信服务端代码处理，manifest permission 不构成 OS 沙箱，含 secret settings 的包当前会被拒绝。Beta 仅开放 canonical notifier/search/captcha；external storage、依赖、路由与前端注入仍保留。
 - 线索管理、预约咨询和商业化流程尚未形成完整产品闭环。
 
@@ -369,6 +370,13 @@ POST   /admin/plugins/test-notification
 ---
 
 ## 七、实施路线图
+
+### 当前架构收敛与后续主线
+
+- 单实例边界收口：移除 `/admin/sites`、未接线的租户 Resolver/Scope 和无效站点级 RBAC，同时保留 `SiteConfig` 与旧 schema 回滚窗口。
+- 多实例运维：补齐 `BASE_URL`、CORS、插件目录持久化、域名别名反代示例与双实例隔离 smoke。
+- 插件产品化：继续推进管理 UI、Marketplace 分发/签名/升级、secret settings 和信任边界。
+- 共享数据库多租户已取消；只有出现明确需求并重新完成架构评审后才可能独立立项，不再作为 R3 门槛。
 
 ### Phase 1：核心补齐（内容引擎 + 安全基线）
 
