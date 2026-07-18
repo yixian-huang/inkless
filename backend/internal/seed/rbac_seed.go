@@ -29,7 +29,7 @@ var BuiltinRoles = []RBACSeedConfig{
 	{
 		Name:        model.BuiltinRoleSiteAdmin,
 		DisplayName: "Site Admin",
-		Description: "Full site management access except system-level operations",
+		Description: "Full administration access for the current instance except system-level operations",
 		Permissions: func() []string {
 			var perms []string
 			for _, res := range model.BuiltinResources {
@@ -166,6 +166,14 @@ func seedRole(ctx context.Context, roleRepo repository.RoleRepository, cfg RBACS
 		log.Printf("Created role: %s (id=%d)", cfg.Name, role.ID)
 	} else {
 		log.Printf("Synchronizing permissions for role %s (id=%d)", cfg.Name, role.ID)
+		if role.DisplayName != cfg.DisplayName || role.Description != cfg.Description || !role.IsSystem {
+			role.DisplayName = cfg.DisplayName
+			role.Description = cfg.Description
+			role.IsSystem = true
+			if err := roleRepo.Update(ctx, role); err != nil {
+				return fmt.Errorf("update built-in role metadata: %w", err)
+			}
+		}
 	}
 
 	// Collect permission IDs for this role

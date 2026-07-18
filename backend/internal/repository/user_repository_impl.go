@@ -114,7 +114,7 @@ func (r *GormUserRepository) FindByIDWithRoles(ctx context.Context, id uint) (*m
 	err := r.db.WithContext(ctx).
 		Preload("UserRoles").
 		Preload("UserRoles.Role").
-		Preload("UserRoles.Role.Permissions").
+		Preload("UserRoles.Role.Permissions", "resource <> ?", model.LegacyResourceSites).
 		First(&user, id).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {

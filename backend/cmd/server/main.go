@@ -48,7 +48,6 @@ import (
 	searchhandler "blotting-consultancy/internal/handler/search"
 	seoHandler "blotting-consultancy/internal/handler/seo"
 	setupHandler "blotting-consultancy/internal/handler/setup"
-	siteHandler "blotting-consultancy/internal/handler/site"
 	sitemapHandler "blotting-consultancy/internal/handler/sitemap"
 	storageHandler "blotting-consultancy/internal/handler/storage"
 	systemHandler "blotting-consultancy/internal/handler/system"
@@ -189,8 +188,6 @@ func main() {
 		&model.Glossary{},
 		&model.StorageConfig{},
 		&model.AIConfig{},
-		&model.Site{},
-		&model.SiteUser{},
 		&model.UnifiedPage{},
 		&model.PageVersion{},
 		&model.ScheduledPublishJob{},
@@ -263,7 +260,6 @@ func main() {
 	chunkedUploadRepo := repository.NewGormChunkedUploadRepository(database.DB)
 	glossaryRepo := repository.NewGormGlossaryRepository(database.DB)
 	storageConfigRepo := repository.NewGormStorageConfigRepository(database.DB)
-	siteRepo := repository.NewGormSiteRepository(database.DB)
 	unifiedPageRepo := repository.NewGormUnifiedPageRepository(database.DB)
 	pageVersionRepo := repository.NewGormPageVersionRepository(database.DB)
 	scheduledPublishJobRepo := repository.NewGormScheduledPublishJobRepository(database.DB)
@@ -392,9 +388,6 @@ func main() {
 		storageRuntime,
 	)
 
-	// Initialize site service
-	siteSvc := service.NewSiteService(database.DB, siteRepo)
-
 	// Initialize migration service
 	migrationSvc := migration.NewService(articleRepo, categoryRepo, tagRepo)
 
@@ -434,6 +427,7 @@ func main() {
 		UserRepo:   userRepo,
 		RBACCache:  rbacCache,
 		UploadDir:  cfg.UploadDir,
+		BackupDir:  cfg.BackupDir,
 		AppVersion: Version,
 	}); err != nil {
 		log.Error("Failed to initialize modules", "error", err)
@@ -488,7 +482,6 @@ func main() {
 	chunkedUploadHandlerInst := chunkedUploadHandler.NewHandler(chunkedUploadSvc)
 	mediaFolderHandlerInst := mediaFolderHandler.NewHandler(mediaFolderRepo, mediaRepo)
 	migrationHandlerInst := migrationHandler.NewHandler(migrationSvc)
-	siteHandlerInst := siteHandler.NewHandler(siteSvc, siteRepo)
 	storageHandlerInst := storageHandler.NewHandlerWithRuntime(storageRuntime)
 	systemHandlerInst := systemHandler.NewHandler(database.DB, cfg.UploadDir, Version)
 	translationHandlerInst := translationHandler.NewHandlerWithRegistry(registry, glossaryRepo, articleRepo)
@@ -563,7 +556,6 @@ func main() {
 		ChunkedUpload:  chunkedUploadHandlerInst,
 		MediaFolder:    mediaFolderHandlerInst,
 		Migration:      migrationHandlerInst,
-		Site:           siteHandlerInst,
 		Storage:        storageHandlerInst,
 		System:         systemHandlerInst,
 		Translation:    translationHandlerInst,

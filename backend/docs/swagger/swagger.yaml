@@ -120,8 +120,6 @@ definitions:
     properties:
       roleId:
         type: integer
-      siteId:
-        type: integer
       userId:
         type: integer
     required:

@@ -34,8 +34,13 @@ var BuiltinResources = []string{
 	"dashboard", "articles", "pages", "media", "comments",
 	"categories", "tags", "menus", "themes", "analytics",
 	"audit_logs", "backups", "users", "form_submissions",
-	"roles", "settings", "system", "sites", "plugins",
+	"roles", "settings", "system", "plugins",
 }
+
+// LegacyResourceSites identifies permission rows left by the retired
+// experimental shared-database multi-site feature. Rows remain stored for the
+// rollback window but must not be exposed through current role APIs.
+const LegacyResourceSites = "sites"
 
 // BuiltinActions lists all action types in the system
 var BuiltinActions = []string{

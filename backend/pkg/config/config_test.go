@@ -60,6 +60,9 @@ func TestLoad_WithDefaults(t *testing.T) {
 	if cfg.DBDSN != defaultSQLiteDSN {
 		t.Errorf("expected default DBDSN='%s', got '%s'", defaultSQLiteDSN, cfg.DBDSN)
 	}
+	if cfg.BackupDir != "./backups" {
+		t.Errorf("expected default BackupDir='./backups', got '%s'", cfg.BackupDir)
+	}
 }
 
 func TestLoad_UsesDefaultSQLiteDSNWhenMissing(t *testing.T) {
@@ -159,4 +162,5 @@ func cleanupEnv() {
 	os.Unsetenv("JWT_SECRET")
 	os.Unsetenv("JWT_REFRESH_SECRET")
 	os.Unsetenv("ENV")
+	os.Unsetenv("BACKUP_DIR")
 }

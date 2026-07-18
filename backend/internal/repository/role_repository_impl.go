@@ -29,7 +29,9 @@ func (r *GormRoleRepository) Create(ctx context.Context, role *model.RBACRole) e
 // FindByID finds a role by ID, including its permissions
 func (r *GormRoleRepository) FindByID(ctx context.Context, id uint) (*model.RBACRole, error) {
 	var role model.RBACRole
-	err := r.db.WithContext(ctx).Preload("Permissions").First(&role, id).Error
+	err := r.db.WithContext(ctx).
+		Preload("Permissions", "resource <> ?", model.LegacyResourceSites).
+		First(&role, id).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, errors.New("role not found")
@@ -42,7 +44,10 @@ func (r *GormRoleRepository) FindByID(ctx context.Context, id uint) (*model.RBAC
 // FindByName finds a role by name, including its permissions
 func (r *GormRoleRepository) FindByName(ctx context.Context, name string) (*model.RBACRole, error) {
 	var role model.RBACRole
-	err := r.db.WithContext(ctx).Preload("Permissions").Where("name = ?", name).First(&role).Error
+	err := r.db.WithContext(ctx).
+		Preload("Permissions", "resource <> ?", model.LegacyResourceSites).
+		Where("name = ?", name).
+		First(&role).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, errors.New("role not found")
@@ -94,7 +99,10 @@ func (r *GormRoleRepository) Delete(ctx context.Context, id uint) error {
 // List returns all roles with their permissions
 func (r *GormRoleRepository) List(ctx context.Context) ([]*model.RBACRole, error) {
 	var roles []*model.RBACRole
-	err := r.db.WithContext(ctx).Preload("Permissions").Order("id ASC").Find(&roles).Error
+	err := r.db.WithContext(ctx).
+		Preload("Permissions", "resource <> ?", model.LegacyResourceSites).
+		Order("id ASC").
+		Find(&roles).Error
 	if err != nil {
 		return nil, err
 	}
@@ -122,7 +130,10 @@ func (r *GormRoleRepository) SetPermissions(ctx context.Context, roleID uint, pe
 // ListPermissions returns all available permissions
 func (r *GormRoleRepository) ListPermissions(ctx context.Context) ([]*model.Permission, error) {
 	var perms []*model.Permission
-	err := r.db.WithContext(ctx).Order("resource ASC, action ASC").Find(&perms).Error
+	err := r.db.WithContext(ctx).
+		Where("resource <> ?", model.LegacyResourceSites).
+		Order("resource ASC, action ASC").
+		Find(&perms).Error
 	if err != nil {
 		return nil, err
 	}
@@ -155,11 +166,10 @@ func (r *GormRoleRepository) CountUsersWithRole(ctx context.Context, roleID uint
 }
 
 // AssignRoleToUser assigns a role to a user
-func (r *GormRoleRepository) AssignRoleToUser(ctx context.Context, userID, roleID uint, siteID *uint) error {
+func (r *GormRoleRepository) AssignRoleToUser(ctx context.Context, userID, roleID uint) error {
 	ur := model.UserRole{
 		UserID: userID,
 		RoleID: roleID,
-		SiteID: siteID,
 	}
 	return r.db.WithContext(ctx).Create(&ur).Error
 }
@@ -181,7 +191,7 @@ func (r *GormRoleRepository) GetUserRoles(ctx context.Context, userID uint) ([]m
 	var userRoles []model.UserRole
 	err := r.db.WithContext(ctx).
 		Preload("Role").
-		Preload("Role.Permissions").
+		Preload("Role.Permissions", "resource <> ?", model.LegacyResourceSites).
 		Where("user_id = ?", userID).
 		Find(&userRoles).Error
 	if err != nil {

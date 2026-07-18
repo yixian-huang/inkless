@@ -54,6 +54,16 @@ func TestExternalPluginsRequireExplicitEnable(t *testing.T) {
 	assert.True(t, cfg.ExternalPlugins)
 }
 
+func TestBackupDirCanBeConfiguredPerInstance(t *testing.T) {
+	cleanupBootstrapEnv()
+	os.Setenv("BACKUP_DIR", "/srv/impress-a/backups")
+	defer cleanupBootstrapEnv()
+
+	cfg, err := loadBase()
+	require.NoError(t, err)
+	assert.Equal(t, "/srv/impress-a/backups", cfg.BackupDir)
+}
+
 func TestWriteEnvFile_CreatesEnvAndDirs(t *testing.T) {
 	dir := t.TempDir()
 	path, err := WriteEnvFile(dir, EnvFileParams{
@@ -70,6 +80,8 @@ func TestWriteEnvFile_CreatesEnvAndDirs(t *testing.T) {
 	content := string(data)
 	assert.Contains(t, content, "PORT=9090")
 	assert.Contains(t, content, "JWT_SECRET=secret")
+	assert.Contains(t, content, "BACKUP_DIR=./backups")
+	assert.DirExists(t, filepath.Join(dir, "backups"))
 }
 
 func cleanupBootstrapEnv() {
@@ -80,4 +92,5 @@ func cleanupBootstrapEnv() {
 	os.Unsetenv("DB_DSN")
 	os.Unsetenv("ENV")
 	os.Unsetenv("ENABLE_EXTERNAL_PLUGINS")
+	os.Unsetenv("BACKUP_DIR")
 }

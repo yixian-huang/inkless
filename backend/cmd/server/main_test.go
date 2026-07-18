@@ -199,6 +199,54 @@ func TestMiddlewareOrdering(t *testing.T) {
 	assert.Equal(t, 404, w.Code)
 }
 
+func TestAdminSitesRoutesRemoved(t *testing.T) {
+	router, database := setupTestRouter(t)
+	defer database.Close()
+
+	tests := []struct {
+		method string
+		path   string
+	}{
+		{method: http.MethodGet, path: "/admin/sites"},
+		{method: http.MethodPost, path: "/admin/sites"},
+		{method: http.MethodGet, path: "/admin/sites/1"},
+		{method: http.MethodPut, path: "/admin/sites/1"},
+		{method: http.MethodDelete, path: "/admin/sites/1"},
+		{method: http.MethodGet, path: "/admin/sites/1/users"},
+		{method: http.MethodPost, path: "/admin/sites/1/users"},
+		{method: http.MethodDelete, path: "/admin/sites/1/users/2"},
+		{method: http.MethodGet, path: "/admin/sites/1/export"},
+		{method: http.MethodPost, path: "/admin/sites/import"},
+	}
+
+	for _, test := range tests {
+		t.Run(test.method+" "+test.path, func(t *testing.T) {
+			response := httptest.NewRecorder()
+			request := httptest.NewRequest(test.method, test.path, nil)
+			router.ServeHTTP(response, request)
+			assert.Equal(t, http.StatusNotFound, response.Code)
+		})
+	}
+}
+
+func TestRetiredAdminSitesHTMLPathIsRejectedBeforeSPAFallback(t *testing.T) {
+	assert.True(t, isRetiredAdminSitesPath("/admin/sites"))
+	assert.True(t, isRetiredAdminSitesPath("/admin/sites/1"))
+	assert.False(t, isRetiredAdminSitesPath("/admin/site-config"))
+	assert.False(t, isRetiredAdminSitesPath("/admin/sites-preview"))
+
+	for _, path := range []string{"/admin/sites", "/admin/sites/1"} {
+		response := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(response)
+		c.Request = httptest.NewRequest(http.MethodGet, path, nil)
+		c.Request.Header.Set("Accept", "text/html,application/xhtml+xml")
+
+		assert.True(t, rejectRetiredAdminSitesHTML(c))
+		assert.True(t, c.IsAborted())
+		assert.Equal(t, http.StatusNotFound, c.Writer.Status())
+	}
+}
+
 func TestGracefulShutdownSetup(t *testing.T) {
 	// This test just verifies the test setup works
 	// Actual graceful shutdown is tested in integration tests

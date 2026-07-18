@@ -42,7 +42,7 @@ type RoleRepository interface {
 	CountUsersWithRole(ctx context.Context, roleID uint) (int64, error)
 
 	// AssignRoleToUser assigns a role to a user
-	AssignRoleToUser(ctx context.Context, userID, roleID uint, siteID *uint) error
+	AssignRoleToUser(ctx context.Context, userID, roleID uint) error
 
 	// RemoveRoleFromUser removes a role from a user
 	RemoveRoleFromUser(ctx context.Context, userID, roleID uint) error

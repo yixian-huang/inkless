@@ -1,6 +1,9 @@
 package role
 
 import (
+	"encoding/json"
+	"errors"
+	"io"
 	"net/http"
 	"strconv"
 
@@ -19,6 +22,21 @@ type Handler struct {
 // NewHandler creates a new role handler
 func NewHandler(roleRepo repository.RoleRepository, userRepo repository.UserRepository) *Handler {
 	return &Handler{roleRepo: roleRepo, userRepo: userRepo}
+}
+
+func decodeStrictJSON(c *gin.Context, target any) error {
+	decoder := json.NewDecoder(c.Request.Body)
+	decoder.DisallowUnknownFields()
+	if err := decoder.Decode(target); err != nil {
+		return err
+	}
+	if err := decoder.Decode(&struct{}{}); !errors.Is(err, io.EOF) {
+		if err == nil {
+			return errors.New("request body must contain a single JSON object")
+		}
+		return err
+	}
+	return nil
 }
 
 // RoleResponse is the DTO for role responses
@@ -137,8 +155,12 @@ type CreateRequest struct {
 // @Router       /admin/roles [post]
 func (h *Handler) Create(c *gin.Context) {
 	var req CreateRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
+	if err := decodeStrictJSON(c, &req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": gin.H{"message": "Invalid request: " + err.Error()}})
+		return
+	}
+	if req.Name == "" || req.DisplayName == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": gin.H{"message": "Invalid request: name and displayName are required"}})
 		return
 	}
 
@@ -205,7 +227,7 @@ func (h *Handler) Update(c *gin.Context) {
 	}
 
 	var req UpdateRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
+	if err := decodeStrictJSON(c, &req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": gin.H{"message": "Invalid request: " + err.Error()}})
 		return
 	}
@@ -322,9 +344,8 @@ func (h *Handler) ListPermissions(c *gin.Context) {
 
 // AssignRoleRequest is the request body for assigning a role to a user
 type AssignRoleRequest struct {
-	UserID uint  `json:"userId" binding:"required"`
-	RoleID uint  `json:"roleId" binding:"required"`
-	SiteID *uint `json:"siteId"`
+	UserID uint `json:"userId"`
+	RoleID uint `json:"roleId"`
 }
 
 // AssignRole assigns a role to a user.
@@ -339,8 +360,12 @@ type AssignRoleRequest struct {
 // @Router       /admin/roles/assign [post]
 func (h *Handler) AssignRole(c *gin.Context) {
 	var req AssignRoleRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
+	if err := decodeStrictJSON(c, &req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": gin.H{"message": "Invalid request: " + err.Error()}})
+		return
+	}
+	if req.UserID == 0 || req.RoleID == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": gin.H{"message": "Invalid request: userId and roleId are required"}})
 		return
 	}
 
@@ -358,7 +383,7 @@ func (h *Handler) AssignRole(c *gin.Context) {
 		return
 	}
 
-	if err := h.roleRepo.AssignRoleToUser(c.Request.Context(), req.UserID, req.RoleID, req.SiteID); err != nil {
+	if err := h.roleRepo.AssignRoleToUser(c.Request.Context(), req.UserID, req.RoleID); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": gin.H{"message": "Failed to assign role: " + err.Error()}})
 		return
 	}
@@ -384,8 +409,12 @@ type UnassignRoleRequest struct {
 // @Router       /admin/roles/unassign [post]
 func (h *Handler) UnassignRole(c *gin.Context) {
 	var req UnassignRoleRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
+	if err := decodeStrictJSON(c, &req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": gin.H{"message": "Invalid request: " + err.Error()}})
+		return
+	}
+	if req.UserID == 0 || req.RoleID == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": gin.H{"message": "Invalid request: userId and roleId are required"}})
 		return
 	}
 

@@ -34,7 +34,6 @@ import (
 	roleHandler "blotting-consultancy/internal/handler/role"
 	searchhandler "blotting-consultancy/internal/handler/search"
 	seoHandler "blotting-consultancy/internal/handler/seo"
-	siteHandler "blotting-consultancy/internal/handler/site"
 	sitemapHandler "blotting-consultancy/internal/handler/sitemap"
 	storageHandler "blotting-consultancy/internal/handler/storage"
 	systemHandler "blotting-consultancy/internal/handler/system"
@@ -90,7 +89,6 @@ type Handlers struct {
 	ChunkedUpload  *chunkedUploadHandler.Handler
 	MediaFolder    *mediaFolderHandler.Handler
 	Migration      *migrationHandler.Handler
-	Site           *siteHandler.Handler
 	Storage        *storageHandler.Handler
 	System         *systemHandler.Handler
 	Translation    *translationHandler.Handler
@@ -268,6 +266,9 @@ func registerRoutes(router *gin.Engine, handlers *Handlers, deps *RouteDeps) {
 	if cfg.FrontendDir != "" {
 		indexPath := filepath.Join(cfg.FrontendDir, "index.html")
 		adminGroup.Use(func(c *gin.Context) {
+			if rejectRetiredAdminSitesHTML(c) {
+				return
+			}
 			accept := c.GetHeader("Accept")
 			if c.Request.Method == "GET" && strings.Contains(accept, "text/html") {
 				if !serveSPAWithMeta(c, seoRenderer, cfg.BaseURL, deps.ContentDocRepo) {
@@ -473,18 +474,6 @@ func registerRoutes(router *gin.Engine, handlers *Handlers, deps *RouteDeps) {
 		adminGroup.POST("/migration/jobs/:jobId/retry", require("system", "manage"), handlers.Migration.RetryJob)
 		adminGroup.GET("/migration/jobs/:jobId/stream", require("system", "manage"), handlers.Migration.StreamProgress)
 
-		// Site management
-		adminGroup.GET("/sites", require("sites", "read"), handlers.Site.AdminList)
-		adminGroup.GET("/sites/:id", require("sites", "read"), handlers.Site.AdminGetByID)
-		adminGroup.POST("/sites", require("sites", "create"), handlers.Site.AdminCreate)
-		adminGroup.PUT("/sites/:id", require("sites", "update"), handlers.Site.AdminUpdate)
-		adminGroup.DELETE("/sites/:id", require("sites", "delete"), handlers.Site.AdminDelete)
-		adminGroup.GET("/sites/:id/users", require("sites", "manage"), handlers.Site.AdminListUsers)
-		adminGroup.POST("/sites/:id/users", require("sites", "manage"), handlers.Site.AdminAssignUser)
-		adminGroup.DELETE("/sites/:id/users/:userId", require("sites", "manage"), handlers.Site.AdminUnassignUser)
-		adminGroup.GET("/sites/:id/export", require("sites", "manage"), handlers.Site.AdminExport)
-		adminGroup.POST("/sites/import", require("sites", "manage"), handlers.Site.AdminImport)
-
 		// Storage configuration
 		adminGroup.GET("/storage/config", require("settings", "manage"), handlers.Storage.GetConfig)
 		adminGroup.PUT("/storage/config", require("settings", "manage"), handlers.Storage.UpdateConfig)
@@ -571,4 +560,19 @@ func registerRoutes(router *gin.Engine, handlers *Handlers, deps *RouteDeps) {
 			c.JSON(404, gin.H{"error": "not found"})
 		})
 	}
+}
+
+func isRetiredAdminSitesPath(path string) bool {
+	return path == "/admin/sites" || strings.HasPrefix(path, "/admin/sites/")
+}
+
+func rejectRetiredAdminSitesHTML(c *gin.Context) bool {
+	if c.Request.Method != http.MethodGet ||
+		!strings.Contains(c.GetHeader("Accept"), "text/html") ||
+		!isRetiredAdminSitesPath(c.Request.URL.Path) {
+		return false
+	}
+	c.Status(http.StatusNotFound)
+	c.Abort()
+	return true
 }

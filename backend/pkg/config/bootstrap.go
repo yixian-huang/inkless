@@ -104,6 +104,10 @@ func loadBase() (*Config, error) {
 	if cfg.UploadDir == "" {
 		cfg.UploadDir = "./uploads"
 	}
+	cfg.BackupDir = strings.TrimSpace(os.Getenv("BACKUP_DIR"))
+	if cfg.BackupDir == "" {
+		cfg.BackupDir = "./backups"
+	}
 
 	cfg.BaseURL = strings.TrimSpace(os.Getenv("BASE_URL"))
 	if cfg.BaseURL == "" {

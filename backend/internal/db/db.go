@@ -3,6 +3,7 @@ package db
 import (
 	"context"
 	"fmt"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -88,6 +89,73 @@ func Init(opts InitOptions) (*DB, error) {
 	}
 
 	return &DB{DB: db}, nil
+}
+
+// InitReadOnly opens an existing database without applying migrations or
+// connection pragmas that can mutate persistent state. SQLite databases must
+// be file-backed and already exist; their DSN is forced to mode=ro.
+func InitReadOnly(opts InitOptions) (*DB, error) {
+	dsn := strings.TrimSpace(opts.DSN)
+	if dsn == "" {
+		return nil, fmt.Errorf("database DSN cannot be empty")
+	}
+
+	usePostgres := IsPostgresDSN(dsn)
+	var dialector gorm.Dialector
+	if usePostgres {
+		dialector = postgres.Open(dsn)
+	} else {
+		readOnlyDSN, err := sqliteReadOnlyDSN(dsn)
+		if err != nil {
+			return nil, err
+		}
+		dialector = sqlite.Open(readOnlyDSN)
+	}
+
+	database, err := gorm.Open(dialector, &gorm.Config{
+		Logger: logger.Default.LogMode(opts.LogLevel),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to open database read-only: %w", err)
+	}
+
+	sqlDB, err := database.DB()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get underlying sql.DB: %w", err)
+	}
+	if opts.MaxOpenConn > 0 {
+		sqlDB.SetMaxOpenConns(opts.MaxOpenConn)
+	}
+	if opts.MaxIdleConn > 0 {
+		sqlDB.SetMaxIdleConns(opts.MaxIdleConn)
+	}
+	if opts.MaxLifetime > 0 {
+		sqlDB.SetConnMaxLifetime(opts.MaxLifetime)
+	}
+
+	return &DB{DB: database}, nil
+}
+
+func sqliteReadOnlyDSN(dsn string) (string, error) {
+	dbFile, ok := sqliteFilePath(dsn)
+	if !ok {
+		return "", fmt.Errorf("read-only inspection requires an existing file-backed SQLite database")
+	}
+	if _, err := os.Stat(dbFile); err != nil {
+		return "", fmt.Errorf("SQLite database %q is not available for read-only inspection: %w", dbFile, err)
+	}
+
+	trimmed := strings.TrimSpace(dsn)
+	base, rawQuery, _ := strings.Cut(trimmed, "?")
+	if !strings.HasPrefix(strings.ToLower(base), "file:") {
+		base = "file:" + base
+	}
+	query, err := url.ParseQuery(rawQuery)
+	if err != nil {
+		return "", fmt.Errorf("parse SQLite DSN query: %w", err)
+	}
+	query.Set("mode", "ro")
+	return base + "?" + query.Encode(), nil
 }
 
 func ensureSQLiteDirectory(dsn string) error {

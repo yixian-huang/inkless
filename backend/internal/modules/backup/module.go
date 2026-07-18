@@ -25,7 +25,7 @@ func New() *Module {
 func (m *Module) Name() string { return "backup" }
 
 func (m *Module) Init(deps module.Dependencies) error {
-	m.service = NewService(deps.DB, "./backups", 10, deps.UploadDir, deps.AppVersion)
+	m.service = NewService(deps.DB, deps.BackupDir, 10, deps.UploadDir, deps.AppVersion)
 	m.handler = &Handler{service: m.service}
 	m.userRepo = deps.UserRepo
 	m.rbacCache = deps.RBACCache

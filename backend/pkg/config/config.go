@@ -15,6 +15,7 @@ type Config struct {
 	Env                string
 	CORSAllowedOrigins []string
 	UploadDir          string
+	BackupDir          string
 	BaseURL            string
 	FrontendDir        string
 	PluginDir          string

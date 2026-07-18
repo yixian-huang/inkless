@@ -14,7 +14,6 @@ type RBACRole struct {
 	DisplayName string       `gorm:"not null;size:100" json:"displayName"`
 	Description string       `gorm:"type:text" json:"description"`
 	IsSystem    bool         `gorm:"not null;default:false" json:"isSystem"`
-	SiteID      *uint        `gorm:"index" json:"siteId,omitempty"`
 	Permissions []Permission `gorm:"many2many:role_permissions" json:"permissions,omitempty"`
 	CreatedAt   time.Time    `gorm:"autoCreateTime" json:"createdAt"`
 	UpdatedAt   time.Time    `gorm:"autoUpdateTime" json:"updatedAt"`
@@ -48,9 +47,8 @@ func (r *RBACRole) Validate() error {
 
 // UserRole represents the many-to-many relationship between users and roles
 type UserRole struct {
-	UserID uint  `gorm:"primaryKey" json:"userId"`
-	RoleID uint  `gorm:"primaryKey" json:"roleId"`
-	SiteID *uint `json:"siteId,omitempty"` // NULL = global assignment (Phase 4.2)
+	UserID uint     `gorm:"primaryKey" json:"userId"`
+	RoleID uint     `gorm:"primaryKey" json:"roleId"`
 	Role   RBACRole `gorm:"foreignKey:RoleID" json:"role,omitempty"`
 }
 
@@ -62,7 +60,8 @@ func (UserRole) TableName() string {
 // BuiltinRoleSuperAdmin is the super admin role name
 const BuiltinRoleSuperAdmin = "super_admin"
 
-// BuiltinRoleSiteAdmin is the site admin role name
+// BuiltinRoleSiteAdmin is the compatibility name for an administrator of the
+// current Impress instance. It does not imply a site-scoped assignment.
 const BuiltinRoleSiteAdmin = "site_admin"
 
 // BuiltinRoleEditor is the editor role name

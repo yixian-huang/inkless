@@ -5,6 +5,8 @@ import (
 	"testing"
 
 	"blotting-consultancy/internal/model"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestUserRepository_CreateAndFind(t *testing.T) {
@@ -60,7 +62,7 @@ func TestUserRepository_UpdateAndDelete(t *testing.T) {
 
 	user := &model.User{
 		Username:     "testuser",
-		PasswordHash:  "hashedpassword",
+		PasswordHash: "hashedpassword",
 		Role:         model.RoleAdmin,
 	}
 
@@ -125,4 +127,37 @@ func TestUserRepository_List(t *testing.T) {
 	if len(users) != 3 {
 		t.Errorf("Expected 3 users in first page, got %d", len(users))
 	}
+}
+
+func TestFindByIDWithRolesHidesLegacySitePermissions(t *testing.T) {
+	database := setupTestDB(t)
+	defer database.Close()
+	require.NoError(t, database.AutoMigrate(
+		&model.RBACRole{},
+		&model.Permission{},
+		&model.UserRole{},
+	))
+
+	ctx := context.Background()
+	repo := NewGormUserRepository(database.DB)
+	user := &model.User{Username: "permission-user", PasswordHash: "hash", Role: model.RoleAdmin}
+	require.NoError(t, repo.Create(ctx, user))
+	role := &model.RBACRole{Name: "permission-role", DisplayName: "Permission Role"}
+	require.NoError(t, database.Create(role).Error)
+	legacy := &model.Permission{Resource: model.LegacyResourceSites, Action: "read"}
+	current := &model.Permission{Resource: "settings", Action: "read"}
+	require.NoError(t, database.Create(legacy).Error)
+	require.NoError(t, database.Create(current).Error)
+	require.NoError(t, database.Model(role).Association("Permissions").Append(legacy, current))
+	require.NoError(t, database.Create(&model.UserRole{UserID: user.ID, RoleID: role.ID}).Error)
+
+	found, err := repo.FindByIDWithRoles(ctx, user.ID)
+	require.NoError(t, err)
+	assert.Equal(t, []string{"settings:read"}, found.EffectivePermissionKeys())
+
+	var stored int64
+	require.NoError(t, database.Model(&model.Permission{}).
+		Where("resource = ?", model.LegacyResourceSites).
+		Count(&stored).Error)
+	assert.EqualValues(t, 1, stored)
 }

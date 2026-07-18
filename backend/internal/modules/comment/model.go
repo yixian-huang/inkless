@@ -40,8 +40,6 @@ type Comment struct {
 	Status     CommentStatus `gorm:"size:20;default:pending;index" json:"status"`
 	AuthorRole string        `gorm:"size:20;default:guest" json:"authorRole"`
 	Pinned     bool          `gorm:"default:false" json:"pinned"`
-
-	SiteID *uint `gorm:"index" json:"-"`
 }
 
 // Validate validates the comment model

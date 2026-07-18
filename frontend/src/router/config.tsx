@@ -28,7 +28,6 @@ const AdminTranslationPage = lazy(() => import('../pages/admin/translation/page'
 const AdminQAPage = lazy(() => import('../modules/qa/admin/page'));
 const AdminWizardPage = lazy(() => import('../pages/admin/wizard/page'));
 const AdminRolesPage = lazy(() => import('../pages/admin/roles/page'));
-const AdminSitesPage = lazy(() => import('../pages/admin/sites/page'));
 const AdminStoragePage = lazy(() => import('../pages/admin/storage/page'));
 const AdminEmailSettingsPage = lazy(() => import('../pages/admin/email-settings/page'));
 const AdminSiteConfigPage = lazy(() => import('../pages/admin/site-config/page'));
@@ -197,10 +196,6 @@ export const staticRoutes: RouteObject[] = [
       {
         path: 'roles',
         element: <AdminRolesPage />,
-      },
-      {
-        path: 'sites',
-        element: <AdminSitesPage />,
       },
       {
         path: 'storage',
