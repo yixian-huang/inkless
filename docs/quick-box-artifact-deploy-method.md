@@ -413,9 +413,24 @@ QB_SYSTEMD_UNIT=impress
 PORT=8088
 DB_DSN=...
 JWT_SECRET=...
+JWT_REFRESH_SECRET=...
 FRONTEND_DIR=/opt/impress/frontend/current
 UPLOAD_DIR=/opt/impress/uploads
+BACKUP_DIR=/opt/impress/backups
+BASE_URL=https://www.example.com
+CORS_ALLOWED_ORIGINS=https://www.example.com,https://admin.example.com
+PLUGIN_DIR=/opt/impress/plugins
+PLUGIN_DATA_DIR=/opt/impress/data/plugins
+ENABLE_EXTERNAL_PLUGINS=false
 ```
+
+`qb_write_env_file` 会把上述运行参数写入每个实例自己的
+`${QB_RELEASE_ROOT}/backend/.env`。解析优先级是：本次 activate/rollback
+显式传入的环境变量、已有 `.env`、脚本默认值。`BASE_URL` 是唯一 canonical
+origin；`CORS_ALLOWED_ORIGINS` 是允许访问后台 API 的完整 origin 列表，不应填写
+只有 hostname 的值。未显式传入时，脚本使用与实例端口绑定的本机 URL，并把备份、
+插件包和插件数据分别放在 `${QB_RELEASE_ROOT}/backups`、
+`${QB_RELEASE_ROOT}/plugins` 与 `${QB_RELEASE_ROOT}/data/plugins`。
 
 ### 5.3 Transfer
 
@@ -568,6 +583,95 @@ PORT=8088
 
 `activate` 后二进制从 `/opt/impress/backend/current/blotting-api-latest` 启动（或 systemd `ExecStart` 指向该路径）。
 
+### 7.6 同一主机运行两个独立实例
+
+每个逻辑站点使用独立的 Quick-Box project/environment 配置。以下示例中的所有实例
+边界都必须唯一；两个实例不得共用数据库、上传目录、插件目录、插件数据目录、JWT
+secret 或后台会话：
+
+| 参数 | 实例 A | 实例 B |
+| --- | --- | --- |
+| `QB_RELEASE_ROOT` | `/opt/impress-a` | `/opt/impress-b` |
+| `QB_SYSTEMD_UNIT` | `impress-a` | `impress-b` |
+| `PORT` | `8088` | `8089` |
+| `DB_DSN` | `file:/opt/impress-a/data/impress.db?cache=shared&mode=rwc` | `file:/opt/impress-b/data/impress.db?cache=shared&mode=rwc` |
+| `UPLOAD_DIR` | `/opt/impress-a/uploads` | `/opt/impress-b/uploads` |
+| `BACKUP_DIR` | `/opt/impress-a/backups` | `/opt/impress-b/backups` |
+| `PLUGIN_DIR` | `/opt/impress-a/plugins` | `/opt/impress-b/plugins` |
+| `PLUGIN_DATA_DIR` | `/opt/impress-a/data/plugins` | `/opt/impress-b/data/plugins` |
+| `BASE_URL` | `https://a.example.com` | `https://b.example.com` |
+| `JWT_SECRET` / `JWT_REFRESH_SECRET` | 独立 secret A | 独立 secret B |
+
+两个 systemd unit 可使用同一模板，但 `WorkingDirectory`、`EnvironmentFile` 和
+`ExecStart` 必须分别指向 `/opt/impress-a` 与 `/opt/impress-b`；在
+`ProtectSystem=strict` 下，`ReadWritePaths` 还必须放行各自的备份、插件包和插件数据目录。
+activate 脚本会在 `${QB_SYSTEMD_UNIT}.service.d/impress-instance-paths.conf` 写入对应
+drop-in。升级、回滚或停止某一实例时，只操作对应的 `QB_RELEASE_ROOT` 与
+`QB_SYSTEMD_UNIT`。
+
+Nginx 按主域转发；同一实例的域名别名默认 301 到 `BASE_URL`，保留 path 与 query：
+
+```nginx
+server {
+    listen 443 ssl;
+    server_name a.example.com;
+    location / {
+        proxy_pass http://127.0.0.1:8088;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+}
+
+server {
+    listen 443 ssl;
+    server_name alias-a.example.net;
+    return 301 https://a.example.com$request_uri;
+}
+
+server {
+    listen 443 ssl;
+    server_name b.example.com;
+    location / {
+        proxy_pass http://127.0.0.1:8089;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+}
+```
+
+Caddy 等价配置：
+
+```caddyfile
+a.example.com {
+    reverse_proxy 127.0.0.1:8088
+}
+
+alias-a.example.net {
+    redir https://a.example.com{uri} permanent
+}
+
+b.example.com {
+    reverse_proxy 127.0.0.1:8089
+}
+```
+
+如果业务要求别名不跳转，应用仍会基于 `BASE_URL` 输出主域 canonical；此模式必须另行
+确认缓存键、Cookie domain 和搜索引擎重复内容风险。
+
+本地或 CI 可运行不依赖生产凭据的隔离验证：
+
+```bash
+./scripts/test-qb-artifact-env.sh
+./scripts/smoke-two-instances.sh
+```
+
+第二个脚本构建一个临时后端二进制，同时启动 A/B，验证独立端口、SQLite 数据库、上传
+目录、插件数据、相同 slug 的不同文章、A 的数据库备份，以及停止/重启任一实例不影响
+另一个实例。端口被占用时可设置 `IMPRESS_SMOKE_PORT_A`、`IMPRESS_SMOKE_PORT_B`；传入
+`IMPRESS_SMOKE_BINARY` 可复用已构建的 server 二进制。
+
 ---
 
 ## 8. AI handoff 扩展
@@ -634,7 +738,8 @@ PORT=8088
 5. activate 后 `curl http://82.158.226.66:8088/health` 返回 `healthy`，且 `healthCheckPassed: true`
 6. `cancel` 后远端 build/activate 进程终止，日志可见 `remote process terminated`
 7. 心跳失联 5 分钟 → `stale` 标记 + `recommendedAction`
-8. `rollback` 后服务恢复上一版本且 health 通过
+8. `rollback` 后服务恢复上一版本且 health 通过；仓库的双实例 smoke 还会验证 A 的
+   真实备份/恢复与 release 软链升级/回滚期间 B 持续健康且内容不变
 9. AI 仅通过 API Key 完成：handoff → deploy → poll → health 验证，无需 SSH
 
 ---

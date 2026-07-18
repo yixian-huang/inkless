@@ -16,6 +16,34 @@ All scripts support environment-based configuration and maintain version history
 
 For production on Quick-Box environment **`hk`** (`82.158.226.66`), prefer **`deployMethod: artifact`**: a dedicated **build server** runs `scripts/qb-artifact-build.sh`; the VPS only runs `scripts/qb-artifact-activate.sh`. See [`OPS.md`](../OPS.md) and [`docs/quick-box-artifact-deploy-method.md`](quick-box-artifact-deploy-method.md).
 
+### Single-site instance boundary
+
+One Impress instance serves one logical site. `BASE_URL` is its sole canonical origin;
+additional domains are aliases and should normally issue a 301 redirect to that origin at
+Nginx, Caddy, or the load balancer. `CORS_ALLOWED_ORIGINS` contains the complete origins
+allowed to call the admin API.
+
+Independent sites require independent instances. On a shared host, each instance must have
+its own release root, systemd unit, port, database, upload directory, plugin package/data
+directories, and JWT secrets. For example:
+
+```bash
+# Site A
+QB_RELEASE_ROOT=/opt/impress-a QB_SYSTEMD_UNIT=impress-a PORT=8088 \
+DB_DSN='file:/opt/impress-a/data/impress.db?cache=shared&mode=rwc' \
+UPLOAD_DIR=/opt/impress-a/uploads PLUGIN_DIR=/opt/impress-a/plugins \
+BACKUP_DIR=/opt/impress-a/backups PLUGIN_DATA_DIR=/opt/impress-a/data/plugins \
+BASE_URL=https://a.example.com \
+CORS_ALLOWED_ORIGINS=https://a.example.com ./scripts/qb-artifact-activate.sh
+
+# Site B uses /opt/impress-b, impress-b, port 8089, its own directories and secrets.
+```
+
+Do not share a business database or local backup/media/plugin directories between independent
+sites. See [Quick-Box artifact deployment](quick-box-artifact-deploy-method.md#76-同一主机运行两个独立实例)
+for complete A/B values, systemd guidance, Nginx/Caddy alias examples, and the repeatable
+two-instance smoke test.
+
 ## Prerequisites
 
 ### Local Build Environment

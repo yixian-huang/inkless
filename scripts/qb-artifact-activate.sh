@@ -99,13 +99,20 @@ deploy_frontend() {
 }
 
 ensure_layout() {
-  mkdir -p "${RELEASE_ROOT}/data" "${RELEASE_ROOT}/uploads"
+  mkdir -p "${RELEASE_ROOT}/data" "${RELEASE_ROOT}/uploads" "${BACKUP_DIR:-${RELEASE_ROOT}/backups}"
+  mkdir -p "${PLUGIN_DIR:-${RELEASE_ROOT}/plugins}" "${PLUGIN_DATA_DIR:-${RELEASE_ROOT}/data/plugins}"
   mkdir -p "${RELEASE_ROOT}/backend/versions" "${RELEASE_ROOT}/frontend/versions"
 
   if ! id impress >/dev/null 2>&1; then
     qb_log_warn "user 'impress' not found; systemd may need User= adjustment"
   else
-    chown -R impress:impress "${RELEASE_ROOT}/data" "${RELEASE_ROOT}/uploads" 2>/dev/null || true
+    chown -R impress:impress \
+      "${RELEASE_ROOT}/data" \
+      "${RELEASE_ROOT}/uploads" \
+      "${BACKUP_DIR:-${RELEASE_ROOT}/backups}" \
+      "${PLUGIN_DIR:-${RELEASE_ROOT}/plugins}" \
+      "${PLUGIN_DATA_DIR:-${RELEASE_ROOT}/data/plugins}" \
+      2>/dev/null || true
   fi
 }
 
@@ -122,68 +129,93 @@ install_systemd_unit() {
     fi
   fi
 
-  if [[ -f "${unit_path}" ]]; then
-    return 0
+  if [[ ! -f "${unit_path}" ]]; then
+    if [[ ! -f "${template}" ]]; then
+      qb_log_warn "systemd template missing at ${template}; skip unit install"
+      return 0
+    fi
+    qb_log_info "installing systemd unit ${unit} from ${template}"
+    cp "${template}" "${unit_path}"
+    sed -i "s|/opt/impress|${RELEASE_ROOT}|g" "${unit_path}" 2>/dev/null || \
+      sed -i '' "s|/opt/impress|${RELEASE_ROOT}|g" "${unit_path}"
+    systemctl daemon-reload
+    systemctl enable "${unit}"
   fi
-  if [[ ! -f "${template}" ]]; then
-    qb_log_warn "systemd template missing at ${template}; skip unit install"
-    return 0
-  fi
-  qb_log_info "installing systemd unit ${unit} from ${template}"
-  cp "${template}" "${unit_path}"
-  sed -i "s|/opt/impress|${RELEASE_ROOT}|g" "${unit_path}" 2>/dev/null || \
-    sed -i '' "s|/opt/impress|${RELEASE_ROOT}|g" "${unit_path}"
+
+  local dropin_dir="/etc/systemd/system/${unit}.service.d"
+  mkdir -p "${dropin_dir}"
+  {
+    echo "[Service]"
+    echo "ReadWritePaths=${BACKUP_DIR:-${RELEASE_ROOT}/backups} ${PLUGIN_DIR:-${RELEASE_ROOT}/plugins} ${PLUGIN_DATA_DIR:-${RELEASE_ROOT}/data/plugins}"
+  } >"${dropin_dir}/impress-instance-paths.conf"
   systemctl daemon-reload
-  systemctl enable "${unit}"
 }
 
 rollback_on_failure() {
+  local component="${1:-all}"
   qb_log_error "activate failed; attempting rollback to previous"
-  QB_RELEASE_ROOT="${RELEASE_ROOT}" COMPONENT=all TARGET_VERSION=previous \
+  QB_RELEASE_ROOT="${RELEASE_ROOT}" COMPONENT="${component}" TARGET_VERSION=previous \
     "${SCRIPT_DIR}/qb-artifact-rollback.sh" || true
 }
 
 main() {
   verify_manifest
-  ensure_layout
+
+  local env_file="${RELEASE_ROOT}/backend/.env"
+  qb_load_env_file_defaults "${env_file}"
 
   export FRONTEND_DIR="${FRONTEND_DIR:-${RELEASE_ROOT}/frontend/current}"
   export UPLOAD_DIR="${UPLOAD_DIR:-${RELEASE_ROOT}/uploads}"
+  export BACKUP_DIR="${BACKUP_DIR:-${RELEASE_ROOT}/backups}"
   export PORT="${PORT:-8088}"
+  export BASE_URL="${BASE_URL:-http://127.0.0.1:${PORT}}"
+  export CORS_ALLOWED_ORIGINS="${CORS_ALLOWED_ORIGINS:-${BASE_URL}}"
+  export PLUGIN_DIR="${PLUGIN_DIR:-${RELEASE_ROOT}/plugins}"
+  export PLUGIN_DATA_DIR="${PLUGIN_DATA_DIR:-${RELEASE_ROOT}/data/plugins}"
+  export ENABLE_EXTERNAL_PLUGINS="${ENABLE_EXTERNAL_PLUGINS:-false}"
 
   if [[ -z "${DB_DSN:-}" ]]; then
     export DB_DSN="file:${RELEASE_ROOT}/data/impress.db?cache=shared&mode=rwc"
   fi
 
-  local env_file="${RELEASE_ROOT}/backend/.env"
-  if [[ -f "${env_file}" ]]; then
-    set -a
-    # shellcheck disable=SC1090
-    source "${env_file}"
-    set +a
-  fi
-
+  ensure_layout
   qb_write_env_file "${env_file}" "${RELEASE_ROOT}"
 
+  local deployed_frontend=false
+  local deployed_backend=false
   if ! deploy_frontend; then
-    rollback_on_failure
+    rollback_on_failure frontend
     exit 1
   fi
+  [[ -f "${INCOMING}/frontend-${VERSION}.tar.gz" ]] && deployed_frontend=true
   if ! deploy_backend; then
-    rollback_on_failure
+    [[ "${deployed_frontend}" == "true" ]] && rollback_on_failure frontend
     exit 1
   fi
+  [[ -f "${INCOMING}/backend-${VERSION}.tar.gz" ]] && deployed_backend=true
 
   install_systemd_unit
 
   if ! qb_restart_runtime "${RELEASE_ROOT}"; then
-    rollback_on_failure
+    if [[ "${deployed_frontend}" == "true" && "${deployed_backend}" == "true" ]]; then
+      rollback_on_failure all
+    elif [[ "${deployed_backend}" == "true" ]]; then
+      rollback_on_failure backend
+    elif [[ "${deployed_frontend}" == "true" ]]; then
+      rollback_on_failure frontend
+    fi
     exit 1
   fi
 
   sleep "${QB_HEALTH_CHECK_GRACE_SEC:-3}"
   if ! qb_health_check; then
-    rollback_on_failure
+    if [[ "${deployed_frontend}" == "true" && "${deployed_backend}" == "true" ]]; then
+      rollback_on_failure all
+    elif [[ "${deployed_backend}" == "true" ]]; then
+      rollback_on_failure backend
+    elif [[ "${deployed_frontend}" == "true" ]]; then
+      rollback_on_failure frontend
+    fi
     exit 1
   fi
 

@@ -22,6 +22,45 @@ function setMetaTag(attr: string, key: string, content: string): HTMLMetaElement
   return el;
 }
 
+const canonicalOrigins = new WeakMap<Document, string>();
+
+function parseAbsoluteUrl(value: string | null | undefined): URL | null {
+  if (!value) return null;
+  try {
+    return new URL(value);
+  } catch {
+    return null;
+  }
+}
+
+function getCanonicalOrigin(
+  canonicalLink: HTMLLinkElement | null,
+  canonicalUrl: string,
+): string {
+  const cachedOrigin = canonicalOrigins.get(document);
+  if (cachedOrigin) return cachedOrigin;
+
+  const injectedUrl = parseAbsoluteUrl(canonicalLink?.getAttribute("href"));
+  const explicitUrl = parseAbsoluteUrl(canonicalUrl);
+  const origin =
+    (injectedUrl?.origin !== "null" ? injectedUrl?.origin : null) ??
+    (explicitUrl?.origin !== "null" ? explicitUrl?.origin : null) ??
+    window.location.origin;
+
+  canonicalOrigins.set(document, origin);
+  return origin;
+}
+
+function resolveCanonicalUrl(
+  canonicalUrl: string,
+  canonicalLink: HTMLLinkElement | null,
+): string {
+  const origin = getCanonicalOrigin(canonicalLink, canonicalUrl);
+  if (parseAbsoluteUrl(canonicalUrl)) return canonicalUrl;
+
+  return new URL(canonicalUrl, `${origin}/`).href;
+}
+
 export default function SeoHead({
   title,
   description,
@@ -67,15 +106,17 @@ export default function SeoHead({
       added.push(setMetaTag("property", "og:locale", locale));
     }
 
+    let canonicalLink: HTMLLinkElement | null = null;
     if (canonicalUrl) {
       let link = document.querySelector<HTMLLinkElement>('link[rel="canonical"]');
+      const resolvedCanonicalUrl = resolveCanonicalUrl(canonicalUrl, link);
       if (!link) {
         link = document.createElement("link");
         link.setAttribute("rel", "canonical");
         document.head.appendChild(link);
       }
-      link.setAttribute("href", canonicalUrl);
-      added.push(link);
+      link.setAttribute("href", resolvedCanonicalUrl);
+      canonicalLink = link;
     }
 
     addedElementsRef.current = added;
@@ -85,6 +126,7 @@ export default function SeoHead({
       for (const el of added) {
         el.remove();
       }
+      canonicalLink?.remove();
     };
   }, [title, description, ogTitle, ogDescription, ogImage, ogType, canonicalUrl, locale]);
 
