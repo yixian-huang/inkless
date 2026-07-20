@@ -124,6 +124,8 @@
 
 ```ts
 // conceptual — not corporate hero.backgroundImage-first
+type MediaRef = { url?: string; alt?: string; caption?: string };
+
 type ProductHomeConfig = {
   hero?: {
     eyebrow?: Localized;      // e.g. "Open source CMS"
@@ -132,10 +134,15 @@ type ProductHomeConfig = {
     primaryCta?: { label: Localized; href: string };
     secondaryCta?: { label: Localized; href: string };
     badge?: Localized;        // e.g. version line
+    media?: MediaRef;         // hero product screenshot / illustration
+  };
+  showcase?: {
+    title?: Localized;
+    items?: MediaRef[];       // 1–3 product shots under hero
   };
   features?: {
     title?: Localized;
-    items?: Array<{ title: Localized; description: Localized; icon?: string }>;
+    items?: Array<{ title: Localized; description: Localized; icon?: string; media?: MediaRef }>;
   };
   howItWorks?: {
     title?: Localized;
