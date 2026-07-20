@@ -8,6 +8,15 @@ import {
 } from "@/api/installedThemes";
 import { themeManager } from "@/plugins/ThemeManager";
 import { useBootstrap } from "@/contexts/BootstrapContext";
+import {
+  AdminButton,
+  AdminErrorBanner,
+  AdminFilterChip,
+  AdminInput,
+  AdminLoading,
+  AdminSuccessBanner,
+  AdminToolbar,
+} from "@/components/admin/ui";
 
 type ModalTab = "gallery" | "install";
 
@@ -131,108 +140,111 @@ export default function ThemeManagementModal({ onClose }: ThemeManagementModalPr
   ];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={onClose}>
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/45 p-4 backdrop-blur-[2px]"
+      onClick={onClose}
+    >
       <div
-        className="bg-white rounded-xl shadow-xl w-[90vw] max-w-3xl max-h-[80vh] flex flex-col"
+        className="flex max-h-[80vh] w-[90vw] max-w-3xl flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-[0_24px_64px_rgba(15,23,42,0.18)]"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
-        <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between shrink-0">
-          <h3 className="text-lg font-semibold text-gray-900">主题管理</h3>
+        <div className="flex shrink-0 items-center justify-between border-b border-slate-100 px-5 py-4 sm:px-6">
+          <h3 className="text-base font-semibold tracking-tight text-slate-900">主题管理</h3>
           <button
+            type="button"
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 text-xl"
+            className="rounded-lg px-2 py-1 text-lg leading-none text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+            aria-label="关闭"
           >
-            &times;
+            ×
           </button>
         </div>
 
-        {/* Tabs */}
-        <div className="px-6 border-b border-gray-200 shrink-0">
-          <nav className="flex -mb-px space-x-6">
+        <div className="shrink-0 border-b border-slate-100 px-4 py-2">
+          <AdminToolbar className="border-0 bg-transparent p-0 shadow-none">
             {tabs.map((tab) => (
-              <button
+              <AdminFilterChip
                 key={tab.id}
+                active={activeTab === tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`pb-3 pt-3 px-1 text-sm font-medium border-b-2 transition-colors ${
-                  activeTab === tab.id
-                    ? "border-blue-500 text-blue-600"
-                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                }`}
               >
                 {tab.label}
-              </button>
+              </AdminFilterChip>
             ))}
-          </nav>
+          </AdminToolbar>
         </div>
 
-        {/* Body */}
-        <div className="flex-1 overflow-y-auto p-6">
-          {/* Gallery tab */}
+        <div className="flex-1 overflow-y-auto p-5 sm:p-6">
           {activeTab === "gallery" && (
             <div>
-              {galleryMsg && (
-                <div className={`mb-4 p-3 rounded-md text-sm ${galleryMsg.includes("失败") ? "bg-red-50 text-red-700" : "bg-green-50 text-green-700"}`}>
-                  {galleryMsg}
-                </div>
-              )}
+              {galleryMsg ? (
+                galleryMsg.includes("失败") ? (
+                  <AdminErrorBanner message={galleryMsg} />
+                ) : (
+                  <AdminSuccessBanner message={galleryMsg} />
+                )
+              ) : null}
 
               {galleryLoading ? (
-                <div className="py-12 text-center text-gray-500">加载中...</div>
+                <AdminLoading />
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   {installedThemes.map((theme) => (
                     <div
                       key={theme.id}
-                      className={`rounded-lg border-2 overflow-hidden transition-all ${
+                      className={`overflow-hidden rounded-2xl border-2 transition-all ${
                         theme.isActive
                           ? "border-blue-500 ring-2 ring-blue-200"
-                          : "border-gray-200 hover:border-gray-300"
+                          : "border-slate-200 hover:border-slate-300"
                       }`}
                     >
                       <div
-                        className="h-[50px] w-full relative"
-                        style={{ background: theme.preview || "linear-gradient(135deg, #667 0%, #999 100%)" }}
+                        className="relative h-[50px] w-full"
+                        style={{
+                          background:
+                            theme.preview || "linear-gradient(135deg, #667 0%, #999 100%)",
+                        }}
                       >
                         {theme.isActive && (
-                          <span className="absolute top-2 right-2 bg-blue-500 text-white text-xs font-medium px-2 py-0.5 rounded">
+                          <span className="absolute right-2 top-2 rounded-full bg-blue-500 px-2 py-0.5 text-xs font-medium text-white">
                             当前主题
                           </span>
                         )}
                         {theme.source === "external" && (
-                          <span className="absolute top-2 left-2 bg-purple-500 text-white text-xs font-medium px-2 py-0.5 rounded">
+                          <span className="absolute left-2 top-2 rounded-full bg-violet-500 px-2 py-0.5 text-xs font-medium text-white">
                             外部
                           </span>
                         )}
                       </div>
                       <div className="p-3">
-                        <div className="flex items-center justify-between mb-1">
-                          <h4 className="font-bold text-gray-900 text-sm">{theme.nameZh || theme.name}</h4>
-                          <span className="text-xs text-gray-400">v{theme.version}</span>
+                        <div className="mb-1 flex items-center justify-between">
+                          <h4 className="text-sm font-semibold text-slate-900">
+                            {theme.nameZh || theme.name}
+                          </h4>
+                          <span className="text-xs text-slate-400">v{theme.version}</span>
                         </div>
-                        <p className="text-xs text-gray-500 mb-2">{theme.description}</p>
+                        <p className="mb-2 text-xs text-slate-500">{theme.description}</p>
                         <div className="flex items-center justify-between">
-                          <span className="text-xs text-gray-400">{theme.author}</span>
+                          <span className="text-xs text-slate-400">{theme.author}</span>
                           <div className="flex gap-2">
                             {theme.source === "external" && !theme.isActive && (
-                              <button
+                              <AdminButton
+                                size="sm"
+                                variant="ghost"
+                                className="text-red-600 hover:bg-red-50 hover:text-red-800"
                                 onClick={() => handleUninstall(theme)}
-                                className="px-2.5 py-1 rounded text-xs font-medium text-red-600 border border-red-200 hover:bg-red-50 transition-colors"
                               >
                                 卸载
-                              </button>
+                              </AdminButton>
                             )}
-                            <button
-                              onClick={() => handleActivate(theme)}
+                            <AdminButton
+                              size="sm"
+                              variant={theme.isActive ? "secondary" : "primary"}
                               disabled={theme.isActive}
-                              className={`px-2.5 py-1 rounded text-xs font-medium transition-colors ${
-                                theme.isActive
-                                  ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                                  : "bg-blue-600 text-white hover:bg-blue-700"
-                              }`}
+                              onClick={() => handleActivate(theme)}
                             >
                               {theme.isActive ? "已激活" : "激活"}
-                            </button>
+                            </AdminButton>
                           </div>
                         </div>
                       </div>
@@ -243,52 +255,51 @@ export default function ThemeManagementModal({ onClose }: ThemeManagementModalPr
             </div>
           )}
 
-          {/* Install tab */}
           {activeTab === "install" && (
             <div>
-              <p className="text-sm text-gray-500 mb-4">
+              <p className="mb-4 text-sm text-slate-500">
                 输入外部主题的 UMD bundle URL，加载预览后安装
               </p>
 
-              {installMsg && (
-                <div className={`mb-4 p-3 rounded-md text-sm ${installMsg.includes("成功") ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"}`}>
-                  {installMsg}
-                </div>
-              )}
+              {installMsg ? (
+                installMsg.includes("成功") ? (
+                  <AdminSuccessBanner message={installMsg} />
+                ) : (
+                  <AdminErrorBanner message={installMsg} />
+                )
+              ) : null}
 
-              <div className="flex gap-3 mb-6">
-                <input
+              <div className="mb-6 flex flex-col gap-3 sm:flex-row">
+                <AdminInput
                   type="url"
                   value={installUrl}
                   onChange={(e) => setInstallUrl(e.target.value)}
                   placeholder="https://example.com/theme-bundle.umd.js"
-                  className="flex-1 border border-gray-300 rounded-md px-3 py-2 text-sm"
+                  className="flex-1"
                 />
-                <button
+                <AdminButton
                   onClick={handleLoadPreview}
                   disabled={installLoading || !installUrl.trim()}
-                  className="px-4 py-2 bg-gray-800 text-white rounded-md text-sm hover:bg-gray-900 disabled:opacity-50 whitespace-nowrap"
+                  className="whitespace-nowrap"
                 >
-                  {installLoading ? "加载中..." : "加载预览"}
-                </button>
+                  {installLoading ? "加载中…" : "加载预览"}
+                </AdminButton>
               </div>
 
               {installPreview && (
-                <div className="border border-gray-200 rounded-lg p-4">
-                  <h4 className="font-bold text-gray-900 mb-2">{installPreview.nameZh || installPreview.name}</h4>
-                  <p className="text-sm text-gray-500 mb-2">{installPreview.description}</p>
-                  <div className="flex items-center gap-4 text-xs text-gray-400 mb-4">
+                <div className="rounded-2xl border border-slate-200 p-4">
+                  <h4 className="mb-2 font-semibold text-slate-900">
+                    {installPreview.nameZh || installPreview.name}
+                  </h4>
+                  <p className="mb-2 text-sm text-slate-500">{installPreview.description}</p>
+                  <div className="mb-4 flex flex-wrap items-center gap-4 text-xs text-slate-400">
                     <span>作者: {installPreview.author}</span>
                     <span>版本: {installPreview.version}</span>
                     <span>ID: {installPreview.themeId}</span>
                   </div>
-                  <button
-                    onClick={handleInstall}
-                    disabled={installLoading}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm hover:bg-blue-700 disabled:opacity-50"
-                  >
-                    {installLoading ? "安装中..." : "安装主题"}
-                  </button>
+                  <AdminButton onClick={handleInstall} disabled={installLoading}>
+                    {installLoading ? "安装中…" : "安装主题"}
+                  </AdminButton>
                 </div>
               )}
             </div>

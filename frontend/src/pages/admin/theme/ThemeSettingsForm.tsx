@@ -1,4 +1,12 @@
 import type { ThemeSettingGroup } from "@/plugins/types";
+import {
+  AdminCard,
+  AdminCheckbox,
+  AdminField,
+  AdminInput,
+  AdminSelect,
+  AdminTextarea,
+} from "@/components/admin/ui";
 
 interface Props {
   schema: ThemeSettingGroup[];
@@ -18,70 +26,58 @@ export default function ThemeSettingsForm({ schema, values, onChange }: Props) {
   };
 
   return (
-    <div>
+    <div className="space-y-4">
       {schema.map((group) => (
-        <div key={group.group} className="bg-white rounded-lg shadow p-6 mb-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">{group.labelZh}</h3>
+        <AdminCard key={group.group} title={group.labelZh}>
           <div className="space-y-4">
             {group.fields.map((field) => {
               const val = getValue(group.group, field.name, field.defaultValue);
               return (
-                <div key={field.name}>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    {field.labelZh}
-                  </label>
-
+                <AdminField key={field.name} label={field.type === "boolean" ? undefined : field.labelZh}>
                   {field.type === "text" && (
-                    <input
+                    <AdminInput
                       type="text"
                       value={val ?? ""}
                       onChange={(e) => setValue(group.group, field.name, e.target.value)}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
                     />
                   )}
 
                   {field.type === "textarea" && (
-                    <textarea
+                    <AdminTextarea
                       value={val ?? ""}
                       onChange={(e) => setValue(group.group, field.name, e.target.value)}
                       rows={3}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
                     />
                   )}
 
                   {field.type === "number" && (
-                    <input
+                    <AdminInput
                       type="number"
                       value={val ?? 0}
                       onChange={(e) => setValue(group.group, field.name, Number(e.target.value))}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
                     />
                   )}
 
                   {field.type === "boolean" && (
-                    <label className="inline-flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={!!val}
-                        onChange={(e) => setValue(group.group, field.name, e.target.checked)}
-                        className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                      />
-                      <span className="text-sm text-gray-600">{field.labelZh}</span>
-                    </label>
+                    <AdminCheckbox
+                      checked={!!val}
+                      onChange={(e) => setValue(group.group, field.name, e.target.checked)}
+                      label={field.labelZh}
+                    />
                   )}
 
                   {field.type === "select" && (
-                    <select
+                    <AdminSelect
                       value={val ?? ""}
                       onChange={(e) => setValue(group.group, field.name, e.target.value)}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+                      className="w-full"
                     >
                       {field.options?.map((opt) => (
                         <option key={opt.value} value={opt.value}>
                           {opt.label}
                         </option>
                       ))}
-                    </select>
+                    </AdminSelect>
                   )}
 
                   {field.type === "color" && (
@@ -90,21 +86,21 @@ export default function ThemeSettingsForm({ schema, values, onChange }: Props) {
                         type="color"
                         value={val ?? "#000000"}
                         onChange={(e) => setValue(group.group, field.name, e.target.value)}
-                        className="w-10 h-10 rounded border border-gray-200 cursor-pointer"
+                        className="h-10 w-10 cursor-pointer rounded-xl border border-slate-200"
                       />
-                      <input
+                      <AdminInput
                         type="text"
                         value={val ?? ""}
                         onChange={(e) => setValue(group.group, field.name, e.target.value)}
-                        className="flex-1 text-xs font-mono text-gray-500 border border-gray-200 rounded px-2 py-1"
+                        className="flex-1 font-mono text-xs"
                       />
                     </div>
                   )}
-                </div>
+                </AdminField>
               );
             })}
           </div>
-        </div>
+        </AdminCard>
       ))}
     </div>
   );

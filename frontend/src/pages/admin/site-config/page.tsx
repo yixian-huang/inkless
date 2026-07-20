@@ -5,7 +5,16 @@ import {
   publishAdminGlobalConfig,
 } from "@/api/globalConfig";
 import { useBootstrap } from "@/contexts/BootstrapContext";
-import { AdminLoading, AdminPageHeader } from "@/components/admin/ui";
+import {
+  AdminButton,
+  AdminField,
+  AdminFilterChip,
+  AdminInput,
+  AdminLoading,
+  AdminPageHeader,
+  AdminTextarea,
+  AdminToolbar,
+} from "@/components/admin/ui";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import {
   SITE_CONFIG_GLOBAL_DEFAULT,
@@ -117,31 +126,19 @@ export default function AdminSiteConfigPage() {
         description="配置全站名称、品牌图、作者与 SEO 默认值。先保存草稿，确认无误后再发布。"
       />
 
-      {/* Tabs */}
-      <div className="border-b border-gray-200 mb-5 overflow-x-auto">
-        <div className="flex gap-0.5 min-w-max">
-          {TABS.map((t) => (
-            <button
-              key={t.key}
-              type="button"
-              onClick={() => setTab(t.key)}
-              className={`px-3.5 py-2.5 text-sm whitespace-nowrap border-b-2 transition-colors ${
-                tab === t.key
-                  ? "border-blue-600 text-blue-700 font-medium"
-                  : "border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300"
-              }`}
-            >
-              {t.label}
-            </button>
-          ))}
-        </div>
-      </div>
+      <AdminToolbar className="mb-4">
+        {TABS.map((t) => (
+          <AdminFilterChip key={t.key} active={tab === t.key} onClick={() => setTab(t.key)}>
+            {t.label}
+          </AdminFilterChip>
+        ))}
+      </AdminToolbar>
 
       {tabMeta && (
-        <p className="text-xs text-gray-400 mb-4 -mt-2">{tabMeta.desc}</p>
+        <p className="mb-4 -mt-1 text-xs text-slate-400">{tabMeta.desc}</p>
       )}
 
-      <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
+      <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_4px_16px_rgba(15,23,42,0.03)]">
         {tab === "basic" && (
           <BasicTab
             cfg={cfg}
@@ -170,31 +167,20 @@ export default function AdminSiteConfigPage() {
         )}
       </div>
 
-      <div className="mt-5 flex flex-wrap items-center gap-3 sticky bottom-4 bg-gray-50/95 backdrop-blur border border-gray-200 rounded-xl px-4 py-3 shadow-sm">
-        <button
-          type="button"
-          onClick={save}
-          disabled={saving || publishing}
-          className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
-        >
+      <div className="sticky bottom-4 mt-5 flex flex-wrap items-center gap-3 rounded-2xl border border-slate-200/80 bg-white/95 px-4 py-3 shadow-sm backdrop-blur">
+        <AdminButton size="sm" onClick={save} disabled={saving || publishing}>
           {saving ? "保存中…" : "保存草稿"}
-        </button>
-        <button
-          type="button"
-          onClick={publish}
-          disabled={saving || publishing}
-          className="px-4 py-2 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
-        >
+        </AdminButton>
+        <AdminButton size="sm" variant="soft" className="bg-emerald-50 text-emerald-800 border-emerald-200 hover:bg-emerald-100" onClick={publish} disabled={saving || publishing}>
           {publishing ? "发布中…" : "发布上线"}
-        </button>
-        <span className="text-xs text-gray-400">草稿版本 v{draftVersion}</span>
-        {status && (
-          <span
-            className={`text-sm ${status.type === "ok" ? "text-green-700" : "text-red-600"}`}
-          >
-            {status.text}
-          </span>
-        )}
+        </AdminButton>
+        <span className="text-xs text-slate-400">草稿版本 v{draftVersion}</span>
+        {status?.type === "ok" ? (
+          <span className="text-sm text-emerald-700">{status.text}</span>
+        ) : null}
+        {status?.type === "err" ? (
+          <span className="text-sm text-red-600">{status.text}</span>
+        ) : null}
       </div>
     </div>
   );
@@ -214,11 +200,9 @@ function Field({
   children: ReactNode;
 }) {
   return (
-    <div>
-      <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
-      {hint && <p className="text-xs text-gray-500 mb-1.5">{hint}</p>}
+    <AdminField label={label} hint={hint}>
       {children}
-    </div>
+    </AdminField>
   );
 }
 
@@ -232,12 +216,11 @@ function TextInput({
   placeholder?: string;
 }) {
   return (
-    <input
+    <AdminInput
       type="text"
       value={value}
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}
-      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
     />
   );
 }
@@ -254,12 +237,11 @@ function TextArea({
   rows?: number;
 }) {
   return (
-    <textarea
+    <AdminTextarea
       value={value}
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}
       rows={rows}
-      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-blue-500 focus:border-blue-500 resize-y"
     />
   );
 }
@@ -267,7 +249,7 @@ function TextArea({
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
     <section className="space-y-4">
-      <h2 className="text-sm font-semibold text-gray-900 border-b border-gray-100 pb-2">{title}</h2>
+      <h2 className="text-sm font-semibold text-slate-900 border-b border-slate-100 pb-2">{title}</h2>
       <div className="space-y-4">{children}</div>
     </section>
   );
@@ -371,7 +353,7 @@ function BasicTab({
                 },
               }))
             }
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+            className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition hover:border-slate-300 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
           >
             <option value="mono-zh">仅中文</option>
             <option value="mono-en">仅英文</option>
@@ -390,7 +372,7 @@ function BasicTab({
                 },
               }))
             }
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+            className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition hover:border-slate-300 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
           >
             <option value="zh">中文</option>
             <option value="en">English</option>
@@ -454,7 +436,7 @@ function BrandTab({ cfg, patch }: { cfg: SiteConfigGlobal; patch: Patch }) {
               onChange={(e) =>
                 patch((p) => ({ ...p, brand: { ...p.brand, primaryColor: e.target.value } }))
               }
-              className="h-10 w-14 border border-gray-300 rounded cursor-pointer"
+              className="h-10 w-14 border border-slate-200 rounded cursor-pointer"
             />
             <TextInput
               value={cfg.brand.primaryColor}
@@ -471,7 +453,7 @@ function BrandTab({ cfg, patch }: { cfg: SiteConfigGlobal; patch: Patch }) {
               onChange={(e) =>
                 patch((p) => ({ ...p, brand: { ...p.brand, accentColor: e.target.value } }))
               }
-              className="h-10 w-14 border border-gray-300 rounded cursor-pointer"
+              className="h-10 w-14 border border-slate-200 rounded cursor-pointer"
             />
             <TextInput
               value={cfg.brand.accentColor ?? ""}
@@ -584,7 +566,7 @@ function AuthorTab({
                   next[i] = { ...s, kind: e.target.value as SocialKind };
                   patch((p) => ({ ...p, author: { ...p.author, socials: next } }));
                 }}
-                className="border border-gray-300 rounded-lg px-2 py-2 text-sm w-36"
+                className="w-36 rounded-xl border border-slate-200 bg-white px-2 py-2 text-sm shadow-sm"
               >
                 {SOCIAL_KINDS.map((k) => (
                   <option key={k.value} value={k.value}>
@@ -601,7 +583,7 @@ function AuthorTab({
                   patch((p) => ({ ...p, author: { ...p.author, socials: next } }));
                 }}
                 placeholder="https://…"
-                className="flex-1 min-w-[10rem] border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                className="min-w-[10rem] flex-1 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm shadow-sm"
               />
               <button
                 type="button"
@@ -661,7 +643,7 @@ function ChromeTab({
   return (
     <div className="space-y-8">
       <Section title="页眉（顶栏）">
-        <p className="text-xs text-gray-500 -mt-1">
+        <p className="text-xs text-slate-500 -mt-1">
           覆盖当前主题（<strong>{activeThemeId}</strong>）的顶栏默认行为。导航菜单请到「菜单管理」配置。
         </p>
         <Field label="品牌展示方式">
@@ -676,7 +658,7 @@ function ChromeTab({
                 },
               }))
             }
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+            className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition hover:border-slate-300 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
           >
             <option value="">跟随主题默认</option>
             <option value="text">文字（站点名 / 作者名）</option>
@@ -685,7 +667,7 @@ function ChromeTab({
             <option value="none">不显示</option>
           </select>
         </Field>
-        <label className="flex items-center gap-2 text-sm text-gray-700">
+        <label className="flex items-center gap-2 text-sm text-slate-700">
           <input
             type="checkbox"
             checked={header.showRssLink ?? false}
@@ -695,11 +677,11 @@ function ChromeTab({
                 header: { ...(p.header ?? {}), showRssLink: e.target.checked },
               }))
             }
-            className="rounded border-gray-300"
+            className="rounded border-slate-200"
           />
           在顶栏显示 RSS 链接（需在「功能开关」中启用博客 RSS）
         </label>
-        <label className="flex items-center gap-2 text-sm text-gray-700">
+        <label className="flex items-center gap-2 text-sm text-slate-700">
           <input
             type="checkbox"
             checked={header.showSocials ?? false}
@@ -709,7 +691,7 @@ function ChromeTab({
                 header: { ...(p.header ?? {}), showSocials: e.target.checked },
               }))
             }
-            className="rounded border-gray-300"
+            className="rounded border-slate-200"
           />
           在顶栏显示作者社交链接
         </label>
@@ -783,7 +765,7 @@ function SEOTab({
   return (
     <div className="space-y-8">
       <Section title="默认 SEO">
-        <p className="text-xs text-gray-500 -mt-1">
+        <p className="text-xs text-slate-500 -mt-1">
           未单独配置 SEO 的页面/文章会使用这里的默认值。单页仍可在页面/文章编辑器中覆盖。
         </p>
         {showZh && (

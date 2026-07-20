@@ -1,4 +1,10 @@
 import type { EmailConfig } from "./types";
+import {
+  AdminButton,
+  AdminCheckbox,
+  AdminField,
+  AdminInput,
+} from "@/components/admin/ui";
 
 interface SmtpConfigTabProps {
   config: EmailConfig;
@@ -7,6 +13,26 @@ interface SmtpConfigTabProps {
   onTest: () => void;
   isSaving: boolean;
   isTesting: boolean;
+}
+
+function Toggle({
+  checked,
+  onChange,
+}: {
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+}) {
+  return (
+    <label className="relative inline-flex cursor-pointer items-center">
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={(e) => onChange(e.target.checked)}
+        className="peer sr-only"
+      />
+      <div className="h-6 w-11 rounded-full bg-slate-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-slate-300 after:bg-white after:transition-all peer-checked:bg-blue-600 peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300/40" />
+    </label>
+  );
 }
 
 export default function SmtpConfigTab({
@@ -42,182 +68,139 @@ export default function SmtpConfigTab({
 
   return (
     <div className="space-y-8">
-      {/* SMTP Server Settings */}
       <div>
-        <h3 className="text-base font-semibold text-gray-900 mb-4">SMTP 服务器</h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              SMTP 主机 <span className="text-red-500">*</span>
-            </label>
-            <input
+        <h3 className="mb-4 text-base font-semibold tracking-tight text-slate-900">SMTP 服务器</h3>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <AdminField label="SMTP 主机 *">
+            <AdminInput
               type="text"
               value={smtp.host}
               onChange={(e) => updateSmtp("host", e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono text-sm"
+              className="font-mono"
               placeholder="smtp.example.com"
             />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              端口 <span className="text-red-500">*</span>
-            </label>
-            <input
+          </AdminField>
+          <AdminField label="端口 *">
+            <AdminInput
               type="number"
               value={smtp.port}
               onChange={(e) => updateSmtp("port", parseInt(e.target.value) || 0)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono text-sm"
+              className="font-mono"
               placeholder="587"
             />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">用户名</label>
-            <input
+          </AdminField>
+          <AdminField label="用户名">
+            <AdminInput
               type="text"
               value={smtp.username}
               onChange={(e) => updateSmtp("username", e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono text-sm"
+              className="font-mono"
               placeholder="user@example.com"
               autoComplete="off"
             />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              密码
-              {smtp.password && (
-                <span className="text-xs text-green-600 font-normal ml-2">(已配置)</span>
-              )}
-            </label>
-            <input
+          </AdminField>
+          <AdminField
+            label={
+              smtp.password
+                ? "密码（已配置）"
+                : "密码"
+            }
+          >
+            <AdminInput
               type="password"
               value={smtp.password}
               onChange={(e) => updateSmtp("password", e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono text-sm"
+              className="font-mono"
               placeholder="输入 SMTP 密码"
               autoComplete="new-password"
             />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              发件人邮箱 <span className="text-red-500">*</span>
-            </label>
-            <input
+          </AdminField>
+          <AdminField label="发件人邮箱 *">
+            <AdminInput
               type="email"
               value={smtp.from}
               onChange={(e) => updateSmtp("from", e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono text-sm"
+              className="font-mono"
               placeholder="noreply@example.com"
             />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">发件人名称</label>
-            <input
+          </AdminField>
+          <AdminField label="发件人名称">
+            <AdminInput
               type="text"
               value={smtp.fromName}
               onChange={(e) => updateSmtp("fromName", e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
               placeholder="My Site"
             />
-          </div>
+          </AdminField>
         </div>
 
-        {/* TLS Options */}
         <div className="mt-4 flex flex-wrap gap-6">
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={smtp.useTLS}
-              onChange={(e) => updateSmtp("useTLS", e.target.checked)}
-              className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-            />
-            <span className="text-sm text-gray-700">启用 TLS 加密</span>
-          </label>
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={smtp.insecureSkipVerify}
-              onChange={(e) => updateSmtp("insecureSkipVerify", e.target.checked)}
-              className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-            />
-            <span className="text-sm text-gray-700">跳过证书验证</span>
-            <span className="text-xs text-amber-600">(不推荐)</span>
-          </label>
+          <AdminCheckbox
+            checked={smtp.useTLS}
+            onChange={(e) => updateSmtp("useTLS", e.target.checked)}
+            label="启用 TLS 加密"
+          />
+          <AdminCheckbox
+            checked={smtp.insecureSkipVerify}
+            onChange={(e) => updateSmtp("insecureSkipVerify", e.target.checked)}
+            label={
+              <>
+                跳过证书验证{" "}
+                <span className="text-xs text-amber-600">(不推荐)</span>
+              </>
+            }
+          />
         </div>
       </div>
 
-      {/* Receiver Settings */}
-      <div className="pt-6 border-t border-gray-200">
-        <div className="flex items-center justify-between mb-4">
+      <div className="border-t border-slate-100 pt-6">
+        <div className="mb-4 flex items-center justify-between gap-4">
           <div>
-            <h3 className="text-base font-semibold text-gray-900">转发通知</h3>
-            <p className="text-sm text-gray-500 mt-0.5">将表单提交内容转发到指定邮箱</p>
+            <h3 className="text-base font-semibold tracking-tight text-slate-900">转发通知</h3>
+            <p className="mt-0.5 text-sm text-slate-500">将表单提交内容转发到指定邮箱</p>
           </div>
-          <label className="relative inline-flex items-center cursor-pointer">
-            <input
-              type="checkbox"
-              checked={receiver.enabled}
-              onChange={(e) => updateReceiver("enabled", e.target.checked)}
-              className="sr-only peer"
-            />
-            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600" />
-          </label>
+          <Toggle
+            checked={receiver.enabled}
+            onChange={(checked) => updateReceiver("enabled", checked)}
+          />
         </div>
         {receiver.enabled && (
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              接收邮箱 <span className="text-red-500">*</span>
-            </label>
-            <input
+          <AdminField label="接收邮箱 *" hint="多个邮箱用逗号分隔，表单提交将通知到所有邮箱">
+            <AdminInput
               type="text"
               value={receiver.emails}
               onChange={(e) => updateReceiver("emails", e.target.value)}
-              className="w-full max-w-md px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono text-sm"
+              className="max-w-md font-mono"
               placeholder="admin@example.com, support@example.com"
             />
-            <p className="mt-1 text-xs text-gray-500">
-              多个邮箱用逗号分隔，表单提交将通知到所有邮箱
-            </p>
-          </div>
+          </AdminField>
         )}
       </div>
 
-      {/* Auto-Reply Settings */}
-      <div className="pt-6 border-t border-gray-200">
-        <div className="flex items-center justify-between mb-2">
+      <div className="border-t border-slate-100 pt-6">
+        <div className="mb-2 flex items-center justify-between gap-4">
           <div>
-            <h3 className="text-base font-semibold text-gray-900">自动回复</h3>
-            <p className="text-sm text-gray-500 mt-0.5">
-              提交表单后自动向用户发送确认邮件
-            </p>
+            <h3 className="text-base font-semibold tracking-tight text-slate-900">自动回复</h3>
+            <p className="mt-0.5 text-sm text-slate-500">提交表单后自动向用户发送确认邮件</p>
           </div>
-          <label className="relative inline-flex items-center cursor-pointer">
-            <input
-              type="checkbox"
-              checked={autoReply.enabled}
-              onChange={(e) => updateAutoReply("enabled", e.target.checked)}
-              className="sr-only peer"
-            />
-            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600" />
-          </label>
+          <Toggle
+            checked={autoReply.enabled}
+            onChange={(checked) => updateAutoReply("enabled", checked)}
+          />
         </div>
       </div>
 
-      {/* Actions */}
-      <div className="flex items-center justify-between pt-6 border-t border-gray-200">
-        <button
+      <div className="flex items-center justify-between border-t border-slate-100 pt-6">
+        <AdminButton
+          variant="secondary"
           onClick={onTest}
           disabled={isTesting || !smtp.host || !smtp.from}
-          className="px-4 py-2 text-sm font-medium text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 transition-colors"
         >
-          {isTesting ? "发送中..." : "发送测试邮件"}
-        </button>
-        <button
-          onClick={onSave}
-          disabled={isSaving}
-          className="px-6 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
-        >
-          {isSaving ? "保存中..." : "保存配置"}
-        </button>
+          {isTesting ? "发送中…" : "发送测试邮件"}
+        </AdminButton>
+        <AdminButton onClick={onSave} disabled={isSaving}>
+          {isSaving ? "保存中…" : "保存配置"}
+        </AdminButton>
       </div>
     </div>
   );

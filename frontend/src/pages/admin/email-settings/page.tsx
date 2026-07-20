@@ -4,7 +4,15 @@ import type { EmailConfig } from "./types";
 import { defaultEmailConfig } from "./defaults";
 import SmtpConfigTab from "./SmtpConfigTab";
 import TemplateEditorTab from "./TemplateEditorTab";
-import { AdminLoading, AdminPageHeader } from "@/components/admin/ui";
+import {
+  AdminCard,
+  AdminErrorBanner,
+  AdminFilterChip,
+  AdminLoading,
+  AdminPageHeader,
+  AdminSuccessBanner,
+  AdminToolbar,
+} from "@/components/admin/ui";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 
 type TabKey = "smtp" | "autoReply" | "forward";
@@ -45,7 +53,9 @@ export default function AdminEmailSettingsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState(false);
-  const [status, setStatus] = useState<{ type: "success" | "error"; message: string } | null>(null);
+  const [status, setStatus] = useState<{ type: "success" | "error"; message: string } | null>(
+    null,
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -56,7 +66,6 @@ export default function AdminEmailSettingsPage() {
           setConfig(deepMerge(defaultEmailConfig, data));
         }
       } catch {
-        // API may 404 if never configured — use defaults
         if (!cancelled) {
           setConfig(defaultEmailConfig);
         }
@@ -66,7 +75,9 @@ export default function AdminEmailSettingsPage() {
         }
       }
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const showStatus = (type: "success" | "error", message: string) => {
@@ -82,7 +93,10 @@ export default function AdminEmailSettingsPage() {
       setConfig(deepMerge(defaultEmailConfig, updated));
       showStatus("success", "配置保存成功");
     } catch (err: any) {
-      const msg = err?.response?.data?.error?.message || err?.response?.data?.message || "保存失败，请重试";
+      const msg =
+        err?.response?.data?.error?.message ||
+        err?.response?.data?.message ||
+        "保存失败，请重试";
       showStatus("error", msg);
     } finally {
       setSaving(false);
@@ -99,7 +113,10 @@ export default function AdminEmailSettingsPage() {
       const result = await sendTestEmail(to);
       showStatus(result.success ? "success" : "error", result.message || "测试邮件已发送");
     } catch (err: any) {
-      const msg = err?.response?.data?.error?.message || err?.response?.data?.message || "发送测试邮件失败";
+      const msg =
+        err?.response?.data?.error?.message ||
+        err?.response?.data?.message ||
+        "发送测试邮件失败";
       showStatus("error", msg);
     } finally {
       setTesting(false);
@@ -113,51 +130,26 @@ export default function AdminEmailSettingsPage() {
         description="配置 SMTP 服务器、自动回复和转发通知邮件模板"
       />
 
-      {/* Status Message */}
-      {status && (
-        <div
-          className={`p-3 rounded-lg text-sm flex items-center gap-2 ${
-            status.type === "success"
-              ? "bg-green-50 text-green-700"
-              : "bg-red-50 text-red-700"
-          }`}
-        >
-          <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            {status.type === "success" ? (
-              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-            ) : (
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-            )}
-          </svg>
-          {status.message}
-        </div>
-      )}
+      {status?.type === "success" ? <AdminSuccessBanner message={status.message} /> : null}
+      {status?.type === "error" ? <AdminErrorBanner message={status.message} /> : null}
 
       {loading ? (
         <AdminLoading />
       ) : (
-        <div className="bg-white rounded-lg shadow">
-          {/* Tab Navigation */}
-          <div className="border-b border-gray-200">
-            <nav className="flex -mb-px">
-              {TABS.map((tab) => (
-                <button
-                  key={tab.key}
-                  onClick={() => setActiveTab(tab.key)}
-                  className={`px-6 py-3.5 text-sm font-medium border-b-2 transition-colors ${
-                    activeTab === tab.key
-                      ? "border-blue-600 text-blue-600"
-                      : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                  }`}
-                >
-                  {tab.label}
-                </button>
-              ))}
-            </nav>
-          </div>
+        <AdminCard padded={false}>
+          <AdminToolbar className="rounded-none border-0 border-b border-slate-100 shadow-none">
+            {TABS.map((tab) => (
+              <AdminFilterChip
+                key={tab.key}
+                active={activeTab === tab.key}
+                onClick={() => setActiveTab(tab.key)}
+              >
+                {tab.label}
+              </AdminFilterChip>
+            ))}
+          </AdminToolbar>
 
-          {/* Tab Content */}
-          <div className="p-6">
+          <div className="p-5 sm:p-6">
             {activeTab === "smtp" && (
               <SmtpConfigTab
                 config={config}
@@ -195,7 +187,7 @@ export default function AdminEmailSettingsPage() {
               />
             )}
           </div>
-        </div>
+        </AdminCard>
       )}
     </div>
   );

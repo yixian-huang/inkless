@@ -11,6 +11,14 @@ import {
   typographyToCssVars,
 } from "@/theme/typography";
 import { uploadMedia } from "@/api/media";
+import {
+  AdminButton,
+  AdminCard,
+  AdminField,
+  AdminInput,
+  AdminSelect,
+  AdminTextarea,
+} from "@/components/admin/ui";
 
 interface FontPresetSectionProps {
   tokens: ThemeTokens;
@@ -103,13 +111,12 @@ export default function FontPresetSection({ tokens, onChange }: FontPresetSectio
   const bodyLineHeight = tokens.typography?.article?.bodyLineHeight ?? 1.8;
 
   return (
-    <div className="bg-white rounded-lg shadow p-6 mb-6">
-      <h3 className="text-lg font-semibold text-gray-900 mb-1">字体与文章排版</h3>
-      <p className="text-sm text-gray-500 mb-4">
-        字体栈、字号与行高在此统一配置；正文使用衬线或无衬线见「主题设置 → 文章 → 正文默认字体」。
-      </p>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+    <AdminCard
+      className="mb-6"
+      title="字体与文章排版"
+      description="字体栈、字号与行高在此统一配置；正文使用衬线或无衬线见「主题设置 → 文章 → 正文默认字体」。"
+    >
+      <div className="mb-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
         <PresetSelect
           label="UI / 无衬线 (Sans)"
           labelZh="界面与元信息"
@@ -133,52 +140,51 @@ export default function FontPresetSection({ tokens, onChange }: FontPresetSectio
         />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 pt-4 border-t border-gray-100">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">正文字号（CSS）</label>
-          <input
+      <div className="mb-6 grid grid-cols-1 gap-4 border-t border-slate-100 pt-4 md:grid-cols-2">
+        <AdminField label="正文字号（CSS）">
+          <AdminInput
             type="text"
             value={bodySize}
             onChange={(e) => handleTypographyChange({ bodySize: e.target.value })}
-            className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm font-mono"
+            className="font-mono"
             placeholder="1.0625rem"
           />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">正文行高</label>
-          <input
+        </AdminField>
+        <AdminField label="正文行高">
+          <AdminInput
             type="number"
             step="0.05"
             min="1"
             max="2.5"
             value={bodyLineHeight}
             onChange={(e) => handleTypographyChange({ bodyLineHeight: Number(e.target.value) })}
-            className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
           />
-        </div>
+        </AdminField>
       </div>
 
-      <div className="flex flex-wrap gap-2 mb-6">
-        <button
+      <div className="mb-6 flex flex-wrap gap-2">
+        <AdminButton
           type="button"
-          className="px-3 py-1.5 text-sm border border-gray-300 rounded-md hover:bg-gray-50"
+          variant="secondary"
+          size="sm"
           onClick={() => {
             uploadRef.current?.setAttribute("data-role", "heading");
             uploadRef.current?.click();
           }}
         >
           上传衬线字体 (woff2)
-        </button>
-        <button
+        </AdminButton>
+        <AdminButton
           type="button"
-          className="px-3 py-1.5 text-sm border border-gray-300 rounded-md hover:bg-gray-50"
+          variant="secondary"
+          size="sm"
           onClick={() => {
             uploadRef.current?.setAttribute("data-role", "sans");
             uploadRef.current?.click();
           }}
         >
           上传无衬线字体 (woff2)
-        </button>
+        </AdminButton>
         <input
           ref={uploadRef}
           type="file"
@@ -199,43 +205,46 @@ export default function FontPresetSection({ tokens, onChange }: FontPresetSectio
       </div>
 
       <details className="text-sm">
-        <summary className="cursor-pointer text-gray-600 font-medium mb-2">高级：自定义 font-family 栈</summary>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Sans 栈</label>
-            <textarea
+        <summary className="mb-2 cursor-pointer font-medium text-slate-600">
+          高级：自定义 font-family 栈
+        </summary>
+        <div className="mt-2 grid grid-cols-1 gap-4 md:grid-cols-2">
+          <AdminField label="Sans 栈">
+            <AdminTextarea
               value={tokens.fonts.sans}
               onChange={(e) => handleFontStackChange("sans", e.target.value)}
               rows={2}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 text-xs font-mono"
+              className="font-mono text-xs"
             />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Heading（衬线）栈</label>
-            <textarea
+          </AdminField>
+          <AdminField label="Heading（衬线）栈">
+            <AdminTextarea
               value={tokens.fonts.heading}
               onChange={(e) => handleFontStackChange("heading", e.target.value)}
               rows={2}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 text-xs font-mono"
+              className="font-mono text-xs"
             />
-          </div>
+          </AdminField>
         </div>
       </details>
 
       <div
-        className="mt-6 p-4 rounded-lg border border-gray-200 article-typography article-reading bg-surface"
+        className="article-typography article-reading bg-surface mt-6 rounded-2xl border border-slate-200 p-4"
         style={previewStyle}
       >
-        <p className="article-page-title text-xl mb-2">文章标题预览 Sample Title</p>
+        <p className="article-page-title mb-2 text-xl">文章标题预览 Sample Title</p>
         <div className="tiptap ProseMirror">
           <p>
-            中文正文预览：这是一段用于检验字号与行高的示例文字。The quick brown fox jumps over the lazy dog.
+            中文正文预览：这是一段用于检验字号与行高的示例文字。The quick brown fox jumps over the lazy
+            dog.
           </p>
           <blockquote>引用块应使用 muted 色与细左边框。</blockquote>
-          <pre><code>const mono = true;</code></pre>
+          <pre>
+            <code>const mono = true;</code>
+          </pre>
         </div>
       </div>
-    </div>
+    </AdminCard>
   );
 }
 
@@ -253,20 +262,14 @@ function PresetSelect({
   onChange: (id: string) => void;
 }) {
   return (
-    <div>
-      <label className="block text-sm font-medium text-gray-700 mb-1">{labelZh}</label>
-      <span className="text-xs text-gray-400 block mb-1">{label}</span>
-      <select
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
-      >
+    <AdminField label={labelZh} hint={label}>
+      <AdminSelect value={value} onChange={(e) => onChange(e.target.value)} className="w-full">
         {options.map((p) => (
           <option key={p.id} value={p.id}>
             {p.nameZh}
           </option>
         ))}
-      </select>
-    </div>
+      </AdminSelect>
+    </AdminField>
   );
 }

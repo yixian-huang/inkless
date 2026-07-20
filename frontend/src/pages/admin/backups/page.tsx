@@ -81,19 +81,19 @@ function DatabaseBackupTab() {
   return (
     <div>
       <div className="flex justify-between items-center mb-4">
-        <p className="text-sm text-gray-500">创建数据库级别的备份（不含媒体文件）</p>
+        <p className="text-sm text-slate-500">创建数据库级别的备份（不含媒体文件）</p>
         <div className="flex gap-2">
           <button
             onClick={handleTriggerBackup}
             disabled={creating}
-            className="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 disabled:opacity-50"
+            className="inline-flex h-9 items-center justify-center rounded-xl bg-emerald-600 px-3.5 text-sm font-medium text-white shadow-sm hover:bg-emerald-700 disabled:opacity-50"
           >
             {creating ? "创建中..." : "手动备份"}
           </button>
           <button
             onClick={fetchBackups}
             disabled={loading}
-            className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 disabled:opacity-50"
+            className="inline-flex h-9 items-center justify-center rounded-xl bg-blue-600 px-3.5 text-sm font-medium text-white shadow-sm hover:bg-blue-700 disabled:opacity-50"
           >
             {loading ? "加载中..." : "刷新"}
           </button>
@@ -101,7 +101,7 @@ function DatabaseBackupTab() {
       </div>
 
       {successMsg && (
-        <div className="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+        <div className="mb-4 rounded-2xl border border-emerald-200/80 bg-emerald-50/90 px-4 py-3 text-sm text-emerald-800">
           {successMsg}
         </div>
       )}
@@ -171,14 +171,14 @@ function SiteExportTab() {
 
   return (
     <div>
-      <p className="text-sm text-gray-500 mb-4">
+      <p className="text-sm text-slate-500 mb-4">
         导出全站数据（所有表数据 + 媒体文件）为 ZIP 归档，可用于迁移到其他实例。
       </p>
 
       <button
         onClick={handleExport}
         disabled={exporting}
-        className="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 disabled:opacity-50"
+        className="inline-flex h-9 items-center justify-center rounded-xl bg-emerald-600 px-3.5 text-sm font-medium text-white shadow-sm hover:bg-emerald-700 disabled:opacity-50"
       >
         {exporting ? "导出中..." : "生成导出包"}
       </button>
@@ -192,7 +192,7 @@ function SiteExportTab() {
       {exportResult && (
         <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-md">
           <p className="text-green-700 text-sm font-medium mb-2">导出成功</p>
-          <div className="text-sm text-gray-700 space-y-1">
+          <div className="text-sm text-slate-700 space-y-1">
             <p>文件名: {exportResult.filename}</p>
             <p>大小: {formatFileSize(exportResult.size)}</p>
           </div>
@@ -272,7 +272,7 @@ function SiteImportTab() {
 
   return (
     <div>
-      <p className="text-sm text-gray-500 mb-4">
+      <p className="text-sm text-slate-500 mb-4">
         从导出归档恢复全站数据。此操作将覆盖所有现有数据，请谨慎操作。
       </p>
 
@@ -282,10 +282,10 @@ function SiteImportTab() {
           type="file"
           accept=".zip"
           onChange={handleFileChange}
-          className="block text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+          className="block text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
         />
         {file && (
-          <button onClick={reset} className="text-sm text-gray-400 hover:text-gray-600">
+          <button onClick={reset} className="text-sm text-slate-400 hover:text-slate-600">
             清除
           </button>
         )}
@@ -315,7 +315,7 @@ function SiteImportTab() {
       {validation && validation.valid && (
         <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-md">
           <p className="text-green-700 text-sm font-medium mb-3">验证通过 — 归档预览</p>
-          <div className="text-sm text-gray-700 space-y-1 mb-3">
+          <div className="text-sm text-slate-700 space-y-1 mb-3">
             <p>导出版本: {validation.version || "未知"}</p>
             <p>导出时间: {validation.exportedAt ? new Date(validation.exportedAt).toLocaleString("zh-CN") : "未知"}</p>
             <p>媒体文件: {validation.mediaFiles} 个</p>
@@ -364,7 +364,7 @@ function SiteImportTab() {
                 <button
                   onClick={() => setShowConfirm(false)}
                   disabled={importing}
-                  className="px-4 py-2 bg-gray-200 text-gray-700 text-sm font-medium rounded-md hover:bg-gray-300 disabled:opacity-50"
+                  className="inline-flex h-9 items-center justify-center rounded-xl border border-slate-200 bg-white px-3.5 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50 disabled:opacity-50"
                 >
                   取消
                 </button>
@@ -399,7 +399,7 @@ export default function AdminBackupsPage() {
               className={`whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm ${
                 activeTab === tab.key
                   ? "border-blue-500 text-blue-600"
-                  : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                  : "border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-200"
               }`}
             >
               {tab.label}

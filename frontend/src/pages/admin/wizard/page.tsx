@@ -65,7 +65,7 @@ function StepIndicator({ current }: { current: number }) {
                     ? "bg-blue-600 border-blue-600 text-white"
                     : isActive
                     ? "bg-white border-blue-600 text-blue-600"
-                    : "bg-white border-gray-300 text-gray-400"
+                    : "bg-white border-slate-200 text-slate-400"
                 }`}
               >
                 {isComplete ? (
@@ -74,12 +74,12 @@ function StepIndicator({ current }: { current: number }) {
                   </svg>
                 ) : stepNum}
               </div>
-              <span className={`mt-1.5 text-xs font-medium ${isActive ? "text-blue-600" : "text-gray-400"}`}>
+              <span className={`mt-1.5 text-xs font-medium ${isActive ? "text-blue-600" : "text-slate-400"}`}>
                 {label}
               </span>
             </div>
             {i < steps.length - 1 && (
-              <div className={`w-16 md:w-24 h-0.5 mx-2 mb-5 transition-colors ${stepNum < current ? "bg-blue-600" : "bg-gray-200"}`} />
+              <div className={`w-16 md:w-24 h-0.5 mx-2 mb-5 transition-colors ${stepNum < current ? "bg-blue-600" : "bg-slate-200"}`} />
             )}
           </div>
         );
@@ -129,11 +129,11 @@ function Step1Questionnaire({
 
   return (
     <div className="max-w-2xl mx-auto">
-      <h3 className="text-lg font-semibold text-gray-900 mb-6">告诉我们您的需求</h3>
+      <h3 className="text-lg font-semibold text-slate-900 mb-6">告诉我们您的需求</h3>
 
       <div className="space-y-6">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-slate-700 mb-1">
             品牌名称 <span className="text-red-500">*</span>
           </label>
           <input
@@ -141,29 +141,29 @@ function Step1Questionnaire({
             value={formData.brand_name}
             onChange={(e) => onChange({ brand_name: e.target.value })}
             placeholder="输入您的品牌或公司名称"
-            className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition hover:border-slate-300 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">品牌描述</label>
+          <label className="block text-sm font-medium text-slate-700 mb-1">品牌描述</label>
           <textarea
             value={formData.description}
             onChange={(e) => onChange({ description: e.target.value })}
             rows={3}
             placeholder="简要描述您的业务或品牌特点..."
-            className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+            className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition hover:border-slate-300 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 resize-none"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-slate-700 mb-2">
             所属行业 <span className="text-red-500">*</span>
           </label>
           <select
             value={formData.industry}
             onChange={(e) => onChange({ industry: e.target.value })}
-            className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition hover:border-slate-300 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
           >
             <option value="">请选择行业...</option>
             {INDUSTRY_OPTIONS.map((opt) => (
@@ -173,7 +173,7 @@ function Step1Questionnaire({
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-slate-700 mb-2">
             风格偏好 <span className="text-red-500">*</span>
           </label>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
@@ -183,7 +183,7 @@ function Step1Questionnaire({
                 className={`flex items-center justify-center p-3 border rounded-lg cursor-pointer transition-colors text-sm font-medium ${
                   formData.style_preference === opt.value
                     ? "border-blue-600 bg-blue-50 text-blue-700"
-                    : "border-gray-200 hover:border-gray-300 text-gray-700"
+                    : "border-slate-200 hover:border-slate-200 text-slate-700"
                 }`}
               >
                 <input
@@ -201,40 +201,40 @@ function Step1Questionnaire({
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">需要的功能模块</label>
+          <label className="block text-sm font-medium text-slate-700 mb-2">需要的功能模块</label>
           <div className="grid grid-cols-2 gap-2">
             {FEATURE_OPTIONS.map((opt) => (
               <label
                 key={opt.value}
-                className="flex items-center gap-2 p-2 border rounded-lg cursor-pointer hover:bg-gray-50 text-sm"
+                className="flex items-center gap-2 p-2 border rounded-lg cursor-pointer hover:bg-slate-50 text-sm"
               >
                 <input
                   type="checkbox"
                   checked={formData.features.includes(opt.value)}
                   onChange={() => toggleFeature(opt.value)}
-                  className="rounded border-gray-300 text-blue-600"
+                  className="rounded border-slate-200 text-blue-600"
                 />
-                <span className="text-gray-700">{opt.label}</span>
+                <span className="text-slate-700">{opt.label}</span>
               </label>
             ))}
           </div>
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">需要的页面</label>
+          <label className="block text-sm font-medium text-slate-700 mb-2">需要的页面</label>
           <div className="grid grid-cols-2 gap-2">
             {CONTENT_TYPE_OPTIONS.map((opt) => (
               <label
                 key={opt.value}
-                className="flex items-center gap-2 p-2 border rounded-lg cursor-pointer hover:bg-gray-50 text-sm"
+                className="flex items-center gap-2 p-2 border rounded-lg cursor-pointer hover:bg-slate-50 text-sm"
               >
                 <input
                   type="checkbox"
                   checked={formData.content_types.includes(opt.value)}
                   onChange={() => toggleContentType(opt.value)}
-                  className="rounded border-gray-300 text-blue-600"
+                  className="rounded border-slate-200 text-blue-600"
                 />
-                <span className="text-gray-700">{opt.label}</span>
+                <span className="text-slate-700">{opt.label}</span>
               </label>
             ))}
           </div>
@@ -245,7 +245,7 @@ function Step1Questionnaire({
         <button
           onClick={onNext}
           disabled={!isValid || loading}
-          className="px-6 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+          className="px-6 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-xl hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
         >
           {loading ? (
             <>
@@ -274,11 +274,11 @@ function ColorSwatch({ color, label }: { color: string; label: string }) {
   return (
     <div className="flex flex-col items-center gap-1">
       <div
-        className="w-12 h-12 rounded-lg border border-gray-200 shadow-sm"
+        className="w-12 h-12 rounded-lg border border-slate-200 shadow-sm"
         style={{ backgroundColor: color }}
       />
-      <span className="text-xs text-gray-500">{label}</span>
-      <span className="text-xs font-mono text-gray-400">{color}</span>
+      <span className="text-xs text-slate-500">{label}</span>
+      <span className="text-xs font-mono text-slate-400">{color}</span>
     </div>
   );
 }
@@ -296,7 +296,7 @@ function Step2ReviewPlan({
 }) {
   return (
     <div className="max-w-2xl mx-auto">
-      <h3 className="text-lg font-semibold text-gray-900 mb-6">AI 生成的建站方案</h3>
+      <h3 className="text-lg font-semibold text-slate-900 mb-6">AI 生成的建站方案</h3>
 
       <div className="space-y-6">
         {/* Recommended Theme */}
@@ -308,7 +308,7 @@ function Step2ReviewPlan({
         {/* Color Scheme */}
         {plan.color_scheme && (
           <div>
-            <h4 className="text-sm font-semibold text-gray-700 mb-3">配色方案</h4>
+            <h4 className="text-sm font-semibold text-slate-700 mb-3">配色方案</h4>
             <div className="flex gap-6 flex-wrap">
               {plan.color_scheme.primary && (
                 <ColorSwatch color={plan.color_scheme.primary} label="主色" />
@@ -329,17 +329,17 @@ function Step2ReviewPlan({
         {/* Page List */}
         {plan.pages && plan.pages.length > 0 && (
           <div>
-            <h4 className="text-sm font-semibold text-gray-700 mb-3">页面列表</h4>
+            <h4 className="text-sm font-semibold text-slate-700 mb-3">页面列表</h4>
             <div className="space-y-2">
               {plan.pages.map((p, i) => (
-                <div key={i} className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                <div key={i} className="flex items-start gap-3 p-3 bg-slate-50 rounded-lg border border-slate-200">
                   <span className="mt-0.5 w-6 h-6 rounded-full bg-blue-100 text-blue-600 text-xs font-semibold flex items-center justify-center shrink-0">
                     {i + 1}
                   </span>
                   <div>
-                    <p className="text-sm font-medium text-gray-900">{p.name}</p>
-                    {p.slug && <p className="text-xs text-gray-500 mt-0.5">/{p.slug}</p>}
-                    {p.description && <p className="text-xs text-gray-600 mt-1">{p.description}</p>}
+                    <p className="text-sm font-medium text-slate-900">{p.name}</p>
+                    {p.slug && <p className="text-xs text-slate-500 mt-0.5">/{p.slug}</p>}
+                    {p.description && <p className="text-xs text-slate-600 mt-1">{p.description}</p>}
                   </div>
                 </div>
               ))}
@@ -349,7 +349,7 @@ function Step2ReviewPlan({
 
         {/* Raw Plan (collapsed) */}
         <details className="text-sm">
-          <summary className="cursor-pointer text-gray-500 hover:text-gray-700 select-none">查看完整方案 JSON</summary>
+          <summary className="cursor-pointer text-slate-500 hover:text-slate-700 select-none">查看完整方案 JSON</summary>
           <pre className="mt-2 p-3 bg-gray-900 text-green-400 rounded-lg text-xs overflow-x-auto">
             {JSON.stringify(plan, null, 2)}
           </pre>
@@ -360,7 +360,7 @@ function Step2ReviewPlan({
         <button
           onClick={onBack}
           disabled={loading}
-          className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 flex items-center gap-2"
+          className="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 disabled:opacity-50 flex items-center gap-2"
         >
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
@@ -370,7 +370,7 @@ function Step2ReviewPlan({
         <button
           onClick={onApply}
           disabled={loading}
-          className="px-6 py-2.5 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 disabled:opacity-50 flex items-center gap-2"
+          className="px-6 py-2.5 bg-green-600 text-white text-sm font-medium rounded-xl hover:bg-green-700 disabled:opacity-50 flex items-center gap-2"
         >
           {loading ? (
             <>
@@ -413,16 +413,16 @@ function Step3Confirmation({
               <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
             </svg>
           </div>
-          <h3 className="text-xl font-bold text-gray-900 mb-2">建站方案应用成功！</h3>
-          <p className="text-gray-500 text-sm mb-6">
-            已成功创建 <span className="font-semibold text-gray-700">{applyResult.pages_created}</span> 个页面，
-            基于 <span className="font-semibold text-gray-700">{plan.recommended_theme || "默认主题"}</span> 主题。
+          <h3 className="text-xl font-bold text-slate-900 mb-2">建站方案应用成功！</h3>
+          <p className="text-slate-500 text-sm mb-6">
+            已成功创建 <span className="font-semibold text-slate-700">{applyResult.pages_created}</span> 个页面，
+            基于 <span className="font-semibold text-slate-700">{plan.recommended_theme || "默认主题"}</span> 主题。
           </p>
-          <div className="p-4 bg-gray-50 rounded-lg border border-gray-200 text-left mb-6">
-            <h4 className="text-sm font-semibold text-gray-700 mb-2">已创建的页面</h4>
+          <div className="p-4 bg-slate-50 rounded-lg border border-slate-200 text-left mb-6">
+            <h4 className="text-sm font-semibold text-slate-700 mb-2">已创建的页面</h4>
             <ul className="space-y-1">
               {plan.pages?.map((p, i) => (
-                <li key={i} className="flex items-center gap-2 text-sm text-gray-600">
+                <li key={i} className="flex items-center gap-2 text-sm text-slate-600">
                   <svg className="w-3.5 h-3.5 text-green-500 shrink-0" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                   </svg>
@@ -434,13 +434,13 @@ function Step3Confirmation({
           <div className="flex gap-3 justify-center">
             <a
               href="/admin/pages"
-              className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700"
+              className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-xl hover:bg-blue-700"
             >
               查看页面管理
             </a>
             <button
               onClick={onReset}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+              className="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-200 rounded-xl hover:bg-slate-50"
             >
               再次使用向导
             </button>
@@ -453,11 +453,11 @@ function Step3Confirmation({
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
             </svg>
           </div>
-          <h3 className="text-xl font-bold text-gray-900 mb-2">应用失败</h3>
-          <p className="text-gray-500 text-sm mb-6">方案应用过程中遇到错误，请重试。</p>
+          <h3 className="text-xl font-bold text-slate-900 mb-2">应用失败</h3>
+          <p className="text-slate-500 text-sm mb-6">方案应用过程中遇到错误，请重试。</p>
           <button
             onClick={onReset}
-            className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700"
+            className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-xl hover:bg-blue-700"
           >
             重新开始
           </button>

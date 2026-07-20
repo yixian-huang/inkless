@@ -17,7 +17,7 @@ import {
   AdminTableHead,
   AdminTd,
   AdminTh,
-} from "@/components/admin/ui";
+} from "@/components/admin/ui"  // AdminButton available;
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { isAxiosError } from "axios";
 
@@ -61,15 +61,15 @@ function ResultSummary({ job }: { job: MigrationJob }) {
   const finishedAt = job.finishedAt ? new Date(job.finishedAt).toLocaleString("zh-CN") : null;
 
   if (!isTerminalPhase(job.phase)) {
-    return <span className="text-gray-400">导入完成后显示</span>;
+    return <span className="text-slate-400">导入完成后显示</span>;
   }
 
   return (
     <div className="space-y-1 text-sm">
-      <div className="text-gray-700">
+      <div className="text-slate-700">
         成功 {job.succeeded} 条，失败 {job.failed} 条
       </div>
-      <div className={totalErrors > 0 ? "text-red-600" : "text-gray-500"}>
+      <div className={totalErrors > 0 ? "text-red-600" : "text-slate-500"}>
         错误 {totalErrors} 个{finishedAt ? `，完成于 ${finishedAt}` : ""}
       </div>
     </div>
@@ -80,7 +80,7 @@ function ResultSummary({ job }: { job: MigrationJob }) {
 function ProgressBar({ value }: { value: number }) {
   const clamped = Math.min(100, Math.max(0, value));
   return (
-    <div className="w-full bg-gray-200 rounded-full h-1.5">
+    <div className="w-full bg-slate-200 rounded-full h-1.5">
       <div
         className={`h-1.5 rounded-full transition-all duration-300 ${
           clamped === 100 ? "bg-green-500" : "bg-blue-500"
@@ -116,7 +116,7 @@ function FileDropzone({ accept, file, onFileChange }: DropzoneProps) {
           ? "border-blue-400 bg-blue-50"
           : file
           ? "border-green-400 bg-green-50"
-          : "border-gray-300 hover:border-gray-400 bg-gray-50"
+          : "border-slate-200 hover:border-slate-300 bg-slate-50"
       }`}
       onClick={() => inputRef.current?.click()}
       onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
@@ -135,8 +135,8 @@ function FileDropzone({ accept, file, onFileChange }: DropzoneProps) {
           <svg className="w-10 h-10 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
-          <p className="text-sm font-medium text-gray-900">{file.name}</p>
-          <p className="text-xs text-gray-500">
+          <p className="text-sm font-medium text-slate-900">{file.name}</p>
+          <p className="text-xs text-slate-500">
             {file.size < 1024 * 1024
               ? `${(file.size / 1024).toFixed(1)} KB`
               : `${(file.size / (1024 * 1024)).toFixed(1)} MB`}
@@ -151,11 +151,11 @@ function FileDropzone({ accept, file, onFileChange }: DropzoneProps) {
         </div>
       ) : (
         <div className="flex flex-col items-center gap-2">
-          <svg className="w-10 h-10 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+          <svg className="w-10 h-10 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
           </svg>
-          <p className="text-sm font-medium text-gray-700">点击或拖放文件到此处</p>
-          <p className="text-xs text-gray-400">{accept}</p>
+          <p className="text-sm font-medium text-slate-700">点击或拖放文件到此处</p>
+          <p className="text-xs text-slate-400">{accept}</p>
         </div>
       )}
     </div>
@@ -334,12 +334,12 @@ function ImportSection({ onJobCreated }: { onJobCreated: () => void }) {
   };
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 p-6 mb-6">
-      <h3 className="text-base font-semibold text-gray-900 mb-4">导入数据</h3>
+    <div className="rounded-2xl border border-slate-200/80 bg-white p-6 mb-6 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+      <h3 className="text-base font-semibold text-slate-900 mb-4">导入数据</h3>
 
       {/* Format selector */}
       <div className="mb-4">
-        <label className="block text-sm font-medium text-gray-700 mb-2">选择格式</label>
+        <label className="block text-sm font-medium text-slate-700 mb-2">选择格式</label>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {formatOptions.map((opt) => (
             <button
@@ -349,24 +349,24 @@ function ImportSection({ onJobCreated }: { onJobCreated: () => void }) {
               className={`text-left p-3 rounded-lg border-2 transition-colors ${
                 format === opt.value
                   ? "border-blue-500 bg-blue-50"
-                  : "border-gray-200 hover:border-gray-300"
+                  : "border-slate-200 hover:border-slate-200"
               }`}
             >
-              <div className="text-sm font-medium text-gray-900">{opt.label}</div>
-              <div className="text-xs text-gray-500 mt-1 line-clamp-2">{opt.description}</div>
+              <div className="text-sm font-medium text-slate-900">{opt.label}</div>
+              <div className="text-xs text-slate-500 mt-1 line-clamp-2">{opt.description}</div>
             </button>
           ))}
         </div>
       </div>
 
       {/* Format description */}
-      <div className="mb-4 p-3 bg-blue-50 border border-blue-100 rounded-md text-sm text-blue-800">
+      <div className="mb-4 p-3 bg-blue-50 border border-blue-100 rounded-xl text-sm text-blue-800">
         <strong>{selectedFormat.label}：</strong>{selectedFormat.description}
       </div>
 
       {/* File dropzone */}
       <div className="mb-4">
-        <label className="block text-sm font-medium text-gray-700 mb-2">上传文件</label>
+        <label className="block text-sm font-medium text-slate-700 mb-2">上传文件</label>
         <FileDropzone
           accept={acceptMap[format]}
           file={file}
@@ -375,12 +375,12 @@ function ImportSection({ onJobCreated }: { onJobCreated: () => void }) {
       </div>
 
       {successMsg && (
-        <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-md text-green-700 text-sm">
+        <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-xl text-green-700 text-sm">
           {successMsg}
         </div>
       )}
       {error && (
-        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md text-red-700 text-sm">
+        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm">
           {error}
         </div>
       )}
@@ -388,7 +388,7 @@ function ImportSection({ onJobCreated }: { onJobCreated: () => void }) {
       <button
         onClick={handleImport}
         disabled={!file || importing}
-        className="px-5 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+        className="px-5 py-2 bg-blue-600 text-white text-sm font-medium rounded-xl hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {importing ? "提交中..." : "开始导入"}
       </button>
@@ -480,14 +480,14 @@ function JobsTable() {
         <button
           onClick={fetchJobs}
           disabled={loading}
-          className="px-3 py-1.5 text-sm text-slate-600 border border-slate-300 rounded-md hover:bg-slate-50 disabled:opacity-50"
+          className="px-3 py-1.5 text-sm text-slate-600 border border-slate-300 rounded-xl hover:bg-slate-50 disabled:opacity-50"
         >
           {loading ? "刷新中..." : "刷新"}
         </button>
       </div>
 
       {error && (
-        <div className="p-3 bg-red-50 border border-red-200 rounded-md text-red-700 text-sm">
+        <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm">
           {error}
         </div>
       )}
@@ -561,7 +561,7 @@ function JobsTable() {
                         <button
                           onClick={() => handleRetry(job.jobId)}
                           disabled={retryingJobId === job.jobId}
-                          className="px-3 py-1.5 text-sm text-blue-600 border border-blue-200 rounded-md hover:bg-blue-50 disabled:opacity-50"
+                          className="px-3 py-1.5 text-sm text-blue-600 border border-blue-200 rounded-xl hover:bg-blue-50 disabled:opacity-50"
                         >
                           {retryingJobId === job.jobId ? "重试中..." : "重试"}
                         </button>

@@ -7,7 +7,18 @@ import { useThemeManager } from "@/plugins/hooks";
 import ThemeManagementModal from "./ThemeManagementModal";
 import ThemeSettingsForm from "./ThemeSettingsForm";
 import FontPresetSection from "./FontPresetSection";
-import { AdminButton, AdminPageHeader } from "@/components/admin/ui";
+import {
+  AdminButton,
+  AdminCard,
+  AdminErrorBanner,
+  AdminField,
+  AdminFilterChip,
+  AdminInput,
+  AdminLoading,
+  AdminPageHeader,
+  AdminSuccessBanner,
+  AdminToolbar,
+} from "@/components/admin/ui";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { useBootstrap } from "@/contexts/BootstrapContext";
 
@@ -198,190 +209,164 @@ export default function AdminThemePage() {
         }
       />
 
-      {exportImportMsg && (
-        <div className={`mb-4 p-3 rounded-md text-sm ${exportImportMsg.includes("成功") ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"}`}>
-          {exportImportMsg}
-        </div>
-      )}
+      {exportImportMsg ? (
+        exportImportMsg.includes("成功") ? (
+          <AdminSuccessBanner message={exportImportMsg} />
+        ) : (
+          <AdminErrorBanner message={exportImportMsg} />
+        )
+      ) : null}
 
-      {/* Active theme card */}
       {manifest && (
-        <div className="bg-white rounded-lg shadow overflow-hidden mb-6">
+        <AdminCard padded={false} className="mb-6 overflow-hidden">
           <div
             className="h-20 w-full"
-            style={{ background: manifest.preview || "linear-gradient(135deg, #667eea 0%, #764ba2 100%)" }}
+            style={{
+              background: manifest.preview || "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+            }}
           />
           <div className="p-5">
-            <div className="flex items-center gap-3 mb-2">
-              <h3 className="text-lg font-bold text-gray-900">
+            <div className="mb-2 flex items-center gap-3">
+              <h3 className="text-lg font-semibold tracking-tight text-slate-900">
                 {manifest.nameZh || manifest.name}
               </h3>
-              <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded">
+              <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-500">
                 v{manifest.version}
               </span>
             </div>
-            <p className="text-sm text-gray-500 mb-3">
+            <p className="mb-3 text-sm text-slate-500">
               {manifest.descriptionZh || manifest.description}
             </p>
-            <span className="inline-flex items-center text-xs text-gray-400">
+            <span className="inline-flex items-center text-xs text-slate-400">
               作者: {manifest.author}
             </span>
           </div>
-        </div>
+        </AdminCard>
       )}
 
-      {/* Tabs */}
-      <div className="border-b border-gray-200 mb-6">
-        <nav className="flex -mb-px space-x-6">
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`pb-3 px-1 text-sm font-medium border-b-2 transition-colors ${
-                activeTab === tab.id
-                  ? "border-blue-500 text-blue-600"
-                  : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </nav>
-      </div>
+      <AdminToolbar className="mb-6">
+        {tabs.map((tab) => (
+          <AdminFilterChip
+            key={tab.id}
+            active={activeTab === tab.id}
+            onClick={() => setActiveTab(tab.id)}
+          >
+            {tab.label}
+          </AdminFilterChip>
+        ))}
+      </AdminToolbar>
 
-      {/* Customize tab */}
       {activeTab === "customize" && (
         <div>
-          <div className="flex items-center justify-between mb-6">
+          <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-1">样式定制</h3>
-              <p className="text-sm text-gray-500">在主题基础上进一步调整颜色、字体和布局</p>
+              <h3 className="mb-1 text-lg font-semibold tracking-tight text-slate-900">样式定制</h3>
+              <p className="text-sm text-slate-500">在主题基础上进一步调整颜色、字体和布局</p>
             </div>
-            <div className="flex items-center gap-3">
-              <button
-                onClick={handleReset}
-                className="px-4 py-2 border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-50"
-              >
+            <div className="flex items-center gap-2">
+              <AdminButton variant="secondary" size="sm" onClick={handleReset}>
                 重置为默认
-              </button>
-              <button
-                onClick={handleSave}
-                disabled={saving}
-                className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm hover:bg-blue-700 disabled:opacity-50"
-              >
-                {saving ? "保存中..." : "保存设置"}
-              </button>
+              </AdminButton>
+              <AdminButton size="sm" onClick={handleSave} disabled={saving}>
+                {saving ? "保存中…" : "保存设置"}
+              </AdminButton>
             </div>
           </div>
 
-          {customizeMsg && (
-            <div className={`mb-4 p-3 rounded-md text-sm ${customizeMsg.includes("成功") ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"}`}>
-              {customizeMsg}
-            </div>
-          )}
+          {customizeMsg ? (
+            customizeMsg.includes("成功") ? (
+              <AdminSuccessBanner message={customizeMsg} />
+            ) : (
+              <AdminErrorBanner message={customizeMsg} />
+            )
+          ) : null}
 
           {customizeLoading ? (
-            <div className="py-12 text-center text-gray-500">加载中...</div>
+            <AdminLoading />
           ) : (
             <>
-              {/* Colors */}
-              <div className="bg-white rounded-lg shadow p-6 mb-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">颜色</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <AdminCard className="mb-6" title="颜色">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                   {colorFields.map(({ key, label }) => (
                     <div key={key} className="flex items-center gap-3">
                       <input
                         type="color"
                         value={tokens.colors[key]}
                         onChange={(e) => handleColorChange(key, e.target.value)}
-                        className="w-10 h-10 rounded border border-gray-200 cursor-pointer"
+                        className="h-10 w-10 cursor-pointer rounded-xl border border-slate-200"
                       />
-                      <div className="flex-1">
-                        <div className="text-sm font-medium text-gray-700">{label}</div>
-                        <input
+                      <div className="min-w-0 flex-1">
+                        <div className="text-sm font-medium text-slate-700">{label}</div>
+                        <AdminInput
                           type="text"
                           value={tokens.colors[key]}
                           onChange={(e) => handleColorChange(key, e.target.value)}
-                          className="w-full text-xs font-mono text-gray-500 border border-gray-200 rounded px-2 py-1 mt-1"
+                          className="mt-1 font-mono text-xs"
                         />
                       </div>
                     </div>
                   ))}
                 </div>
-              </div>
+              </AdminCard>
 
               <FontPresetSection tokens={tokens} onChange={setTokens} />
 
-              {/* Layout */}
-              <div className="bg-white rounded-lg shadow p-6 mb-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">布局</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">最大宽度</label>
-                    <input
+              <AdminCard className="mb-6" title="布局">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+                  <AdminField label="最大宽度">
+                    <AdminInput
                       type="text"
                       value={tokens.layout.maxWidth}
                       onChange={(e) => handleLayoutChange("maxWidth", e.target.value)}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
                     />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">圆角</label>
-                    <input
+                  </AdminField>
+                  <AdminField label="圆角">
+                    <AdminInput
                       type="text"
                       value={tokens.layout.borderRadius}
                       onChange={(e) => handleLayoutChange("borderRadius", e.target.value)}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
                     />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">内容留白 (Content Padding)</label>
-                    <input
+                  </AdminField>
+                  <AdminField label="内容留白 (Content Padding)">
+                    <AdminInput
                       type="text"
                       value={tokens.layout.contentPadding}
                       onChange={(e) => handleLayoutChange("contentPadding", e.target.value)}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
                     />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">区块间距 (Section Spacing)</label>
-                    <input
+                  </AdminField>
+                  <AdminField label="区块间距 (Section Spacing)">
+                    <AdminInput
                       type="text"
                       value={tokens.layout.sectionSpacing}
                       onChange={(e) => handleLayoutChange("sectionSpacing", e.target.value)}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
                     />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">内容间距 (Content Gap)</label>
-                    <input
+                  </AdminField>
+                  <AdminField label="内容间距 (Content Gap)">
+                    <AdminInput
                       type="text"
                       value={tokens.layout.contentGap}
                       onChange={(e) => handleLayoutChange("contentGap", e.target.value)}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
                     />
-                  </div>
+                  </AdminField>
                 </div>
-              </div>
+              </AdminCard>
 
-              {/* Preview */}
-              <div className="bg-white rounded-lg shadow p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">预览</h3>
-                <div className="flex gap-4 flex-wrap">
+              <AdminCard title="预览">
+                <div className="flex flex-wrap gap-4">
                   <div
-                    className="w-24 h-24 rounded-lg flex items-center justify-center text-white text-xs font-bold"
+                    className="flex h-24 w-24 items-center justify-center rounded-2xl text-xs font-bold text-white"
                     style={{ backgroundColor: tokens.colors.primary }}
                   >
                     Primary
                   </div>
                   <div
-                    className="w-24 h-24 rounded-lg flex items-center justify-center text-white text-xs font-bold"
+                    className="flex h-24 w-24 items-center justify-center rounded-2xl text-xs font-bold text-white"
                     style={{ backgroundColor: tokens.colors.accent }}
                   >
                     Accent
                   </div>
                   <div
-                    className="w-24 h-24 rounded-lg border flex items-center justify-center text-xs font-bold"
+                    className="flex h-24 w-24 items-center justify-center rounded-2xl border text-xs font-bold"
                     style={{
                       backgroundColor: tokens.colors.surface,
                       color: tokens.colors.onSurface,
@@ -391,7 +376,7 @@ export default function AdminThemePage() {
                     Surface
                   </div>
                   <div
-                    className="w-24 h-24 rounded-lg flex items-center justify-center text-xs font-bold"
+                    className="flex h-24 w-24 items-center justify-center rounded-2xl text-xs font-bold"
                     style={{
                       backgroundColor: tokens.colors.surfaceAlt,
                       color: tokens.colors.onSurfaceMuted,
@@ -400,59 +385,60 @@ export default function AdminThemePage() {
                     Surface Alt
                   </div>
                 </div>
-              </div>
+              </AdminCard>
             </>
           )}
         </div>
       )}
 
-      {/* Presets tab */}
       {activeTab === "presets" && tokenPresets.length > 0 && (
         <div>
-          <div className="flex items-center justify-between mb-6">
+          <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-1">预设方案</h3>
-              <p className="text-sm text-gray-500">选择一个预设快速应用，点击后仍需在「样式定制」中保存</p>
+              <h3 className="mb-1 text-lg font-semibold tracking-tight text-slate-900">预设方案</h3>
+              <p className="text-sm text-slate-500">
+                选择一个预设快速应用，点击后仍需在「样式定制」中保存
+              </p>
             </div>
-            <div className="flex items-center gap-3">
-              <button
-                onClick={handleSave}
-                disabled={saving}
-                className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm hover:bg-blue-700 disabled:opacity-50"
-              >
-                {saving ? "保存中..." : "保存设置"}
-              </button>
-            </div>
+            <AdminButton size="sm" onClick={handleSave} disabled={saving}>
+              {saving ? "保存中…" : "保存设置"}
+            </AdminButton>
           </div>
 
-          {customizeMsg && (
-            <div className={`mb-4 p-3 rounded-md text-sm ${customizeMsg.includes("成功") ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"}`}>
-              {customizeMsg}
-            </div>
-          )}
+          {customizeMsg ? (
+            customizeMsg.includes("成功") ? (
+              <AdminSuccessBanner message={customizeMsg} />
+            ) : (
+              <AdminErrorBanner message={customizeMsg} />
+            )
+          ) : null}
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
             {tokenPresets.map((preset) => {
-              const active = tokens.colors.primary.toLowerCase() === preset.tokens.colors.primary.toLowerCase();
+              const active =
+                tokens.colors.primary.toLowerCase() === preset.tokens.colors.primary.toLowerCase();
               return (
                 <div
                   key={preset.id}
-                  className={`rounded-lg border-2 overflow-hidden transition-all ${
-                    active ? "border-blue-500 ring-2 ring-blue-200" : "border-gray-200 hover:border-gray-300"
+                  className={`overflow-hidden rounded-2xl border-2 transition-all ${
+                    active
+                      ? "border-blue-500 ring-2 ring-blue-200"
+                      : "border-slate-200 hover:border-slate-300"
                   }`}
                 >
-                  <div className="h-[40px] w-full" style={{ background: preset.preview }} />
-                  <div className="p-3 flex items-center justify-between">
-                    <span className="font-medium text-gray-900 text-sm">{preset.nameZh || preset.name}</span>
-                    <button
-                      onClick={() => setTokens(preset.tokens)}
+                  <div className="h-10 w-full" style={{ background: preset.preview }} />
+                  <div className="flex items-center justify-between p-3">
+                    <span className="text-sm font-medium text-slate-900">
+                      {preset.nameZh || preset.name}
+                    </span>
+                    <AdminButton
+                      size="sm"
+                      variant={active ? "secondary" : "primary"}
                       disabled={active}
-                      className={`px-3 py-1 rounded text-xs font-medium transition-colors ${
-                        active ? "bg-gray-100 text-gray-400 cursor-not-allowed" : "bg-blue-600 text-white hover:bg-blue-700"
-                      }`}
+                      onClick={() => setTokens(preset.tokens)}
                     >
                       {active ? "已应用" : "应用"}
-                    </button>
+                    </AdminButton>
                   </div>
                 </div>
               );
@@ -461,39 +447,33 @@ export default function AdminThemePage() {
         </div>
       )}
 
-      {/* Settings tab */}
       {activeTab === "settings" && activeTheme?.settingSchema && (
         <div>
-          <div className="flex items-center justify-between mb-6">
+          <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-1">主题设置</h3>
-              <p className="text-sm text-gray-500">配置主题的功能选项</p>
+              <h3 className="mb-1 text-lg font-semibold tracking-tight text-slate-900">主题设置</h3>
+              <p className="text-sm text-slate-500">配置主题的功能选项</p>
             </div>
-            <div className="flex items-center gap-3">
-              <button
-                onClick={handleSettingsReset}
-                className="px-4 py-2 border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-50"
-              >
+            <div className="flex items-center gap-2">
+              <AdminButton variant="secondary" size="sm" onClick={handleSettingsReset}>
                 重置为默认
-              </button>
-              <button
-                onClick={handleSettingsSave}
-                disabled={themeDbId === null}
-                className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm hover:bg-blue-700 disabled:opacity-50"
-              >
+              </AdminButton>
+              <AdminButton size="sm" onClick={handleSettingsSave} disabled={themeDbId === null}>
                 保存设置
-              </button>
+              </AdminButton>
             </div>
           </div>
 
-          {settingsMsg && (
-            <div className={`mb-4 p-3 rounded-md text-sm ${settingsMsg.includes("成功") ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"}`}>
-              {settingsMsg}
-            </div>
-          )}
+          {settingsMsg ? (
+            settingsMsg.includes("成功") ? (
+              <AdminSuccessBanner message={settingsMsg} />
+            ) : (
+              <AdminErrorBanner message={settingsMsg} />
+            )
+          ) : null}
 
           {settingsLoading ? (
-            <div className="py-12 text-center text-gray-500">加载中...</div>
+            <AdminLoading />
           ) : (
             <ThemeSettingsForm
               schema={activeTheme.settingSchema}
