@@ -29,4 +29,40 @@ describe("AdminSidebar", () => {
       "/admin/site-config",
     );
   });
+
+  it("groups settings under a dedicated section with hub entry", () => {
+    render(
+      <MemoryRouter initialEntries={["/admin"]}>
+        <AdminSidebar
+          collapsed={false}
+          onToggle={vi.fn()}
+          mobileOpen={false}
+          onMobileClose={vi.fn()}
+        />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByRole("button", { name: /设置/i })).toBeInTheDocument();
+    // Settings is default-collapsed when not on a settings route
+    expect(screen.queryByRole("link", { name: "设置中心" })).not.toBeInTheDocument();
+  });
+
+  it("expands settings group when a settings route is active", () => {
+    render(
+      <MemoryRouter initialEntries={["/admin/settings"]}>
+        <AdminSidebar
+          collapsed={false}
+          onToggle={vi.fn()}
+          mobileOpen={false}
+          onMobileClose={vi.fn()}
+        />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByRole("link", { name: "设置中心" })).toHaveAttribute(
+      "href",
+      "/admin/settings",
+    );
+    expect(screen.getByRole("link", { name: "AI 配置" })).toBeInTheDocument();
+  });
 });

@@ -67,5 +67,19 @@ describe("admin route access metadata", () => {
     expect(isAdminRouteVisibleInNavigation("/admin/ai-settings")).toBe(true);
     expect(isAdminRouteVisibleInNavigation("/admin/migration")).toBe(true);
     expect(isAdminRouteVisibleInNavigation("/admin/system-status")).toBe(true);
+    expect(isAdminRouteVisibleInNavigation("/admin/settings")).toBe(true);
+  });
+
+  it("registers settings hub with OR permission gates", () => {
+    expect(getAdminRoutePermission("/admin/settings")).toEqual([
+      "settings:manage",
+      "backups:read",
+      "audit_logs:read",
+      "system:manage",
+      "pages:create",
+    ]);
+    expect(
+      hasAdminRoutePermission(getAdminRoutePermission("/admin/settings"), (p) => p === "backups:read"),
+    ).toBe(true);
   });
 });

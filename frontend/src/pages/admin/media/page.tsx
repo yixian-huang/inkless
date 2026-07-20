@@ -3,6 +3,7 @@ import { listMedia, deleteMedia, uploadMedia, getMediaUsages, renameMedia } from
 import type { MediaItem, MediaUsage } from "@/api/media";
 import ImageCropUpload from "@/components/admin/ImageCropUpload";
 import RecropModal from "@/components/admin/RecropModal";
+import { AdminButton, AdminErrorBanner, AdminPageHeader } from "@/components/admin/ui";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 
 export default function MediaPage() {
@@ -212,29 +213,26 @@ export default function MediaPage() {
         </div>
       )}
 
-      <div className="mb-6 flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">媒体管理</h1>
-          <p className="text-sm text-gray-500 mt-1">共 {total} 个文件</p>
-        </div>
-        <div className="flex items-center gap-3">
-          <label className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 cursor-pointer text-sm">
-            直接上传
-            <input
-              type="file"
-              accept="image/*,video/*,audio/*"
-              onChange={handleDirectUpload}
-              className="hidden"
-            />
-          </label>
-          <button
-            onClick={() => setShowUpload(!showUpload)}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm"
-          >
-            裁剪上传
-          </button>
-        </div>
-      </div>
+      <AdminPageHeader
+        title="媒体管理"
+        description={`共 ${total} 个文件 · 支持拖拽与粘贴上传`}
+        actions={
+          <>
+            <label className="inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50">
+              直接上传
+              <input
+                type="file"
+                accept="image/*,video/*,audio/*"
+                onChange={handleDirectUpload}
+                className="hidden"
+              />
+            </label>
+            <AdminButton size="sm" onClick={() => setShowUpload(!showUpload)}>
+              裁剪上传
+            </AdminButton>
+          </>
+        }
+      />
 
       {/* Hint text */}
       <p className="text-xs text-gray-400 mb-4">
@@ -259,11 +257,7 @@ export default function MediaPage() {
         </div>
       )}
 
-      {error && (
-        <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-800">
-          {error}
-        </div>
-      )}
+      {error && <AdminErrorBanner message={error} onDismiss={() => setError(null)} />}
 
       {showUpload && (
         <div className="mb-6 p-6 bg-white shadow rounded-lg">

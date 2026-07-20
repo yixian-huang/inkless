@@ -1,5 +1,17 @@
 import { useState, useEffect, useCallback } from "react";
 import { getAnalyticsSummary, type AnalyticsSummary } from "@/api/analytics";
+import {
+  AdminButton,
+  AdminErrorBanner,
+  AdminLoading,
+  AdminPageHeader,
+  AdminStatCard,
+  AdminTable,
+  AdminTableBody,
+  AdminTableHead,
+  AdminTd,
+  AdminTh,
+} from "@/components/admin/ui";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 
 const PAGE_KEY_LABELS: Record<string, string> = {
@@ -38,108 +50,95 @@ export default function AdminAnalyticsPage() {
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold text-gray-900">访问统计</h2>
-        <button
-          onClick={fetchData}
-          disabled={loading}
-          className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 disabled:opacity-50"
-        >
-          {loading ? "加载中..." : "刷新"}
-        </button>
-      </div>
+      <AdminPageHeader
+        title="访问统计"
+        description="按页面汇总的访问趋势"
+        actions={
+          <AdminButton size="sm" onClick={fetchData} disabled={loading}>
+            {loading ? "加载中…" : "刷新"}
+          </AdminButton>
+        }
+      />
 
-      {error && (
-        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-md text-red-700 text-sm">
-          {error}
-        </div>
-      )}
+      {error && <AdminErrorBanner message={error} onDismiss={() => setError(null)} />}
 
       {loading && !data ? (
-        <div className="text-center py-12 text-gray-500">加载中...</div>
+        <AdminLoading />
       ) : data ? (
         <>
-          {/* Summary Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-            <SummaryCard label="今日访问" value={data.totals.today} />
-            <SummaryCard label="近 7 天" value={data.totals.last7d} />
-            <SummaryCard label="近 30 天" value={data.totals.last30d} />
+          <div className="mb-8 grid grid-cols-1 gap-4 md:grid-cols-3">
+            <AdminStatCard
+              label="今日访问"
+              value={data.totals.today.toLocaleString()}
+              colorClass="bg-blue-500"
+              icon={<span className="text-sm font-bold">今</span>}
+            />
+            <AdminStatCard
+              label="近 7 天"
+              value={data.totals.last7d.toLocaleString()}
+              colorClass="bg-emerald-500"
+              icon={<span className="text-sm font-bold">7d</span>}
+            />
+            <AdminStatCard
+              label="近 30 天"
+              value={data.totals.last30d.toLocaleString()}
+              colorClass="bg-violet-500"
+              icon={<span className="text-sm font-bold">30</span>}
+            />
           </div>
 
-          {/* Detail Table */}
-          <div className="bg-white shadow rounded-lg overflow-hidden">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    页面
-                  </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    今日
-                  </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    近 7 天
-                  </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    近 30 天
-                  </th>
+          <AdminTable>
+            <AdminTableHead>
+              <tr>
+                <AdminTh>页面</AdminTh>
+                <AdminTh className="text-right">今日</AdminTh>
+                <AdminTh className="text-right">近 7 天</AdminTh>
+                <AdminTh className="text-right">近 30 天</AdminTh>
+              </tr>
+            </AdminTableHead>
+            <AdminTableBody>
+              {data.pages.map((page) => (
+                <tr key={page.pageKey} className="hover:bg-slate-50/80">
+                  <AdminTd className="whitespace-nowrap font-medium text-slate-900">
+                    {PAGE_KEY_LABELS[page.pageKey] || page.pageKey}
+                    <span className="ml-2 text-xs text-slate-400">{page.pageKey}</span>
+                  </AdminTd>
+                  <AdminTd className="whitespace-nowrap text-right tabular-nums">
+                    {page.today.toLocaleString()}
+                  </AdminTd>
+                  <AdminTd className="whitespace-nowrap text-right tabular-nums">
+                    {page.last7d.toLocaleString()}
+                  </AdminTd>
+                  <AdminTd className="whitespace-nowrap text-right tabular-nums">
+                    {page.last30d.toLocaleString()}
+                  </AdminTd>
                 </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {data.pages.map((page) => (
-                  <tr key={page.pageKey} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      {PAGE_KEY_LABELS[page.pageKey] || page.pageKey}
-                      <span className="ml-2 text-xs text-gray-400">{page.pageKey}</span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 text-right">
-                      {page.today.toLocaleString()}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 text-right">
-                      {page.last7d.toLocaleString()}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 text-right">
-                      {page.last30d.toLocaleString()}
-                    </td>
-                  </tr>
-                ))}
-                {data.pages.length === 0 && (
-                  <tr>
-                    <td colSpan={4} className="px-6 py-8 text-center text-sm text-gray-500">
-                      暂无访问数据
-                    </td>
-                  </tr>
-                )}
-                {data.pages.length > 0 && (
-                  <tr className="bg-gray-50 font-semibold">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      合计
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
-                      {data.totals.today.toLocaleString()}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
-                      {data.totals.last7d.toLocaleString()}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
-                      {data.totals.last30d.toLocaleString()}
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+              ))}
+              {data.pages.length === 0 && (
+                <tr>
+                  <AdminTd colSpan={4} className="py-8 text-center text-slate-500">
+                    暂无访问数据
+                  </AdminTd>
+                </tr>
+              )}
+              {data.pages.length > 0 && (
+                <tr className="bg-slate-50 font-semibold">
+                  <AdminTd className="whitespace-nowrap text-slate-900">合计</AdminTd>
+                  <AdminTd className="whitespace-nowrap text-right tabular-nums text-slate-900">
+                    {data.totals.today.toLocaleString()}
+                  </AdminTd>
+                  <AdminTd className="whitespace-nowrap text-right tabular-nums text-slate-900">
+                    {data.totals.last7d.toLocaleString()}
+                  </AdminTd>
+                  <AdminTd className="whitespace-nowrap text-right tabular-nums text-slate-900">
+                    {data.totals.last30d.toLocaleString()}
+                  </AdminTd>
+                </tr>
+              )}
+            </AdminTableBody>
+          </AdminTable>
         </>
       ) : null}
-    </div>
-  );
-}
-
-function SummaryCard({ label, value }: { label: string; value: number }) {
-  return (
-    <div className="bg-white rounded-lg shadow p-6">
-      <p className="text-sm font-medium text-gray-500">{label}</p>
-      <p className="mt-2 text-3xl font-bold text-gray-900">{value.toLocaleString()}</p>
     </div>
   );
 }

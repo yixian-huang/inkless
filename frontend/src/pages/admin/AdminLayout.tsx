@@ -1,21 +1,24 @@
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { Outlet, Navigate, useLocation, useNavigate } from "react-router-dom";
+import { AdminRouteFallback } from "@/components/admin/ui";
 import { useAuth } from "@/contexts/AuthContext";
 import { useBranding } from "@/hooks/useBranding";
 import { useSetupStatus } from "@/hooks/useSetupStatus";
 import { BROWSER_STORAGE_KEYS } from "@/lib/browserStorage";
+import { isAdminEditorPath } from "@/pages/admin/nav/adminNav";
 import { getAdminRoutePermission, hasAdminRoutePermission } from "@/router/adminAccess";
 import AdminSidebar from "./components/AdminSidebar";
+import AdminTopbar from "./components/AdminTopbar";
 
 export default function AdminLayout() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, isAuthenticated, isLoading, logout, hasPermission } = useAuth();
+  const { isAuthenticated, isLoading, logout, hasPermission } = useAuth();
   const { status: setupStatus, loading: setupLoading } = useSetupStatus();
   const branding = useBranding();
 
-  const [collapsed, setCollapsed] = useState(() =>
-    localStorage.getItem(BROWSER_STORAGE_KEYS.adminSidebarCollapsed) === "true"
+  const [collapsed, setCollapsed] = useState(
+    () => localStorage.getItem(BROWSER_STORAGE_KEYS.adminSidebarCollapsed) === "true",
   );
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -27,11 +30,13 @@ export default function AdminLayout() {
     });
   };
 
-  // Show loading state while checking auth / setup
   if (isLoading || setupLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-100">
-        <div className="text-gray-600">加载中...</div>
+      <div className="flex min-h-screen items-center justify-center bg-slate-50">
+        <div className="flex flex-col items-center gap-3 text-slate-500">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-200 border-t-blue-600" />
+          <p className="text-sm">加载中…</p>
+        </div>
       </div>
     );
   }
@@ -40,17 +45,14 @@ export default function AdminLayout() {
     return <Navigate to="/setup" replace />;
   }
 
-  // Redirect to login if not authenticated
   if (!isAuthenticated && location.pathname !== "/admin/login") {
     return <Navigate to="/admin/login" replace />;
   }
 
-  // Show login page without navigation frame
   if (location.pathname === "/admin/login") {
     return <Outlet />;
   }
 
-  // Check route-level permission
   const requiredPerm = getAdminRoutePermission(location.pathname);
   if (!hasAdminRoutePermission(requiredPerm, hasPermission)) {
     return <Navigate to="/admin" replace />;
@@ -61,14 +63,10 @@ export default function AdminLayout() {
     navigate("/admin/login");
   };
 
-  const roleBadge = user?.isSuperAdmin
-    ? "超级管理员"
-    : user?.role === "admin"
-      ? "管理员"
-      : "编辑";
+  const flush = isAdminEditorPath(location.pathname);
 
   return (
-    <div className="min-h-screen bg-gray-100 flex">
+    <div className="flex min-h-screen bg-slate-50">
       <AdminSidebar
         collapsed={collapsed}
         onToggle={handleToggle}
@@ -76,54 +74,28 @@ export default function AdminLayout() {
         onMobileClose={() => setMobileOpen(false)}
       />
 
-      {/* Main Area */}
       <div
-        className={`flex-1 flex flex-col transition-all duration-200 ${
+        className={`flex min-w-0 flex-1 flex-col transition-all duration-200 ${
           collapsed ? "md:ml-16" : "md:ml-64"
         }`}
       >
-        {/* Top Header Bar */}
-        <header className="sticky top-0 z-10 bg-white shadow-sm h-14 flex items-center justify-between px-6">
-          {/* Left: mobile menu button */}
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => setMobileOpen(true)}
-              className="md:hidden p-1.5 rounded-md text-gray-500 hover:bg-gray-100 hover:text-gray-700"
-              aria-label="打开菜单"
-            >
-              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
-              </svg>
-            </button>
-            <span className="text-sm font-medium text-gray-600 hidden sm:block">
-              {branding.siteName} - 管理后台
-            </span>
-          </div>
+        <AdminTopbar
+          pathname={location.pathname}
+          siteName={branding.siteName}
+          onOpenMobileMenu={() => setMobileOpen(true)}
+          onLogout={handleLogout}
+        />
 
-          {/* Right: user info + logout */}
-          <div className="flex items-center gap-3">
-            <span className="text-sm text-gray-600">
-              {user?.username || "管理员"}
-            </span>
-            <span className={`text-xs px-2 py-0.5 rounded ${
-              user?.isSuperAdmin
-                ? "text-amber-700 bg-amber-100"
-                : "text-gray-500 bg-gray-100"
-            }`}>
-              {roleBadge}
-            </span>
-            <button
-              onClick={handleLogout}
-              className="px-3 py-1.5 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors"
-            >
-              退出
-            </button>
-          </div>
-        </header>
-
-        {/* Main Content */}
-        <main className="flex-1 p-6">
-          <Outlet />
+        <main
+          className={
+            flush
+              ? "flex min-h-0 flex-1 flex-col overflow-hidden"
+              : "flex-1 p-4 sm:p-6"
+          }
+        >
+          <Suspense fallback={<AdminRouteFallback />}>
+            <Outlet />
+          </Suspense>
         </main>
       </div>
     </div>

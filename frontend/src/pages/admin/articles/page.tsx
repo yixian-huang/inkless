@@ -2,6 +2,20 @@ import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { getAdminArticles, deleteArticle } from "@/api/articles";
 import type { Article } from "@/api/articles";
+import {
+  AdminBadge,
+  AdminButton,
+  AdminEmptyState,
+  AdminErrorBanner,
+  AdminLoading,
+  AdminPageHeader,
+  AdminPagination,
+  AdminTable,
+  AdminTableBody,
+  AdminTableHead,
+  AdminTd,
+  AdminTh,
+} from "@/components/admin/ui";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 
 export default function AdminArticlesPage() {
@@ -25,7 +39,7 @@ export default function AdminArticlesPage() {
       setArticles(data.items || []);
       setTotal(data.total);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load articles");
+      setError(err instanceof Error ? err.message : "加载文章失败");
     } finally {
       setLoading(false);
     }
@@ -36,7 +50,8 @@ export default function AdminArticlesPage() {
   }, [loadArticles]);
 
   const handleDelete = async (article: Article) => {
-    if (!confirm(`Are you sure you want to delete "${article.zhTitle || article.enTitle}"?`)) return;
+    const title = article.zhTitle || article.enTitle || "未命名";
+    if (!confirm(`确定删除「${title}」吗？`)) return;
 
     setDeleting(article.id);
     setError(null);
@@ -45,7 +60,7 @@ export default function AdminArticlesPage() {
       setArticles((prev) => prev.filter((a) => a.id !== article.id));
       setTotal((prev) => prev - 1);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Delete failed");
+      setError(err instanceof Error ? err.message : "删除失败");
     } finally {
       setDeleting(null);
     }
@@ -56,67 +71,54 @@ export default function AdminArticlesPage() {
   const statusLabel = (status: string) => {
     switch (status) {
       case "published":
-        return <span className="px-2 py-0.5 text-xs bg-green-100 text-green-800 rounded-full">Published</span>;
+        return <AdminBadge tone="success">已发布</AdminBadge>;
       case "draft":
-        return <span className="px-2 py-0.5 text-xs bg-yellow-100 text-yellow-800 rounded-full">Draft</span>;
+        return <AdminBadge tone="warning">草稿</AdminBadge>;
       default:
-        return <span className="px-2 py-0.5 text-xs bg-gray-100 text-gray-600 rounded-full">{status}</span>;
+        return <AdminBadge>{status}</AdminBadge>;
     }
   };
 
   return (
     <div>
-      <div className="mb-6 flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">文章管理</h1>
-          <p className="text-sm text-gray-500 mt-1">Total: {total}</p>
-        </div>
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => navigate("/admin/articles/categories")}
-            className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm"
-          >
-            Categories
-          </button>
-          <button
-            onClick={() => navigate("/admin/articles/tags")}
-            className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm"
-          >
-            Tags
-          </button>
-          <button
-            onClick={() => navigate("/admin/articles/new")}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm"
-          >
-            New Article
-          </button>
-        </div>
-      </div>
+      <AdminPageHeader
+        title="文章管理"
+        description={`共 ${total} 篇文章`}
+        actions={
+          <>
+            <AdminButton variant="secondary" size="sm" onClick={() => navigate("/admin/articles/categories")}>
+              分类
+            </AdminButton>
+            <AdminButton variant="secondary" size="sm" onClick={() => navigate("/admin/articles/tags")}>
+              标签
+            </AdminButton>
+            <AdminButton size="sm" onClick={() => navigate("/admin/articles/new")}>
+              新建文章
+            </AdminButton>
+          </>
+        }
+      />
 
-      {error && (
-        <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-800">
-          {error}
-        </div>
-      )}
+      {error && <AdminErrorBanner message={error} onDismiss={() => setError(null)} />}
 
-      {/* Status filter */}
-      <div className="mb-4 flex items-center gap-2">
-        <span className="text-sm text-gray-600">Status:</span>
+      <div className="mb-4 flex flex-wrap items-center gap-2">
+        <span className="text-sm text-slate-500">状态：</span>
         {[
-          { value: "", label: "All" },
-          { value: "draft", label: "Draft" },
-          { value: "published", label: "Published" },
+          { value: "", label: "全部" },
+          { value: "draft", label: "草稿" },
+          { value: "published", label: "已发布" },
         ].map((opt) => (
           <button
             key={opt.value}
+            type="button"
             onClick={() => {
               setStatusFilter(opt.value);
               setPage(1);
             }}
-            className={`px-3 py-1.5 text-sm rounded-lg border ${
+            className={`rounded-lg border px-3 py-1.5 text-sm transition-colors ${
               statusFilter === opt.value
-                ? "bg-blue-50 border-blue-300 text-blue-700"
-                : "border-gray-300 text-gray-600 hover:bg-gray-50"
+                ? "border-blue-300 bg-blue-50 text-blue-700"
+                : "border-slate-200 text-slate-600 hover:bg-slate-50"
             }`}
           >
             {opt.label}
@@ -125,99 +127,73 @@ export default function AdminArticlesPage() {
       </div>
 
       {loading ? (
-        <div className="flex items-center justify-center h-64">
-          <div className="text-gray-600">Loading...</div>
-        </div>
+        <AdminLoading />
       ) : articles.length === 0 ? (
-        <div className="flex items-center justify-center h-64">
-          <p className="text-gray-500">No articles found.</p>
-        </div>
+        <AdminEmptyState
+          title="暂无文章"
+          description="创建第一篇文章，或调整筛选条件。"
+          action={
+            <AdminButton size="sm" onClick={() => navigate("/admin/articles/new")}>
+              新建文章
+            </AdminButton>
+          }
+        />
       ) : (
         <>
-          <div className="bg-white shadow rounded-lg overflow-hidden">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Title
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Category
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Created
-                  </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
-                  </th>
+          <AdminTable>
+            <AdminTableHead>
+              <tr>
+                <AdminTh>标题</AdminTh>
+                <AdminTh>状态</AdminTh>
+                <AdminTh>分类</AdminTh>
+                <AdminTh>创建时间</AdminTh>
+                <AdminTh className="text-right">操作</AdminTh>
+              </tr>
+            </AdminTableHead>
+            <AdminTableBody>
+              {articles.map((article) => (
+                <tr key={article.id} className="hover:bg-slate-50/80">
+                  <AdminTd>
+                    <div className="max-w-xs truncate text-sm font-medium text-slate-900">
+                      {article.zhTitle || article.enTitle || "（未命名）"}
+                    </div>
+                    <div className="max-w-xs truncate text-xs text-slate-500">/{article.slug}</div>
+                  </AdminTd>
+                  <AdminTd className="whitespace-nowrap">{statusLabel(article.status)}</AdminTd>
+                  <AdminTd className="whitespace-nowrap text-slate-600">
+                    {article.category?.zhName || article.category?.enName || "—"}
+                  </AdminTd>
+                  <AdminTd className="whitespace-nowrap text-slate-500">
+                    {new Date(article.createdAt).toLocaleDateString("zh-CN")}
+                  </AdminTd>
+                  <AdminTd className="whitespace-nowrap text-right">
+                    <button
+                      type="button"
+                      onClick={() => navigate(`/admin/articles/edit/${article.id}`)}
+                      className="mr-3 text-sm font-medium text-blue-600 hover:text-blue-800"
+                    >
+                      编辑
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDelete(article)}
+                      disabled={deleting === article.id}
+                      className="text-sm font-medium text-red-600 hover:text-red-800 disabled:opacity-50"
+                    >
+                      {deleting === article.id ? "…" : "删除"}
+                    </button>
+                  </AdminTd>
                 </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {articles.map((article) => (
-                  <tr key={article.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4">
-                      <div className="text-sm font-medium text-gray-900 truncate max-w-xs">
-                        {article.zhTitle || article.enTitle || "(Untitled)"}
-                      </div>
-                      <div className="text-xs text-gray-500 truncate max-w-xs">
-                        /{article.slug}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      {statusLabel(article.status)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                      {article.category?.zhName || article.category?.enName || "-"}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {new Date(article.createdAt).toLocaleDateString("zh-CN")}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
-                      <button
-                        onClick={() => navigate(`/admin/articles/edit/${article.id}`)}
-                        className="text-blue-600 hover:text-blue-800 mr-3"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => handleDelete(article)}
-                        disabled={deleting === article.id}
-                        className="text-red-600 hover:text-red-800 disabled:opacity-50"
-                      >
-                        {deleting === article.id ? "..." : "Delete"}
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+              ))}
+            </AdminTableBody>
+          </AdminTable>
 
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="mt-6 flex items-center justify-center gap-2">
-              <button
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                disabled={page <= 1}
-                className="px-3 py-1.5 text-sm border rounded hover:bg-gray-50 disabled:opacity-50"
-              >
-                Previous
-              </button>
-              <span className="text-sm text-gray-600">
-                {page} / {totalPages}
-              </span>
-              <button
-                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                disabled={page >= totalPages}
-                className="px-3 py-1.5 text-sm border rounded hover:bg-gray-50 disabled:opacity-50"
-              >
-                Next
-              </button>
-            </div>
-          )}
+          <AdminPagination
+            page={page}
+            totalPages={totalPages}
+            total={total}
+            onPageChange={setPage}
+          />
         </>
       )}
     </div>

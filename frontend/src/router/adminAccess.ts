@@ -36,6 +36,17 @@ export const adminRouteAccess: AdminRouteAccess[] = [
   { path: "/admin/wizard", permission: "pages:create", status: "production" },
   { path: "/admin/migration", permission: "system:manage", status: "production" },
   { path: "/admin/system-status", permission: "system:manage", status: "production" },
+  {
+    path: "/admin/settings",
+    permission: [
+      "settings:manage",
+      "backups:read",
+      "audit_logs:read",
+      "system:manage",
+      "pages:create",
+    ],
+    status: "production",
+  },
   { path: "/admin/qa", permission: "settings:manage", status: "experimental" },
   { path: "/admin", permission: "dashboard:read", status: "production" },
 ];

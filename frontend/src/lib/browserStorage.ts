@@ -16,6 +16,7 @@ export const BROWSER_STORAGE_KEYS = {
   authAccessToken: "inkless.auth.accessToken",
   authRefreshToken: "inkless.auth.refreshToken",
   adminSidebarCollapsed: "inkless.admin.sidebarCollapsed",
+  adminNavGroupCollapsed: "inkless.admin.navGroupCollapsed",
   commentGuest: "inkless.comment.guest",
   setupStep: "inkless.setup.step",
   setupDraft: "inkless.setup.draft",

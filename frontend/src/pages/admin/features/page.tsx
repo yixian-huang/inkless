@@ -5,7 +5,9 @@ import {
   putAdminFeaturesDraft,
   publishAdminFeatures,
 } from "@/api/features";
+import { AdminButton, AdminCard, AdminLoading, AdminPageHeader } from "@/components/admin/ui";
 import { useBootstrap } from "@/contexts/BootstrapContext";
+import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { normalizeFeatures } from "@/lib/normalizeFeatures";
 import {
   SITE_CONFIG_FEATURES_DEFAULT,
@@ -31,6 +33,7 @@ function normalizeDraft(raw: SiteConfigFeatures): SiteConfigFeatures {
 }
 
 export default function AdminFeaturesPage() {
+  useDocumentTitle("功能开关");
   const { refetch: refetchBootstrap, data: bootstrapData } = useBootstrap();
   const [draft, setDraft] = useState<SiteConfigFeatures>(SITE_CONFIG_FEATURES_DEFAULT);
   const [draftVersion, setDraftVersion] = useState(0);
@@ -69,9 +72,9 @@ export default function AdminFeaturesPage() {
     try {
       const r = await putAdminFeaturesDraft(draft, draftVersion);
       setDraftVersion(r.draftVersion);
-      setStatus("Draft saved (v" + r.draftVersion + ")");
+      setStatus("草稿已保存（v" + r.draftVersion + "）");
     } catch (e) {
-      setStatus("Save failed: " + (e as Error).message);
+      setStatus("保存失败：" + (e as Error).message);
     }
   }
 
@@ -80,103 +83,120 @@ export default function AdminFeaturesPage() {
     try {
       const r = await publishAdminFeatures();
       await refetchBootstrap();
-      setStatus("Published v" + r.publishedVersion + " — refresh the site to see changes.");
+      setStatus("已发布 v" + r.publishedVersion + " — 刷新前台即可看到变更。");
     } catch (e) {
-      setStatus("Publish failed: " + (e as Error).message);
+      setStatus("发布失败：" + (e as Error).message);
     }
   }
 
-  if (loading) return <div className="p-4">Loading…</div>;
+  if (loading) return <AdminLoading />;
 
   const activeThemeId = bootstrapData?.activeTheme?.themeId ?? "—";
 
   return (
-    <div className="p-4 max-w-2xl">
-      <h1 className="text-xl font-semibold mb-4">Features</h1>
-      <p className="text-sm text-gray-500 mb-4">Draft v{draftVersion}</p>
+    <div className="max-w-2xl">
+      <AdminPageHeader
+        title="功能开关"
+        description={`草稿版本 v${draftVersion} · 控制公开路由与博客能力`}
+        actions={
+          <>
+            <AdminButton variant="secondary" size="sm" onClick={save}>
+              保存草稿
+            </AdminButton>
+            <AdminButton size="sm" onClick={publish}>
+              发布
+            </AdminButton>
+          </>
+        }
+      />
 
-      <p className="text-sm text-gray-600 mb-6">
+      <p className="mb-6 text-sm text-slate-600">
         首页布局与 Header/Footer 由{" "}
-        <Link to="/admin/theme" className="text-blue-600 underline">
+        <Link to="/admin/theme" className="font-medium text-blue-600 hover:underline">
           主题
         </Link>
         {" "}决定（当前激活：<strong>{activeThemeId}</strong>）。
         本页仅控制公开路由开关与博客功能。
       </p>
 
-      <section className="mb-6">
-        <h2 className="text-sm font-medium text-gray-600 mb-2">Blog</h2>
-        <ul className="space-y-2">
-          <li className="flex items-center gap-3">
-            <input
-              type="checkbox"
-              id="blog-comments"
-              checked={draft.blog.comments}
-              onChange={() => toggleBlog("comments")}
-            />
-            <label htmlFor="blog-comments" className="text-sm">文章评论区（全站开关，发布后生效）</label>
-          </li>
-          <li className="flex items-center gap-3">
-            <input
-              type="checkbox"
-              id="blog-rss"
-              checked={draft.blog.rss}
-              onChange={() => toggleBlog("rss")}
-            />
-            <label htmlFor="blog-rss" className="text-sm">RSS feed at /feed.xml</label>
-          </li>
-          <li className="flex items-center gap-3">
-            <input
-              type="checkbox"
-              id="blog-reading-meta"
-              checked={draft.blog.readingMeta}
-              onChange={() => toggleBlog("readingMeta")}
-            />
-            <label htmlFor="blog-reading-meta" className="text-sm">Word count & reading time on articles</label>
-          </li>
-        </ul>
-        <div className="mt-3">
-          <label htmlFor="blog-wpm" className="text-sm text-gray-600 block mb-1">
-            Reading speed (words per minute)
-          </label>
-          <input
-            id="blog-wpm"
-            type="number"
-            min={100}
-            max={600}
-            className="border rounded px-2 py-1 text-sm w-28"
-            value={draft.blog.wordsPerMinute ?? 280}
-            onChange={(e) => {
-              const n = Number(e.target.value);
-              setDraft((d) => ({
-                ...d,
-                blog: { ...d.blog, wordsPerMinute: Number.isFinite(n) && n > 0 ? n : 280 },
-              }));
-            }}
-          />
-        </div>
-      </section>
+      {status ? <p className="mb-4 text-sm text-slate-700">{status}</p> : null}
 
-      <section className="mb-6">
-        <h2 className="text-sm font-medium text-gray-600 mb-2">Public pages</h2>
-        <ul className="space-y-2">
-          {PUBLIC_PAGE_KEYS.map((key) => (
-            <li key={key} className="flex items-center gap-3">
+      <div className="space-y-4">
+        <AdminCard title="博客" description="评论、RSS 与阅读信息">
+          <ul className="space-y-2">
+            <li className="flex items-center gap-3">
               <input
                 type="checkbox"
-                id={`pp-${key}`}
-                checked={draft.publicPages[key]}
-                onChange={() => toggle(key)}
+                id="blog-comments"
+                checked={draft.blog.comments}
+                onChange={() => toggleBlog("comments")}
               />
-              <label htmlFor={`pp-${key}`} className="text-sm">/{key}</label>
+              <label htmlFor="blog-comments" className="text-sm">
+                文章评论区（全站开关，发布后生效）
+              </label>
             </li>
-          ))}
-        </ul>
-      </section>
-      <div className="flex gap-2 items-center">
-        <button type="button" onClick={save} className="px-4 py-2 bg-blue-600 text-white rounded">Save Draft</button>
-        <button type="button" onClick={publish} className="px-4 py-2 bg-green-600 text-white rounded">Publish</button>
-        {status && <span className="text-sm text-gray-700">{status}</span>}
+            <li className="flex items-center gap-3">
+              <input
+                type="checkbox"
+                id="blog-rss"
+                checked={draft.blog.rss}
+                onChange={() => toggleBlog("rss")}
+              />
+              <label htmlFor="blog-rss" className="text-sm">
+                RSS 订阅源（/feed.xml）
+              </label>
+            </li>
+            <li className="flex items-center gap-3">
+              <input
+                type="checkbox"
+                id="blog-reading-meta"
+                checked={draft.blog.readingMeta}
+                onChange={() => toggleBlog("readingMeta")}
+              />
+              <label htmlFor="blog-reading-meta" className="text-sm">
+                显示字数与阅读时间
+              </label>
+            </li>
+          </ul>
+          <div className="mt-4">
+            <label htmlFor="blog-wpm" className="mb-1 block text-sm text-slate-600">
+              阅读速度（词/分钟）
+            </label>
+            <input
+              id="blog-wpm"
+              type="number"
+              min={100}
+              max={600}
+              className="w-28 rounded-lg border border-slate-200 px-2 py-1.5 text-sm"
+              value={draft.blog.wordsPerMinute ?? 280}
+              onChange={(e) => {
+                const n = Number(e.target.value);
+                setDraft((d) => ({
+                  ...d,
+                  blog: { ...d.blog, wordsPerMinute: Number.isFinite(n) && n > 0 ? n : 280 },
+                }));
+              }}
+            />
+          </div>
+        </AdminCard>
+
+        <AdminCard title="公开页面" description="控制前台路由是否开放">
+          <ul className="space-y-2">
+            {PUBLIC_PAGE_KEYS.map((key) => (
+              <li key={key} className="flex items-center gap-3">
+                <input
+                  type="checkbox"
+                  id={`pp-${key}`}
+                  checked={draft.publicPages[key]}
+                  onChange={() => toggle(key)}
+                />
+                <label htmlFor={`pp-${key}`} className="text-sm">
+                  /{key}
+                </label>
+              </li>
+            ))}
+          </ul>
+        </AdminCard>
       </div>
     </div>
   );
