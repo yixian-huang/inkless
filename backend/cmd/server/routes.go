@@ -539,6 +539,8 @@ func registerRoutes(router *gin.Engine, handlers *Handlers, deps *RouteDeps) {
 	if cfg.FrontendDir != "" {
 		router.Static("/assets", filepath.Join(cfg.FrontendDir, "assets"))
 		router.Static("/images", filepath.Join(cfg.FrontendDir, "images"))
+		// Brand kit (favicon, logos, OG) from Vite public/brand — not SPA-routed
+		router.Static("/brand", filepath.Join(cfg.FrontendDir, "brand"))
 		router.StaticFile("/favicon.ico", filepath.Join(cfg.FrontendDir, "favicon.ico"))
 
 		// SPA fallback: non-API GET requests return index.html with SEO meta
@@ -564,6 +566,7 @@ func registerFrontendFallback(
 			!strings.HasPrefix(path, "/public/") &&
 			!strings.HasPrefix(path, "/auth/") &&
 			!strings.HasPrefix(path, "/uploads/") &&
+			!strings.HasPrefix(path, "/brand/") &&
 			path != "/health" &&
 			path != "/version" &&
 			path != "/metrics" &&
