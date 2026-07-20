@@ -33,8 +33,8 @@ importers:
         specifier: ^6.40.0
         version: 6.40.0
       '@inkless/theme-blog-first':
-        specifier: workspace:*
-        version: link:../packages/theme-blog-first
+        specifier: github:yixian-huang/inkless-theme-blog-first#main
+        version: https://codeload.github.com/yixian-huang/inkless-theme-blog-first/tar.gz/ff35644b04c5b14d96697f5c403e3b2be5d923a6(react-dom@19.2.4(react@19.2.4))(react-i18next@15.7.4(i18next@25.8.4(typescript@5.8.3))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.8.3))(react-router-dom@7.13.0(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(react@19.2.4)
       '@stripe/react-stripe-js':
         specifier: 4.0.2
         version: 4.0.2(@stripe/stripe-js@7.9.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
@@ -246,39 +246,6 @@ importers:
       unplugin-auto-import:
         specifier: ^19.3.0
         version: 19.3.0(@vueuse/core@12.8.2(typescript@5.8.3))
-      vite:
-        specifier: ^7.0.3
-        version: 7.3.1(@types/node@25.2.1)(jiti@2.6.1)
-      vitest:
-        specifier: ^4.0.18
-        version: 4.0.18(@types/node@25.2.1)(happy-dom@20.6.1)(jiti@2.6.1)(jsdom@28.0.0)
-
-  packages/theme-blog-first:
-    devDependencies:
-      '@types/react':
-        specifier: ^19.1.8
-        version: 19.2.13
-      '@types/react-dom':
-        specifier: ^19.1.6
-        version: 19.2.3(@types/react@19.2.13)
-      '@vitejs/plugin-react-swc':
-        specifier: ^3.10.2
-        version: 3.11.0(vite@7.3.1(@types/node@25.2.1)(jiti@2.6.1))
-      react:
-        specifier: ^19.1.0
-        version: 19.2.4
-      react-dom:
-        specifier: ^19.1.0
-        version: 19.2.4(react@19.2.4)
-      react-i18next:
-        specifier: ^15.6.0
-        version: 15.7.4(i18next@25.8.4(typescript@5.8.3))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.8.3)
-      react-router-dom:
-        specifier: ^7.6.3
-        version: 7.13.0(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
-      typescript:
-        specifier: ~5.8.3
-        version: 5.8.3
       vite:
         specifier: ^7.0.3
         version: 7.3.1(@types/node@25.2.1)(jiti@2.6.1)
@@ -1097,6 +1064,15 @@ packages:
 
   '@iconify/utils@3.1.4':
     resolution: {integrity: sha512-b1S7B1k9ohZ+iNTi2ATxbRYG9fTrJmUT0rc46bvVnNxqNRGW7dyo/vRREwyniI5IRN2RSJHDcm+s3BjWrSAjHw==}
+
+  '@inkless/theme-blog-first@https://codeload.github.com/yixian-huang/inkless-theme-blog-first/tar.gz/ff35644b04c5b14d96697f5c403e3b2be5d923a6':
+    resolution: {tarball: https://codeload.github.com/yixian-huang/inkless-theme-blog-first/tar.gz/ff35644b04c5b14d96697f5c403e3b2be5d923a6}
+    version: 1.0.0
+    peerDependencies:
+      react: ^19.0.0
+      react-dom: ^19.0.0
+      react-i18next: ^15.0.0
+      react-router-dom: ^7.0.0
 
   '@jridgewell/gen-mapping@0.3.13':
     resolution: {integrity: sha512-2kkt/7niJ6MgEPxF0bYdQ6etZaA+fQvDcLKckhy1yIQOzaoKjBBjSj63/aLVjYE3qhRt5dvM+uUyfCg6UKCBbA==}
@@ -4960,6 +4936,13 @@ snapshots:
       '@antfu/install-pkg': 1.1.0
       '@iconify/types': 2.0.0
       import-meta-resolve: 4.2.0
+
+  '@inkless/theme-blog-first@https://codeload.github.com/yixian-huang/inkless-theme-blog-first/tar.gz/ff35644b04c5b14d96697f5c403e3b2be5d923a6(react-dom@19.2.4(react@19.2.4))(react-i18next@15.7.4(i18next@25.8.4(typescript@5.8.3))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.8.3))(react-router-dom@7.13.0(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(react@19.2.4)':
+    dependencies:
+      react: 19.2.4
+      react-dom: 19.2.4(react@19.2.4)
+      react-i18next: 15.7.4(i18next@25.8.4(typescript@5.8.3))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.8.3)
+      react-router-dom: 7.13.0(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
 
   '@jridgewell/gen-mapping@0.3.13':
     dependencies:

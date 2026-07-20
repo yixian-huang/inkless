@@ -13,16 +13,35 @@ import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const umdPath = resolve(root, "packages/theme-blog-first/dist/theme.umd.js");
-const manifestPath = resolve(root, "packages/theme-blog-first/inkless.theme.json");
+const umdCandidates = [
+  resolve(root, "frontend/node_modules/@inkless/theme-blog-first/dist/theme.umd.js"),
+  resolve(root, "node_modules/@inkless/theme-blog-first/dist/theme.umd.js"),
+  resolve(root, "packages/theme-blog-first/dist/theme.umd.js"),
+];
+const manifestCandidates = [
+  resolve(root, "frontend/node_modules/@inkless/theme-blog-first/inkless.theme.json"),
+  resolve(root, "node_modules/@inkless/theme-blog-first/inkless.theme.json"),
+  resolve(root, "packages/theme-blog-first/inkless.theme.json"),
+];
+const umdPath = umdCandidates.find((p) => existsSync(p));
+const manifestPath = manifestCandidates.find((p) => existsSync(p));
+if (!umdPath) {
+  // fall through to old error after assignment below
+}
+
 
 function fail(msg) {
   console.error(`theme-umd-smoke: ${msg}`);
   process.exit(1);
 }
 
-if (!existsSync(umdPath)) {
-  fail(`missing UMD bundle at ${umdPath} — run: pnpm -C packages/theme-blog-first build`);
+if (!umdPath || !existsSync(umdPath)) {
+  fail(
+    `missing UMD bundle — run: pnpm --filter @inkless/theme-blog-first build (looked in node_modules and packages/)`,
+  );
+}
+if (!manifestPath || !existsSync(manifestPath)) {
+  fail("missing inkless.theme.json for theme-blog-first");
 }
 
 const manifest = JSON.parse(readFileSync(manifestPath, "utf8"));

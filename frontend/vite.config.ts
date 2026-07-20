@@ -87,7 +87,6 @@ export default defineConfig({
       // Theme packages import host APIs only through this facade.
       "@inkless/theme-host": resolve(__dirname, "./src/theme-host/index.ts"),
       // Prefer package source over any published dist while developing.
-      "@inkless/theme-blog-first": resolve(__dirname, "../packages/theme-blog-first/src/index.ts"),
     },
   },
   server: {
@@ -106,8 +105,7 @@ export default defineConfig({
     setupFiles: "./src/test/setup.ts",
     include: [
       "src/**/*.test.{ts,tsx}",
-      "../packages/theme-blog-first/src/**/*.test.{ts,tsx}",
-    ],
+          ],
     coverage: {
       provider: "v8",
       reporter: ["text", "json", "html"],

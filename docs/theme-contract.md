@@ -161,8 +161,12 @@ Install paths:
 ### 7.1 Local monorepo commands
 
 ```bash
-pnpm -C packages/theme-blog-first build   # → dist/theme.umd.js + theme.es.js
-pnpm theme:umd:smoke                      # build + Playwright register smoke
+# In the theme repo (or after pnpm install into node_modules):
+pnpm --filter @inkless/theme-blog-first build
+# Or from a clone of inkless-theme-blog-first:
+#   pnpm build
+# Host monorepo smoke (uses package from node_modules if present):
+pnpm theme:umd:smoke
 ```
 
 CI: Quality Gate runs UMD build + smoke after Playwright Chromium install.
@@ -174,7 +178,7 @@ CI: Quality Gate runs UMD build + smoke after Playwright Chromium install.
 3. Move home page into theme folder — done.
 4. Monorepo package `packages/theme-blog-first` — done.
 5. **Separate GitHub repo** — done: [`yixian-huang/inkless-theme-blog-first`](https://github.com/yixian-huang/inkless-theme-blog-first)  
-   - Inkless monorepo consumes it as a **git submodule** at `packages/theme-blog-first`  
+   - Inkless monorepo consumes via pnpm: `github:yixian-huang/inkless-theme-blog-first#main`  
    - Standalone types: `types/theme-host-shim.d.ts`  
    - Release assets: `pnpm build` → `dist/theme.umd.js`
 
