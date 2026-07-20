@@ -43,6 +43,8 @@ import { SeoFieldsPanel, AdvancedSettingsPanel, PopoverButton } from "./SeoField
 import ArticleTypographyRoot from "@/components/blog/ArticleTypographyRoot";
 import { ArticleVersionHistoryPanel, type ArticleDraftSnapshot } from "./VersionHistoryPanel";
 import ArticlePreviewModal, { type ArticlePreviewData } from "./ArticlePreviewModal";
+import { translateText } from "@/api/translation";
+import { countWords, htmlToPlainText, plainTextToHtml } from "./bilingualUtils";
 import { SaveStatusBadge } from "./saveStatus";
 import {
   LEAVE_UNSAVED_MESSAGE,
@@ -151,6 +153,13 @@ export default function ArticleEditorPage() {
   const [versionDraftSnapshot, setVersionDraftSnapshot] = useState<ArticleDraftSnapshot | null>(null);
   const [showPreview, setShowPreview] = useState(false);
   const [previewData, setPreviewData] = useState<ArticlePreviewData | null>(null);
+  /** focus = single active language; split = side-by-side bilingual */
+  const [viewLayout, setViewLayout] = useState<"focus" | "split">("focus");
+  const [translateBusy, setTranslateBusy] = useState(false);
+  const [wordStats, setWordStats] = useState({
+    zh: { chars: 0, words: 0 },
+    en: { chars: 0, words: 0 },
+  });
 
   // Language carousel
   const [enabledLangs, setEnabledLangs] = useState<string[]>(["zh"]);
@@ -598,6 +607,118 @@ export default function ArticleEditorPage() {
     });
   }, [slug, author, zhEditor, enEditor, editorMode]);
 
+  // Word counts for language tabs (debounced)
+  useEffect(() => {
+    const t = window.setTimeout(() => {
+      const zhText =
+        editorMode === "markdown"
+          ? (markdownContent.zh ?? "")
+          : (zhEditor?.getText() || htmlToPlainText(zhBody));
+      const enText =
+        editorMode === "markdown"
+          ? (markdownContent.en ?? "")
+          : (enEditor?.getText() || htmlToPlainText(enBody));
+      setWordStats({
+        zh: countWords(zhText),
+        en: countWords(enText),
+      });
+    }, 250);
+    return () => window.clearTimeout(t);
+  }, [editorMode, markdownContent, zhBody, enBody, zhEditor, enEditor, isDirty, saving]);
+
+  // Auto-enable English when entering split layout
+  useEffect(() => {
+    if (viewLayout === "split" && !enabledLangs.includes("en")) {
+      setEnabledLangs((prev) => (prev.includes("en") ? prev : [...prev, "en"]));
+    }
+  }, [viewLayout, enabledLangs]);
+
+  const handleCopyToOtherLang = useCallback(
+    (from: "zh" | "en") => {
+      const to = from === "zh" ? "en" : "zh";
+      if (editorMode === "markdown") {
+        const src = markdownContent[from] ?? "";
+        setMarkdownContent((prev) => ({ ...prev, [to]: src }));
+      } else {
+        const srcEd = from === "zh" ? zhEditor : enEditor;
+        const dstEd = to === "zh" ? zhEditor : enEditor;
+        const html = srcEd?.getHTML() || (from === "zh" ? zhBody : enBody) || "";
+        dstEd?.commands.setContent(html, { emitUpdate: false });
+        if (to === "zh") setZhBody(html);
+        else setEnBody(html);
+      }
+      if (from === "zh") {
+        if (zhTitle.trim()) setEnTitle(zhTitle);
+      } else if (enTitle.trim()) {
+        setZhTitle(enTitle);
+      }
+      touch();
+      setSuccessMessage(from === "zh" ? "已复制中文到英文（未保存）" : "已复制英文到中文（未保存）");
+      window.setTimeout(() => setSuccessMessage(""), 2500);
+    },
+    [editorMode, markdownContent, zhEditor, enEditor, zhBody, enBody, zhTitle, enTitle, touch],
+  );
+
+  const handleTranslateToOtherLang = useCallback(
+    async (from: "zh" | "en") => {
+      const to = from === "zh" ? "en" : "zh";
+      setTranslateBusy(true);
+      setError(null);
+      try {
+        const srcTitle = from === "zh" ? zhTitle : enTitle;
+        let srcBodyPlain: string;
+        let srcMarkdown = "";
+        if (editorMode === "markdown") {
+          srcMarkdown = markdownContent[from] ?? "";
+          srcBodyPlain = srcMarkdown;
+        } else {
+          const srcEd = from === "zh" ? zhEditor : enEditor;
+          const html = srcEd?.getHTML() || (from === "zh" ? zhBody : enBody) || "";
+          srcBodyPlain = htmlToPlainText(html);
+        }
+        if (!srcTitle.trim() && !srcBodyPlain.trim()) {
+          setError("源语言内容为空，无法翻译");
+          return;
+        }
+        const sourceLang = from === "zh" ? "zh" : "en";
+        const targetLang = to === "zh" ? "zh" : "en";
+        if (srcTitle.trim()) {
+          const tr = await translateText({ text: srcTitle, sourceLang, targetLang });
+          if (to === "zh") setZhTitle(tr.translatedText);
+          else setEnTitle(tr.translatedText);
+        }
+        if (srcBodyPlain.trim()) {
+          const tr = await translateText({ text: srcBodyPlain, sourceLang, targetLang });
+          if (editorMode === "markdown") {
+            setMarkdownContent((prev) => ({ ...prev, [to]: tr.translatedText }));
+          } else {
+            const html = plainTextToHtml(tr.translatedText);
+            const dstEd = to === "zh" ? zhEditor : enEditor;
+            dstEd?.commands.setContent(html, { emitUpdate: false });
+            if (to === "zh") setZhBody(html);
+            else setEnBody(html);
+          }
+        }
+        if (!enabledLangs.includes(to)) {
+          setEnabledLangs((prev) => (prev.includes(to) ? prev : [...prev, to]));
+        }
+        touch();
+        setSuccessMessage(from === "zh" ? "已翻译到英文（未保存，请校对）" : "已翻译到中文（未保存，请校对）");
+        window.setTimeout(() => setSuccessMessage(""), 3000);
+      } catch (err: any) {
+        const msg = err?.response?.data?.error?.message ?? err?.response?.data?.error;
+        setError(msg || (err instanceof Error ? err.message : "翻译失败（请检查 AI/翻译配置）"));
+      } finally {
+        setTranslateBusy(false);
+      }
+    },
+    [
+      zhTitle, enTitle, editorMode, markdownContent, zhEditor, enEditor, zhBody, enBody,
+      enabledLangs, touch,
+    ],
+  );
+
+
   const handleSchedulePublish = async (scheduledAt: string) => {
     if (!canPublish) return;
     if (!zhTitle.trim()) { setError("请填写中文标题"); return; }
@@ -883,8 +1004,11 @@ export default function ArticleEditorPage() {
                     : "bg-transparent border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-100/80"
                 }`}
               >
-                {info?.label || lang}
-                {lang !== "zh" && (
+                <span>{info?.label || lang}</span>
+                <span className="ml-1.5 text-[10px] text-gray-400 font-normal tabular-nums">
+                  {(wordStats[lang as "zh" | "en"]?.words ?? 0).toLocaleString()} 词
+                </span>
+                {lang !== "zh" && viewLayout !== "split" && (
                   <span
                     onClick={(e) => { e.stopPropagation(); removeLang(lang); }}
                     className="ml-1.5 text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
@@ -896,7 +1020,7 @@ export default function ArticleEditorPage() {
             );
           })}
 
-          {enabledLangs.length < ALL_LANGS.length && (
+          {enabledLangs.length < ALL_LANGS.length && viewLayout !== "split" && (
             <div className="relative" ref={langMenuRef}>
               <button onClick={() => setShowLangMenu(!showLangMenu)}
                 className="px-2 py-1.5 text-sm text-gray-400 hover:text-gray-600 rounded-t-lg hover:bg-gray-100"
@@ -916,23 +1040,41 @@ export default function ArticleEditorPage() {
             </div>
           )}
 
-          {enabledLangs.length > 1 && (
-            <div className="ml-auto flex items-center gap-1 pb-1">
-              <button
-                onClick={() => setActiveLangIdx((i) => Math.max(0, i - 1))}
-                disabled={activeLangIdx === 0}
-                className="p-1 text-gray-400 hover:text-gray-600 disabled:opacity-30"
-              >&larr;</button>
-              <span className="text-xs text-gray-400">{activeLangIdx + 1}/{enabledLangs.length}</span>
-              <button
-                onClick={() => setActiveLangIdx((i) => Math.min(enabledLangs.length - 1, i + 1))}
-                disabled={activeLangIdx === enabledLangs.length - 1}
-                className="p-1 text-gray-400 hover:text-gray-600 disabled:opacity-30"
-              >&rarr;</button>
-            </div>
-          )}
-
-          <div className={`pb-1 ${enabledLangs.length > 1 ? "ml-2" : "ml-auto"}`}>
+          <div className="ml-auto flex items-center gap-1.5 pb-1 flex-wrap justify-end">
+            <button
+              type="button"
+              onClick={() => setViewLayout((v) => (v === "split" ? "focus" : "split"))}
+              title="中英并排编辑"
+              className={`px-2 py-1 text-xs rounded-lg border transition-colors ${
+                viewLayout === "split"
+                  ? "bg-blue-50 border-blue-300 text-blue-800"
+                  : "border-gray-200 text-gray-600 hover:bg-gray-100"
+              }`}
+            >
+              并排
+            </button>
+            {enabledLangs.includes("en") && (
+              <>
+                <button
+                  type="button"
+                  disabled={translateBusy}
+                  onClick={() => handleCopyToOtherLang("zh")}
+                  className="px-2 py-1 text-xs rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-100 disabled:opacity-50"
+                  title="将中文标题与正文复制到英文"
+                >
+                  中→英 复制
+                </button>
+                <button
+                  type="button"
+                  disabled={translateBusy}
+                  onClick={() => void handleTranslateToOtherLang("zh")}
+                  className="px-2 py-1 text-xs rounded-lg border border-violet-200 text-violet-700 hover:bg-violet-50 disabled:opacity-50"
+                  title="使用翻译 API 将中文译为英文"
+                >
+                  {translateBusy ? "翻译中…" : "中→英 翻译"}
+                </button>
+              </>
+            )}
             <EditorModeSwitcher mode={editorMode} onModeChange={handleModeChange} />
           </div>
         </div>
@@ -975,8 +1117,85 @@ export default function ArticleEditorPage() {
       {/* Main Content: Editor + Sidebar */}
       <div className="flex-1 flex min-h-0">
         <div className="flex-1 flex flex-col min-h-0 min-w-0 bg-white">
-          <div className={`flex-1 min-h-0 ${editorMode === "markdown" ? "overflow-hidden" : "overflow-y-auto"}`}>
-            {editorMode === "markdown" ? (
+          <div className={`flex-1 min-h-0 ${editorMode === "markdown" || viewLayout === "split" ? "overflow-hidden" : "overflow-y-auto"}`}>
+            {viewLayout === "split" ? (
+              <div className="h-full min-h-0 grid grid-cols-1 md:grid-cols-2 gap-0 divide-x divide-gray-200">
+                {(["zh", "en"] as const).map((lang) => {
+                  const entry = langEditors[lang];
+                  const isActiveCol = activeLang === lang;
+                  return (
+                    <div
+                      key={lang}
+                      className={`flex flex-col min-h-0 min-w-0 ${isActiveCol ? "bg-white" : "bg-gray-50/40"}`}
+                      onMouseDown={() => {
+                        const idx = enabledLangs.indexOf(lang);
+                        if (idx >= 0) setActiveLangIdx(idx);
+                      }}
+                    >
+                      <div className="flex-shrink-0 px-3 py-2 border-b border-gray-100 space-y-1.5">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className={`text-xs font-semibold ${isActiveCol ? "text-blue-700" : "text-gray-500"}`}>
+                            {lang === "zh" ? "中文" : "English"}
+                            {isActiveCol && (
+                              <span className="ml-1.5 text-[10px] font-normal text-blue-500">编辑中</span>
+                            )}
+                          </span>
+                          <span className="text-[10px] text-gray-400 tabular-nums">
+                            {wordStats[lang].words.toLocaleString()} 词 · {wordStats[lang].chars.toLocaleString()} 字
+                          </span>
+                        </div>
+                        <input
+                          type="text"
+                          value={langTitleMap[lang]?.title || ""}
+                          onChange={(e) => langTitleMap[lang]?.setTitle(e.target.value)}
+                          onFocus={() => {
+                            const idx = enabledLangs.indexOf(lang);
+                            if (idx >= 0) setActiveLangIdx(idx);
+                          }}
+                          className="w-full px-2 py-1 text-sm font-medium border border-gray-200 rounded-lg focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none bg-white"
+                          placeholder={langTitleMap[lang]?.placeholder || "标题"}
+                        />
+                      </div>
+                      <div className="flex-1 min-h-0">
+                        {editorMode === "markdown" ? (
+                          <div className="h-full min-h-0 p-2">
+                            <MarkdownMode
+                              key={`split-${lang}`}
+                              contentKey={lang}
+                              label={lang === "zh" ? "Markdown · 中文" : "Markdown · EN"}
+                              showPreview={false}
+                              value={markdownContent[lang] ?? ""}
+                              onChange={(val) => {
+                                setMarkdownContent((prev) => ({ ...prev, [lang]: val }));
+                                touch();
+                              }}
+                              onApiReady={lang === activeLang ? setMarkdownApi : undefined}
+                            />
+                          </div>
+                        ) : entry?.editor ? (
+                          <div className="h-full overflow-y-auto">
+                            {isActiveCol && (
+                              <>
+                                <EditorBubbleMenu editor={entry.editor} />
+                                <TableBubbleMenu editor={entry.editor} />
+                                <EditorFloatingMenu editor={entry.editor} />
+                              </>
+                            )}
+                            <ArticleTypographyRoot
+                              mode="editor"
+                              articleMetadata={metadata}
+                              className="h-full article-editor-content"
+                            >
+                              <EditorContent editor={entry.editor} className="h-full" />
+                            </ArticleTypographyRoot>
+                          </div>
+                        ) : null}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : editorMode === "markdown" ? (
               <div className="h-full min-h-0 p-3">
                 <MarkdownMode
                   key={activeLang}
@@ -1012,7 +1231,7 @@ export default function ArticleEditorPage() {
           </div>
         </div>
 
-        {editorMode === "richtext" && (
+        {editorMode === "richtext" && viewLayout === "focus" && (
           <EditorSidebar
             editor={activeEntry?.editor ?? null}
             article={sidebarArticle}
