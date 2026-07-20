@@ -5,14 +5,13 @@ import ImageCropUpload from "@/components/admin/ImageCropUpload";
 import RecropModal from "@/components/admin/RecropModal";
 import { AdminButton, AdminErrorBanner, AdminPageHeader } from "@/components/admin/ui";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
+import { invalidateAdminQueryPrefix, useAdminQuery } from "@/lib/adminQuery";
+import { adminQueryKeys } from "@/lib/adminQueryKeys";
 
 export default function MediaPage() {
   useDocumentTitle("媒体管理");
-  const [items, setItems] = useState<MediaItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
-  const [total, setTotal] = useState(0);
   const [deleting, setDeleting] = useState<number | null>(null);
   const [showUpload, setShowUpload] = useState(false);
   const [cropItem, setCropItem] = useState<MediaItem | null>(null);
@@ -26,38 +25,36 @@ export default function MediaPage() {
   const [uploadSuccess, setUploadSuccess] = useState(false);
   const pageSize = 20;
 
-  const loadMedia = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const data = await listMedia(page, pageSize);
-      setItems(data.items || []);
-      setTotal(data.total);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "加载图片列表失败");
-    } finally {
-      setLoading(false);
-    }
-  }, [page]);
+  const { data, error, loading, isFetching, refetch } = useAdminQuery(
+    [...adminQueryKeys.media, page, pageSize],
+    () => listMedia(page, pageSize),
+  );
 
-  useEffect(() => {
-    loadMedia();
-  }, [loadMedia]);
+  const items = data?.items ?? [];
+  const total = data?.total ?? 0;
+  const displayError = actionError ?? (error ? error.message : null);
+
+  const loadMedia = useCallback(async () => {
+    setActionError(null);
+    invalidateAdminQueryPrefix(adminQueryKeys.media);
+    invalidateAdminQueryPrefix(adminQueryKeys.dashboardStats);
+    await refetch({ force: true });
+  }, [refetch]);
 
   const handleFilesUpload = useCallback(async (files: File[]) => {
     if (files.length === 0) return;
     setUploadingPaste(true);
     setUploadSuccess(false);
-    setError(null);
+    setActionError(null);
     try {
       for (const file of files) {
         await uploadMedia(file);
       }
       setUploadSuccess(true);
-      loadMedia();
+      await loadMedia();
       setTimeout(() => setUploadSuccess(false), 3000);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "上传失败");
+      setActionError(err instanceof Error ? err.message : "上传失败");
     } finally {
       setUploadingPaste(false);
     }
@@ -113,13 +110,12 @@ export default function MediaPage() {
     if (!confirm(`确定要删除 ${item.filename} 吗？`)) return;
 
     setDeleting(item.id);
-    setError(null);
+    setActionError(null);
     try {
       await deleteMedia(item.id);
-      setItems((prev) => prev.filter((i) => i.id !== item.id));
-      setTotal((prev) => prev - 1);
+      await loadMedia();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "删除失败");
+      setActionError(err instanceof Error ? err.message : "删除失败");
     } finally {
       setDeleting(null);
     }
@@ -145,12 +141,12 @@ export default function MediaPage() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    setError(null);
+    setActionError(null);
     try {
       await uploadMedia(file);
-      loadMedia();
+      await loadMedia();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "上传失败");
+      setActionError(err instanceof Error ? err.message : "上传失败");
     }
     e.target.value = "";
   };
@@ -175,10 +171,10 @@ export default function MediaPage() {
       return;
     }
     try {
-      const updated = await renameMedia(item.id, trimmed);
-      setItems((prev) => prev.map((i) => (i.id === updated.id ? updated : i)));
+      await renameMedia(item.id, trimmed);
+      await loadMedia();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "重命名失败");
+      setActionError(err instanceof Error ? err.message : "重命名失败");
     }
     setEditingId(null);
   };
@@ -215,7 +211,11 @@ export default function MediaPage() {
 
       <AdminPageHeader
         title="媒体管理"
-        description={`共 ${total} 个文件 · 支持拖拽与粘贴上传`}
+        description={
+          loading
+            ? "支持拖拽与粘贴上传"
+            : `共 ${total} 个文件 · 支持拖拽与粘贴上传${isFetching ? " · 刷新中" : ""}`
+        }
         actions={
           <>
             <label className="inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50">
@@ -257,7 +257,9 @@ export default function MediaPage() {
         </div>
       )}
 
-      {error && <AdminErrorBanner message={error} onDismiss={() => setError(null)} />}
+      {displayError && (
+        <AdminErrorBanner message={displayError} onDismiss={() => setActionError(null)} />
+      )}
 
       {showUpload && (
         <div className="mb-6 p-6 bg-white shadow rounded-lg">
@@ -412,8 +414,8 @@ export default function MediaPage() {
         <RecropModal
           item={cropItem}
           onClose={() => setCropItem(null)}
-          onSuccess={(updated) => {
-            setItems((prev) => prev.map((i) => (i.id === updated.id ? updated : i)));
+          onSuccess={() => {
+            void loadMedia();
             setCropItem(null);
           }}
         />

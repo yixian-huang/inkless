@@ -43,6 +43,10 @@ export default function BlogHomePage() {
     defaultLocale,
     currentLocale,
   });
+  // English / alternate name under the primary display name when distinct
+  const enName = siteConfig.identity.name?.en?.trim() || "";
+  const heroSubtitle =
+    enName && enName !== authorName && !authorName.includes(enName) ? enName : undefined;
   const intro = bio || tagline || defaultDescription;
 
   const [articles, setArticles] = useState<Awaited<ReturnType<typeof getPublicArticles>>["items"]>([]);
@@ -81,27 +85,29 @@ export default function BlogHomePage() {
         ogType="website"
         canonicalUrl="/"
       />
-      <BlogPageShell>
+      <BlogPageShell className={isReading ? "pt-2 md:pt-4" : undefined}>
         <AuthorIntro
           avatar={siteConfig.author?.avatar}
           name={authorName}
+          subtitle={heroSubtitle}
           tagline={tagline}
           bio={bio}
           intro={intro}
+          showSocials
         />
 
-        <section>
+        <section className={isReading ? "pt-2" : undefined}>
           <div
             className={
               isReading
-                ? "flex items-baseline justify-between gap-4 mb-6"
+                ? "flex items-baseline justify-between gap-4 mb-8"
                 : "flex items-center justify-between mb-6"
             }
           >
             <h2
               className={
                 isReading
-                  ? "text-xs font-sans font-medium uppercase tracking-[0.2em] text-on-surface-muted"
+                  ? "text-[11px] font-sans font-medium uppercase tracking-[0.22em] text-on-surface-muted"
                   : "text-xl font-semibold text-on-surface"
               }
             >
@@ -112,7 +118,7 @@ export default function BlogHomePage() {
                 to="/blog"
                 className={
                   isReading
-                    ? "text-sm font-sans text-on-surface-muted hover:text-primary transition-colors shrink-0"
+                    ? "text-xs font-sans uppercase tracking-[0.14em] text-on-surface-muted hover:text-on-surface transition-colors shrink-0"
                     : "text-sm text-primary hover:text-accent transition-colors"
                 }
               >
@@ -139,12 +145,12 @@ export default function BlogHomePage() {
           />
 
           {total > 0 && total <= HOME_RECENT_COUNT && (
-            <p className={isReading ? "mt-10 text-center" : "mt-6"}>
+            <p className={isReading ? "mt-12 text-center" : "mt-6"}>
               <Link
                 to="/blog"
                 className={
                   isReading
-                    ? "text-sm font-sans text-on-surface-muted hover:text-primary transition-colors"
+                    ? "text-xs font-sans uppercase tracking-[0.14em] text-on-surface-muted hover:text-on-surface transition-colors"
                     : "text-sm text-primary hover:text-accent transition-colors"
                 }
               >

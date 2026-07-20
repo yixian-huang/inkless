@@ -12,8 +12,11 @@ export default function BlogFooter({ config }: FooterChromeProps) {
   const { showSocials } = useHeaderSettings();
   const copyright = config?.copyright ?? branding.footer.copyright;
   const style = config?.style ?? "minimal";
+  // Socials live in the home hero; keep footer quiet on theme home.
   const showHomeSocials =
-    isThemeHome && showSocials && branding.author.socials.some((s) => s.url?.trim());
+    !isThemeHome &&
+    showSocials &&
+    branding.author.socials.some((s) => s.url?.trim());
 
   if (style === "none") {
     return null;
