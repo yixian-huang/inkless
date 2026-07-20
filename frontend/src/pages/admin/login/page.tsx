@@ -31,38 +31,37 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="admin-scope relative flex min-h-screen items-center justify-center overflow-hidden bg-[#f4f6f9] px-4 py-12 sm:px-6">
-      {/* Ambient background */}
+    <div className="admin-scope relative flex min-h-screen items-center justify-center overflow-hidden bg-[#f5f1ea] px-4 py-12 sm:px-6">
       <div
-        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,_rgba(37,99,235,0.12),_transparent_55%),radial-gradient(ellipse_at_bottom_right,_rgba(99,102,241,0.08),_transparent_45%)]"
-        aria-hidden
-      />
-      <div
-        className="pointer-events-none absolute -top-24 left-1/2 h-64 w-[36rem] -translate-x-1/2 rounded-full bg-blue-500/10 blur-3xl"
+        className="pointer-events-none absolute inset-0"
+        style={{
+          backgroundImage:
+            "radial-gradient(ellipse 70% 50% at 50% 0%, rgba(26,24,20,0.06), transparent 55%), radial-gradient(ellipse 50% 40% at 100% 100%, rgba(155,59,46,0.04), transparent 50%)",
+        }}
         aria-hidden
       />
 
       <div className="relative w-full max-w-[420px]">
         <div className="mb-8 text-center">
           <div className="mb-5 flex justify-center">
-            <div className="rounded-2xl bg-white p-3 shadow-[0_8px_30px_rgba(15,23,42,0.08)] ring-1 ring-slate-200/80">
-              <img className="h-10 w-10" src="/brand/inkless-mark.svg" alt="Inkless" />
+            <div className="rounded-xl border border-[#e4ddd2] bg-[#fbfaf7] p-3 shadow-[0_8px_28px_rgba(26,24,20,0.06)]">
+              <img className="h-10 w-10" src="/brand/inkless-mark-ink.svg" alt="Inkless" />
             </div>
           </div>
-          <h1 className="text-2xl font-semibold tracking-tight text-slate-900">
+          <h1 className="text-2xl font-semibold tracking-[-0.02em] text-[#1a1814]">
             {PRODUCT_BRAND.name} 管理后台
           </h1>
-          <p className="mt-2 text-sm text-slate-500">使用管理员账号登录以继续</p>
+          <p className="mt-2 text-sm tracking-wide text-[#8a8378]">使用管理员账号登录以继续</p>
         </div>
 
-        <div className="rounded-2xl border border-slate-200/80 bg-white/90 p-6 shadow-[0_16px_48px_rgba(15,23,42,0.08)] backdrop-blur sm:p-8">
+        <div className="rounded-xl border border-[#e4ddd2] bg-[#fbfaf7] p-6 shadow-[0_12px_40px_rgba(26,24,20,0.06)] sm:p-8">
           <form className="space-y-5" onSubmit={handleSubmit}>
             {error ? (
               <AdminErrorBanner message={error} className="mb-0" onDismiss={() => setError("")} />
             ) : null}
 
             <div>
-              <label htmlFor="username" className="mb-1.5 block text-sm font-medium text-slate-700">
+              <label htmlFor="username" className="mb-1.5 block text-sm font-medium text-[#3d3832]">
                 用户名
               </label>
               <AdminInput
@@ -78,7 +77,7 @@ export default function LoginPage() {
             </div>
 
             <div>
-              <label htmlFor="password" className="mb-1.5 block text-sm font-medium text-slate-700">
+              <label htmlFor="password" className="mb-1.5 block text-sm font-medium text-[#3d3832]">
                 密码
               </label>
               <AdminInput
@@ -99,7 +98,7 @@ export default function LoginPage() {
           </form>
         </div>
 
-        <p className="mt-6 text-center text-xs text-slate-400">
+        <p className="mt-6 text-center text-xs tracking-wide text-[#a39b90]">
           {PRODUCT_BRAND.fullName} · {PRODUCT_BRAND.domain}
         </p>
       </div>

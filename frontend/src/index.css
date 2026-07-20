@@ -812,23 +812,30 @@
   }
 }
 
-/* ── Admin console unified form/surface inheritance ──────────────────────────
-   Applied via `.admin-scope` on AdminLayout / login so native controls on
-   not-yet-migrated pages still pick up the refreshed look. */
+/* ── Admin console: ink + paper inheritance ──────────────────────────────────
+   Warm print-magazine palette under `.admin-scope` (AdminLayout / login). */
 @layer components {
   .admin-scope {
-    color: #0f172a;
+    --ink: #1a1814;
+    --ink-soft: #3d3832;
+    --ink-muted: #6b6560;
+    --ink-faint: #8a8378;
+    --paper: #f5f1ea;
+    --paper-sheet: #fbfaf7;
+    --paper-edge: #e4ddd2;
+    --cinnabar: #9b3b2e;
+    color: var(--ink);
     -webkit-font-smoothing: antialiased;
   }
 
   .admin-scope .admin-main > * {
-    animation: admin-page-enter 220ms ease-out both;
+    animation: admin-page-enter 240ms ease-out both;
   }
 
   @keyframes admin-page-enter {
     from {
       opacity: 0;
-      transform: translateY(4px);
+      transform: translateY(5px);
     }
     to {
       opacity: 1;
@@ -842,54 +849,60 @@
     }
   }
 
-  /* Native form controls inside admin (skip rich editor / special widgets) */
   .admin-scope input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="range"]):not([type="color"]):not([type="hidden"]):not(.ProseMirror *),
   .admin-scope select,
   .admin-scope textarea {
-    border-radius: 0.75rem;
-    border-color: rgb(226 232 240);
+    border-radius: 0.5rem;
+    border-color: var(--paper-edge);
     transition: border-color 150ms ease, box-shadow 150ms ease, background-color 150ms ease;
   }
 
   .admin-scope input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="range"]):not([type="color"]):not([type="hidden"]):focus,
   .admin-scope select:focus,
   .admin-scope textarea:focus {
-    border-color: rgb(59 130 246);
+    border-color: rgb(26 24 20 / 0.4);
     outline: none;
-    box-shadow: 0 0 0 3px rgb(59 130 246 / 0.18);
+    box-shadow: 0 0 0 3px rgb(26 24 20 / 0.1);
   }
 
   .admin-scope input[type="checkbox"],
   .admin-scope input[type="radio"] {
-    accent-color: #2563eb;
+    accent-color: #1a1814;
   }
 
-  /* Soften common gray utility leftovers on admin pages */
-  .admin-scope .bg-gray-50 {
-    background-color: rgb(248 250 252 / 0.9);
+  .admin-scope .bg-gray-50,
+  .admin-scope .bg-slate-50 {
+    background-color: rgb(240 235 227 / 0.9);
   }
 
   .admin-scope .border-gray-200,
-  .admin-scope .border-gray-300 {
-    border-color: rgb(226 232 240);
+  .admin-scope .border-gray-300,
+  .admin-scope .border-slate-200 {
+    border-color: var(--paper-edge);
   }
 
-  .admin-scope .text-gray-900 {
-    color: rgb(15 23 42);
+  .admin-scope .text-gray-900,
+  .admin-scope .text-slate-900 {
+    color: var(--ink);
   }
 
   .admin-scope .text-gray-600,
-  .admin-scope .text-gray-500 {
-    color: rgb(100 116 139);
+  .admin-scope .text-gray-500,
+  .admin-scope .text-slate-500,
+  .admin-scope .text-slate-600 {
+    color: var(--ink-muted);
   }
 
-  .admin-scope .text-gray-400 {
-    color: rgb(148 163 184);
+  .admin-scope .text-gray-400,
+  .admin-scope .text-slate-400 {
+    color: var(--ink-faint);
   }
 
   .admin-scope .rounded-lg.border.bg-white,
-  .admin-scope .rounded-md.border.bg-white {
-    border-color: rgb(226 232 240 / 0.9);
-    box-shadow: 0 1px 2px rgb(15 23 42 / 0.04);
+  .admin-scope .rounded-md.border.bg-white,
+  .admin-scope .rounded-xl.border.bg-white {
+    border-color: var(--paper-edge);
+    background-color: var(--paper-sheet);
+    box-shadow: 0 1px 0 rgb(26 24 20 / 0.04);
   }
 }

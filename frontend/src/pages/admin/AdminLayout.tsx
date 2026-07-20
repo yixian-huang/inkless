@@ -48,10 +48,10 @@ export default function AdminLayout() {
 
   if (isLoading || setupLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#f4f6f9]">
-        <div className="flex flex-col items-center gap-3 text-slate-500">
-          <div className="h-9 w-9 animate-spin rounded-full border-2 border-slate-200 border-t-blue-600" />
-          <p className="text-sm font-medium">加载中…</p>
+      <div className="flex min-h-screen items-center justify-center bg-[#f5f1ea]">
+        <div className="flex flex-col items-center gap-3 text-[#8a8378]">
+          <div className="h-9 w-9 animate-spin rounded-full border-2 border-[#e4ddd2] border-t-[#1a1814]" />
+          <p className="text-sm font-medium tracking-wide">加载中…</p>
         </div>
       </div>
     );
@@ -82,7 +82,7 @@ export default function AdminLayout() {
   const flush = isAdminEditorPath(location.pathname);
 
   return (
-    <div className="admin-scope flex min-h-screen bg-[#f4f6f9]">
+    <div className="admin-scope flex min-h-screen bg-[#f5f1ea]">
       <AdminSidebar
         collapsed={collapsed}
         onToggle={handleToggle}

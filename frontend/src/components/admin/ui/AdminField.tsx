@@ -121,8 +121,8 @@ export function AdminFilterChip({
       className={cx(
         "inline-flex items-center rounded-full border px-3 py-1.5 text-xs font-medium transition-all",
         active
-          ? "border-blue-300 bg-blue-50 text-blue-700 shadow-sm shadow-blue-600/10"
-          : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:border-slate-300",
+          ? "border-[#1a1814] bg-[#1a1814] text-[#f7f3ec] shadow-sm"
+          : "border-[#e4ddd2] bg-[#fbfaf7] text-[#5c564f] hover:bg-[#f5f1ea] hover:border-[#d4cbbf]",
         className,
       )}
       {...rest}
@@ -142,9 +142,9 @@ export function AdminTextButton({
   tone?: "primary" | "danger" | "muted";
 }) {
   const tones = {
-    primary: "text-blue-600 hover:text-blue-800",
-    danger: "text-red-600 hover:text-red-800",
-    muted: "text-slate-500 hover:text-slate-800",
+    primary: "text-[#1a1814] hover:text-[#3d3832] underline-offset-2 hover:underline decoration-[#d4cbbf]",
+    danger: "text-[#9b3b2e] hover:text-[#6f2a21]",
+    muted: "text-[#8a8378] hover:text-[#1a1814]",
   } as const;
   return (
     <button
