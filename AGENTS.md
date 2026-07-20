@@ -33,9 +33,23 @@ pnpm type-check     # run TypeScript type checking
 - If adding tests, introduce a runner (e.g., Vitest) and keep names consistent (e.g., `*.test.tsx`) under `frontend/src/`.
 
 ## Commit & Pull Request Guidelines
-- Git history is not available in this checkout, so no existing commit convention could be derived.
 - Recommended commit style: short, imperative subject line (e.g., `Add pricing page CTA`).
 - PRs should include: a concise summary, linked issues (if any), and screenshots for UI changes, plus the commands run (e.g., `pnpm lint`, `pnpm type-check`).
+
+## Default delivery (commit + deploy)
+After finishing a coherent feature/fix/improvement (verification passes), **agents should by default**:
+
+1. **Commit** the related changes with a focused message (do not commit secrets or unrelated dirty files).
+2. **Push** to the tracking remote branch (usually `main` when work is on main).
+3. **Deploy** the live Inkless environment via NoPanel:
+
+```bash
+npc deploy impress hk-artifact --ref <branch-or-sha> --wait
+```
+
+- Default production-like target: project **`impress`**, environment **`hk-artifact`** (gomami / artifact runtime under `/opt/inkless`).
+- Prefer the ref that contains the commit just pushed (`main` after merge/push, or the feature branch when deploying a branch build).
+- Skip auto-deploy only when the user says so, the change is docs-only with no runtime impact, or deploy readiness is blocked — then report why and stop.
 
 ## Configuration Notes
 - Vite build/runtime flags: `BASE_PATH`, `IS_PREVIEW`, `PROJECT_ID`, `VERSION_ID`, `READDY_AI_DOMAIN` (see `frontend/vite.config.ts`).
