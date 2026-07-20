@@ -8,6 +8,10 @@ import { resolve } from "node:path";
  */
 export default defineConfig({
   plugins: [react()],
+  // Browser UMD must not reference Node `process` (register smoke / remote install).
+  define: {
+    "process.env.NODE_ENV": JSON.stringify("production"),
+  },
   build: {
     lib: {
       entry: resolve(__dirname, "src/register.ts"),

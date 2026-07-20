@@ -1,4 +1,5 @@
 import type { ThemePlugin } from "./types";
+import { assertThemeContractCompatible } from "@/theme-host/contract";
 
 type Listener = () => void;
 
@@ -18,6 +19,7 @@ export class ThemeManager {
 
   /** Register a built-in theme */
   registerBuiltIn(theme: ThemePlugin): void {
+    this.assertContract(theme);
     this.registry.set(theme.manifest.id, theme);
     theme.onRegister?.();
     this.invalidateSnapshot();
@@ -26,10 +28,15 @@ export class ThemeManager {
 
   /** Register an externally loaded theme */
   registerExternal(theme: ThemePlugin): void {
+    this.assertContract(theme);
     this.registry.set(theme.manifest.id, theme);
     theme.onRegister?.();
     this.invalidateSnapshot();
     this.emit();
+  }
+
+  private assertContract(theme: ThemePlugin): void {
+    assertThemeContractCompatible(theme.contractVersion, theme.manifest?.id);
   }
 
   /** Activate a theme by id */

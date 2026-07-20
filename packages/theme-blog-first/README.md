@@ -1,6 +1,16 @@
 # @inkless/theme-blog-first
 
-Inkless **blog-first** theme: personal-blog home, header/footer chrome, and reading-room tokens.
+Inkless **blog-first** theme: personal-blog home, author page, header/footer chrome, and reading-room tokens.
+
+## Contract
+
+| Field | Value |
+|-------|--------|
+| Theme id | `blog-first` |
+| `contractVersion` | `1` (must match host `THEME_CONTRACT_VERSION`) |
+| Host facade | `@inkless/theme-host` only (no `@/` deep imports) |
+
+See monorepo `docs/theme-contract.md` for the frozen export inventory and version lock rules.
 
 ## Consumed by host (built-in)
 
@@ -18,6 +28,9 @@ Theme source imports host APIs only from `@inkless/theme-host` (Vite alias → `
 ```bash
 pnpm -C packages/theme-blog-first build
 # → dist/theme.umd.js  (and theme.es.js)
+
+# From monorepo root (requires Playwright Chromium):
+pnpm theme:umd:smoke
 ```
 
 Host must expose (see `frontend/src/plugins/externals.ts`):
@@ -32,13 +45,10 @@ Then admin sets `installed_themes.externalUrl` to the UMD URL.
 
 ```
 src/
-  index.ts          # ThemePlugin export
+  index.ts          # ThemePlugin export (+ contractVersion)
   register.ts       # UMD auto-register entry
   chrome/           # BlogHeader / BlogFooter / brand rules
-  pages/home.tsx    # Theme home presentation
+  pages/home.tsx    # Theme home
+  pages/author.tsx  # Author / about
 inkless.theme.json  # Package manifest for installers
 ```
-
-## Contract
-
-See monorepo `docs/theme-contract.md`.

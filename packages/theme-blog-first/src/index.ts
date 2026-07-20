@@ -6,6 +6,18 @@ import BlogFooter from "./chrome/BlogFooter";
 /** Theme id — keep in sync with host `BUILTIN_THEME_IDS.BLOG_FIRST`. */
 export const BLOG_FIRST_THEME_ID = "blog-first";
 
+/**
+ * Host contract this package targets.
+ * Keep in lockstep with:
+ * - host `THEME_CONTRACT_VERSION` (`@inkless/theme-host`)
+ * - `inkless.theme.json#contractVersion`
+ * - `package.json#inkless.contractVersion`
+ *
+ * Hardcoded (not imported from host) so UMD init only needs layout tokens,
+ * not the full contract module, from `InklessThemeHost`.
+ */
+export const BLOG_FIRST_CONTRACT_VERSION = "1";
+
 export const blogFirstTokens: ThemeTokens = {
   colors: {
     primary: "#44403c",
@@ -58,6 +70,7 @@ export const blogFirstTheme: ThemePlugin = {
     preview: "linear-gradient(135deg, #44403c 0%, #a8a29e 100%)",
     tags: ["blog", "minimal"],
   },
+  contractVersion: BLOG_FIRST_CONTRACT_VERSION,
   defaultTokens: blogFirstTokens,
   settingSchema: [
     {

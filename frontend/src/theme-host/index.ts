@@ -4,8 +4,25 @@
  * Themes must import host APIs only from `@inkless/theme-host` (or this module
  * when resolved via Vite alias). Do not deep-import `@/…` from theme packages.
  *
- * Runtime: also published on `window.__INKLESS_SHARED__.host` for UMD bundles.
+ * Runtime: also published on `window.__INKLESS_SHARED__.host` and
+ * `window.InklessThemeHost` for UMD bundles (see `plugins/externals.ts`).
+ *
+ * Contract: `THEME_CONTRACT_VERSION` + `exports.inventory.ts`.
+ * Breaking facade changes must bump the contract version.
  */
+
+// --- Contract lock & export inventory ---
+export {
+  THEME_CONTRACT_VERSION,
+  THEME_CONTRACT_SUPPORTED,
+  normalizeThemeContractVersion,
+  isThemeContractCompatible,
+  resolveThemeContractVersion,
+  assertThemeContractCompatible,
+} from "./contract";
+export type { ThemeContractVersion } from "./contract";
+export { THEME_HOST_VALUE_EXPORTS, THEME_HOST_TYPE_EXPORTS } from "./exports.inventory";
+export type { ThemeHostValueExport, ThemeHostTypeExport } from "./exports.inventory";
 
 // --- Types ---
 export type {

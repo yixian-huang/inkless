@@ -45,6 +45,9 @@
   "inkless": {
     "type": "theme",
     "id": "blog-first",
-    "contractVersion": "1"
+    "contractVersion": "1",
+    "hostPackage": "@inkless/theme-host",
+    "umd": "dist/theme.umd.js",
+    "esm": "dist/theme.es.js"
   }
 }

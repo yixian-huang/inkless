@@ -13,6 +13,7 @@ const theme: ThemePlugin = {
     author: "Inkless CMS",
     type: "theme",
   },
+  contractVersion: "1",
   defaultTokens: {} as ThemePlugin["defaultTokens"],
   pages: [],
 };
@@ -50,5 +51,17 @@ describe("ThemeManager external registration globals", () => {
     expect(manager.getTheme("external-test")).toBe(theme);
 
     appendSpy.mockRestore();
+  });
+
+  it("rejects themes with incompatible contractVersion", () => {
+    const manager = new ThemeManager();
+    expect(() =>
+      manager.registerExternal({
+        ...theme,
+        manifest: { ...theme.manifest, id: "bad-contract" },
+        contractVersion: "99",
+      }),
+    ).toThrow(/incompatible/);
+    expect(manager.getTheme("bad-contract")).toBeUndefined();
   });
 });

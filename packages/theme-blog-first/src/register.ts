@@ -20,4 +20,9 @@ if (typeof register === "function") {
   register(blogFirstTheme);
 }
 
-export { blogFirstTheme, blogFirstTokens, BLOG_FIRST_THEME_ID } from "./index";
+export {
+  blogFirstTheme,
+  blogFirstTokens,
+  BLOG_FIRST_THEME_ID,
+  BLOG_FIRST_CONTRACT_VERSION,
+} from "./index";

@@ -66,6 +66,20 @@ jobs:
       - name: Install Playwright Chromium
         run: pnpm exec playwright install --with-deps chromium
 
+      - name: Build blog-first theme UMD
+        run: pnpm -C packages/theme-blog-first build
+
+      - name: Theme UMD register smoke
+        run: node scripts/theme-umd-smoke.mjs
+
+      - name: Upload theme UMD artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: theme-blog-first-umd
+          path: packages/theme-blog-first/dist/
+          retention-days: 7
+
       - name: Run admin release-chain E2E
         run: pnpm test:e2e
 

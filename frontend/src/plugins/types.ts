@@ -96,6 +96,12 @@ export interface ThemeSettingGroup {
 
 export interface ThemePlugin extends Plugin {
   manifest: PluginManifest & { type: "theme" };
+  /**
+   * Host `@inkless/theme-host` contract major version this theme targets
+   * (see `THEME_CONTRACT_VERSION`). Required for external UMD installs;
+   * missing is treated as `"1"` while the host still supports v1.
+   */
+  contractVersion?: string;
   defaultTokens: ThemeTokens;
   tokenPresets?: TokenPreset[];
   pages: ThemePageDefinition[];

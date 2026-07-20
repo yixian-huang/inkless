@@ -6,5 +6,6 @@ export {
   blogFirstTheme,
   blogFirstTokens,
   BLOG_FIRST_THEME_ID,
+  BLOG_FIRST_CONTRACT_VERSION,
   resolveBlogHomeBrandMode,
 } from "@inkless/theme-blog-first";
