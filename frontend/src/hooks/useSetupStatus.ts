@@ -31,9 +31,14 @@ export function useSetupStatus() {
   const [loading, setLoading] = useState(!cachedStatus);
   const [error, setError] = useState<string | null>(null);
 
-  const refetch = useCallback(async () => {
-    clearSetupStatusCache();
-    setLoading(true);
+  const refetch = useCallback(async (options?: { background?: boolean }) => {
+    const background = options?.background === true;
+    // Soft/background refresh must NOT flip loading → true, or AdminLayout
+    // unmounts <Outlet /> and every admin page loses local editor state.
+    if (!background) {
+      clearSetupStatusCache();
+      setLoading(true);
+    }
     try {
       const next = await loadSetupStatus(true);
       setStatus(next);
@@ -43,7 +48,9 @@ export function useSetupStatus() {
       setError(err instanceof Error ? err.message : "Failed to load setup status");
       throw err;
     } finally {
-      setLoading(false);
+      if (!background) {
+        setLoading(false);
+      }
     }
   }, []);
 
@@ -67,9 +74,10 @@ export function useSetupStatus() {
     };
   }, []);
 
+  // Re-check install status when the window regains focus, but never block UI.
   useEffect(() => {
     const onFocus = () => {
-      void refetch().catch(() => undefined);
+      void refetch({ background: true }).catch(() => undefined);
     };
     window.addEventListener("focus", onFocus);
     return () => window.removeEventListener("focus", onFocus);

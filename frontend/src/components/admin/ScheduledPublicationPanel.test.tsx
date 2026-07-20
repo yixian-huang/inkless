@@ -72,4 +72,19 @@ describe("ScheduledPublicationPanel", () => {
     expect(screen.queryByRole("button", { name: "安排发布" })).not.toBeInTheDocument();
     expect(screen.getByText("需要权限")).toBeInTheDocument();
   });
+
+  it("renders compact single-line toolbar", () => {
+    render(
+      <ScheduledPublicationPanel
+        compact
+        item={null}
+        canPublish
+        onSchedule={vi.fn()}
+        onCancel={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText("未安排")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "定时" })).toBeInTheDocument();
+  });
 });

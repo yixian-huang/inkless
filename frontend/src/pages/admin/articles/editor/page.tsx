@@ -32,13 +32,24 @@ import EditorFloatingMenu from "@/components/admin/editor/EditorFloatingMenu";
 import EditorModeSwitcher from "@/components/admin/editor/EditorModeSwitcher";
 import MarkdownMode from "@/components/admin/editor/MarkdownMode";
 import TurndownService from "turndown";
-import { marked } from "marked";
+import { markdownToHtml } from "@/lib/markdown";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { useAuth } from "@/contexts/AuthContext";
 import EditorSidebar from "./EditorSidebar";
 import ArticleForm from "./ArticleForm";
 import { SeoFieldsPanel, AdvancedSettingsPanel, PopoverButton } from "./SeoFields";
 import ArticleTypographyRoot from "@/components/blog/ArticleTypographyRoot";
+
+function slugifyTitle(title: string): string {
+  return title
+    .trim()
+    .toLowerCase()
+    .replace(/[\s_]+/g, "-")
+    .replace(/[^\w\u4e00-\u9fff-]+/g, "")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "")
+    .slice(0, 80) || `article-${Date.now()}`;
+}
 
 export default function ArticleEditorPage() {
   useDocumentTitle("编辑文章");
@@ -80,6 +91,7 @@ export default function ArticleEditorPage() {
   const [loading, setLoading] = useState(isEditing);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState("");
   const [categories, setCategories] = useState<Category[]>([]);
   const [tags, setTags] = useState<Tag[]>([]);
   const [scheduledPublication, setScheduledPublication] = useState<ScheduledPublication | null>(null);
@@ -90,6 +102,8 @@ export default function ArticleEditorPage() {
   // Editor mode (richtext / markdown)
   const [editorMode, setEditorMode] = useState<"richtext" | "markdown">("richtext");
   const [markdownContent, setMarkdownContent] = useState<Record<string, string>>({ zh: "", en: "" });
+  // Track whether current article has been loaded (avoid re-fetch wiping edits)
+  const loadedIdRef = useRef<string | null>(null);
 
   // Panel states
   const [showBasicInfo, setShowBasicInfo] = useState(false);
@@ -198,9 +212,10 @@ export default function ArticleEditorPage() {
     } catch { /* non-critical */ }
   }, []);
 
-  // Load article for editing
+  // Load article for editing (once per id — never wipe in-progress edits on remount)
   const loadArticle = useCallback(async () => {
     if (!id) return;
+    if (loadedIdRef.current === id) return;
     setLoading(true);
     setError(null);
     try {
@@ -233,10 +248,13 @@ export default function ArticleEditorPage() {
       setArticleCreatedAt(article.createdAt || null);
       setArticlePublishedAt(article.publishedAt || null);
       setArticleStatus(article.status || "draft");
+      setMarkdownContent({ zh: "", en: "" });
+      setEditorMode("richtext");
       // Auto-enable English if it has content
       if (article.enBody || article.enTitle) {
         setEnabledLangs(["zh", "en"]);
       }
+      loadedIdRef.current = id;
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load article");
     } finally {
@@ -262,15 +280,41 @@ export default function ArticleEditorPage() {
 
   useEffect(() => {
     loadMeta();
-    if (isEditing) loadArticle();
-    loadArticleSchedule();
-  }, [loadMeta, loadArticle, loadArticleSchedule, isEditing]);
+  }, [loadMeta]);
+
+  useEffect(() => {
+    if (!id) {
+      loadedIdRef.current = null;
+      setLoading(false);
+      return;
+    }
+    if (loadedIdRef.current !== id) {
+      void loadArticle();
+    }
+    void loadArticleSchedule();
+  }, [id, loadArticle, loadArticleSchedule]);
+
+  /** Resolve body HTML from the active editor mode. */
+  const resolveBodies = useCallback(() => {
+    if (editorMode === "markdown") {
+      return {
+        zhBody: markdownToHtml(markdownContent.zh ?? ""),
+        enBody: markdownToHtml(markdownContent.en ?? ""),
+      };
+    }
+    return {
+      zhBody: zhEditor?.getHTML() || zhBody || "",
+      enBody: enEditor?.getHTML() || enBody || "",
+    };
+  }, [editorMode, markdownContent, zhEditor, enEditor, zhBody, enBody]);
 
   const buildPayload = (status: "draft" | "published", publishedAt?: string): Record<string, unknown> => {
+    const bodies = resolveBodies();
+    const finalSlug = slug.trim() || slugifyTitle(zhTitle);
     const payload: Record<string, unknown> = {
-      zhTitle, enTitle, slug, coverImage,
-      zhBody: zhEditor?.getHTML() || "",
-      enBody: enEditor?.getHTML() || "",
+      zhTitle, enTitle, slug: finalSlug, coverImage,
+      zhBody: bodies.zhBody,
+      enBody: bodies.enBody,
       zhSeoTitle, enSeoTitle, zhMetaDescription, enMetaDescription, ogImage,
       status, categoryIds: selectedCategoryIds, tagIds: selectedTagIds,
       author, autoSummary, allowComments, pinned, visibility, metadata,
@@ -281,15 +325,27 @@ export default function ArticleEditorPage() {
 
   const handleSave = async (status: "draft" | "published") => {
     if (!zhTitle.trim()) { setError("请填写中文标题"); return; }
-    if (!slug.trim()) { setError("请填写 Slug"); return; }
+    // Auto-fill slug from title when empty so save is not blocked by hidden form field
+    const finalSlug = slug.trim() || slugifyTitle(zhTitle);
+    if (!slug.trim()) setSlug(finalSlug);
+
     setSaving(true);
     setError(null);
+    setSuccessMessage("");
     try {
       const payload = buildPayload(status);
-      if (isEditing) await updateArticle(Number(id), payload as Partial<Article>);
-      else await createArticle(payload as Partial<Article>);
-      setArticleStatus(status);
-      navigate("/admin/articles");
+      if (isEditing) {
+        await updateArticle(Number(id), payload as Partial<Article>);
+        setArticleStatus(status);
+        setSuccessMessage(status === "published" ? "已发布" : "已保存");
+      } else {
+        const created = await createArticle(payload as Partial<Article>);
+        setArticleStatus(status);
+        loadedIdRef.current = String(created.id);
+        setSuccessMessage(status === "published" ? "已创建并发布" : "已保存");
+        navigate(`/admin/articles/edit/${created.id}`, { replace: true });
+      }
+      window.setTimeout(() => setSuccessMessage(""), 3000);
     } catch (err: any) {
       const msg = err?.response?.data?.error?.message;
       setError(msg || (err instanceof Error ? err.message : "保存失败"));
@@ -301,7 +357,8 @@ export default function ArticleEditorPage() {
   const handleSchedulePublish = async (scheduledAt: string) => {
     if (!canPublish) return;
     if (!zhTitle.trim()) { setError("请填写中文标题"); return; }
-    if (!slug.trim()) { setError("请填写 Slug"); return; }
+    const finalSlug = slug.trim() || slugifyTitle(zhTitle);
+    if (!slug.trim()) setSlug(finalSlug);
     setScheduleBusy(true);
     setError(null);
     setScheduleMessage("");
@@ -374,14 +431,24 @@ export default function ArticleEditorPage() {
   };
 
   const handleModeChange = (newMode: "richtext" | "markdown") => {
-    const editor = activeEntry?.editor;
     if (newMode === "markdown" && editorMode === "richtext") {
       const turndown = new TurndownService();
-      const html = editor?.getHTML() ?? "";
-      setMarkdownContent((prev) => ({ ...prev, [activeLang]: turndown.turndown(html) }));
+      // Convert both language buffers so switching tabs in MD mode stays consistent
+      const next: Record<string, string> = { ...markdownContent };
+      for (const lang of enabledLangs) {
+        const ed = langEditors[lang]?.editor;
+        const html = ed?.getHTML() ?? (lang === "zh" ? zhBody : enBody) ?? "";
+        next[lang] = turndown.turndown(html || "");
+      }
+      setMarkdownContent(next);
     } else if (newMode === "richtext" && editorMode === "markdown") {
-      const html = marked(markdownContent[activeLang] ?? "") as string;
-      editor?.commands.setContent(html);
+      for (const lang of enabledLangs) {
+        const ed = langEditors[lang]?.editor;
+        const html = markdownToHtml(markdownContent[lang] ?? "");
+        ed?.commands.setContent(html);
+        if (lang === "zh") setZhBody(html);
+        if (lang === "en") setEnBody(html);
+      }
     }
     setEditorMode(newMode);
   };
@@ -447,9 +514,24 @@ export default function ArticleEditorPage() {
             <PopoverButton label="SEO" active={showSeo} onClick={() => { setShowSeo(!showSeo); setShowBasicInfo(false); setShowAdvanced(false); }} />
             <PopoverButton label="高级" active={showAdvanced} onClick={() => { setShowAdvanced(!showAdvanced); setShowBasicInfo(false); setShowSeo(false); }} />
             <span className="w-px h-6 bg-gray-200 mx-1" />
+            {/* Compact scheduled publish inline with actions */}
+            <ScheduledPublicationPanel
+              compact
+              item={scheduledPublication}
+              loading={scheduleLoading}
+              busy={scheduleBusy}
+              canPublish={canPublish}
+              disabledReason="需要 articles:publish 权限才能安排定时发布。"
+              onSchedule={handleSchedulePublish}
+              onCancel={handleCancelSchedule}
+              onRetry={handleRetrySchedule}
+              onRefresh={loadArticleSchedule}
+              title={articleStatus === "published" ? "定时更新" : "定时"}
+            />
+            <span className="w-px h-6 bg-gray-200 mx-1" />
             <button onClick={() => handleSave("draft")} disabled={saving}
               className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50">
-              {saving ? "保存中..." : "草稿"}
+              {saving ? "保存中..." : "保存"}
             </button>
             {canPublish && (
               <button onClick={() => handleSave("published")} disabled={saving}
@@ -514,26 +596,17 @@ export default function ArticleEditorPage() {
           <button onClick={() => setError(null)} className="ml-2 text-red-600 hover:text-red-800">&times;</button>
         </div>
       )}
-      {scheduleMessage && (
+      {(scheduleMessage || successMessage) && (
         <div className="px-4 py-2 bg-green-50 border-b border-green-200 text-green-800 text-sm flex-shrink-0">
-          {scheduleMessage}
-          <button onClick={() => setScheduleMessage("")} className="ml-2 text-green-600 hover:text-green-800">&times;</button>
+          {successMessage || scheduleMessage}
+          <button
+            onClick={() => { setScheduleMessage(""); setSuccessMessage(""); }}
+            className="ml-2 text-green-600 hover:text-green-800"
+          >
+            &times;
+          </button>
         </div>
       )}
-      <div className="border-b border-gray-200 bg-gray-50 px-4 py-2 flex-shrink-0">
-        <ScheduledPublicationPanel
-          item={scheduledPublication}
-          loading={scheduleLoading}
-          busy={scheduleBusy}
-          canPublish={canPublish}
-          disabledReason="需要 articles:publish 权限才能安排定时发布。"
-          onSchedule={handleSchedulePublish}
-          onCancel={handleCancelSchedule}
-          onRetry={handleRetrySchedule}
-          onRefresh={loadArticleSchedule}
-          title={articleStatus === "published" ? "定时更新发布" : "定时发布"}
-        />
-      </div>
 
       {/* Main Content: Editor + Sidebar */}
       <div className="flex-1 flex min-h-0">
@@ -606,9 +679,9 @@ export default function ArticleEditorPage() {
           </div>
 
           {/* Editor Content Area — fill remaining space */}
-          <div className="flex-1 min-h-0 overflow-y-auto border-t border-gray-300">
+          <div className={`flex-1 min-h-0 border-t border-gray-300 ${editorMode === "markdown" ? "overflow-hidden" : "overflow-y-auto"}`}>
             {editorMode === "markdown" ? (
-              <div className="h-full p-4">
+              <div className="h-full min-h-0 p-3">
                 <MarkdownMode
                   value={markdownContent[activeLang] ?? ""}
                   onChange={(val) => setMarkdownContent((prev) => ({ ...prev, [activeLang]: val }))}
@@ -637,11 +710,13 @@ export default function ArticleEditorPage() {
           </div>
         </div>
 
-        {/* Right: Sidebar — Outline + Details */}
-        <EditorSidebar
-          editor={editorMode === "richtext" ? (activeEntry?.editor ?? null) : null}
-          article={sidebarArticle}
-        />
+        {/* Right: Sidebar — Outline + Details (richtext only; markdown has its own live preview) */}
+        {editorMode === "richtext" && (
+          <EditorSidebar
+            editor={activeEntry?.editor ?? null}
+            article={sidebarArticle}
+          />
+        )}
       </div>
 
       {/* Modals */}

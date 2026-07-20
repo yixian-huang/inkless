@@ -13,6 +13,8 @@ interface ScheduledPublicationPanelProps {
   canPublish: boolean;
   disabledReason?: string;
   title?: string;
+  /** Compact single-line toolbar style (default true for article editor). */
+  compact?: boolean;
   onSchedule: (scheduledAt: string) => Promise<void> | void;
   onCancel: () => Promise<void> | void;
   onRetry?: () => Promise<void> | void;
@@ -38,7 +40,12 @@ const statusLabels: Record<string, string> = {
 function formatDateTime(value: string | null | undefined) {
   if (!value) return "—";
   try {
-    return new Date(value).toLocaleString("zh-CN");
+    return new Date(value).toLocaleString("zh-CN", {
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
   } catch {
     return value;
   }
@@ -51,6 +58,7 @@ export const ScheduledPublicationPanel = memo(function ScheduledPublicationPanel
   canPublish,
   disabledReason,
   title = "定时发布",
+  compact = false,
   onSchedule,
   onCancel,
   onRetry,
@@ -86,6 +94,97 @@ export const ScheduledPublicationPanel = memo(function ScheduledPublicationPanel
   const canAct = canPublish && !busy && !isRunning;
   const hasPending = item?.status === "pending";
   const hasFailed = item?.status === "failed";
+
+  const scheduleLabel = isRunning ? "发布中" : hasPending ? "改期" : compact ? "定时" : "安排发布";
+
+  const actions = (
+    <>
+      {onRefresh && (
+        <button
+          type="button"
+          onClick={onRefresh}
+          disabled={busy}
+          className="rounded border border-gray-300 px-2 py-1 text-gray-600 hover:bg-gray-50 disabled:opacity-50"
+          title="刷新定时发布状态"
+        >
+          刷新
+        </button>
+      )}
+      {canPublish && (
+        <button
+          type="button"
+          onClick={() => setModalOpen(true)}
+          disabled={!canAct}
+          className="rounded bg-blue-600 px-2.5 py-1 text-white hover:bg-blue-700 disabled:opacity-50"
+        >
+          {scheduleLabel}
+        </button>
+      )}
+      {canPublish && hasPending && (
+        <button
+          type="button"
+          onClick={onCancel}
+          disabled={!canAct}
+          className="rounded border border-red-200 px-2 py-1 text-red-600 hover:bg-red-50 disabled:opacity-50"
+        >
+          取消
+        </button>
+      )}
+      {canPublish && hasFailed && onRetry && (
+        <button
+          type="button"
+          onClick={onRetry}
+          disabled={!canAct}
+          className="rounded border border-orange-300 px-2 py-1 text-orange-700 hover:bg-orange-50 disabled:opacity-50"
+        >
+          重试
+        </button>
+      )}
+    </>
+  );
+
+  const modal = (
+    <SchedulePublishModal
+      open={modalOpen}
+      onClose={() => setModalOpen(false)}
+      onSchedule={handleSchedule}
+      currentSchedule={currentSchedule}
+      submitting={busy}
+    />
+  );
+
+  if (compact) {
+    return (
+      <div className="flex items-center gap-2 text-xs min-w-0">
+        <span className="text-gray-500 flex-shrink-0">{title}</span>
+        {loading ? (
+          <span className="text-gray-400">…</span>
+        ) : item ? (
+          <>
+            <span className={`rounded-full border px-2 py-0.5 flex-shrink-0 ${statusClasses[item.status] ?? statusClasses.cancelled}`}>
+              {statusLabels[item.status] ?? item.status}
+            </span>
+            <span className="text-gray-700 truncate" title={formatDateTime(item.scheduledAt)}>
+              {formatDateTime(item.scheduledAt)}
+            </span>
+            {hasFailed && item.lastError && (
+              <span className="text-red-600 truncate max-w-[10rem]" title={item.lastError}>
+                {item.lastError}
+              </span>
+            )}
+          </>
+        ) : (
+          <span className="text-gray-400">未安排</span>
+        )}
+        <div className="flex items-center gap-1.5 flex-shrink-0">{actions}</div>
+        {localError && <span className="text-red-600 truncate max-w-[12rem]" title={localError}>{localError}</span>}
+        {!canPublish && disabledReason && (
+          <span className="text-yellow-700 truncate max-w-[12rem]" title={disabledReason}>无权限</span>
+        )}
+        {modal}
+      </div>
+    );
+  }
 
   return (
     <section className="rounded-md border border-gray-200 bg-white p-3 text-xs">
@@ -131,56 +230,8 @@ export const ScheduledPublicationPanel = memo(function ScheduledPublicationPanel
         </p>
       )}
 
-      <div className="mt-3 flex flex-wrap items-center gap-2">
-        {onRefresh && (
-          <button
-            type="button"
-            onClick={onRefresh}
-            disabled={busy}
-            className="rounded border border-gray-300 px-2.5 py-1 text-gray-600 hover:bg-gray-50 disabled:opacity-50"
-          >
-            刷新
-          </button>
-        )}
-        {canPublish && (
-          <button
-            type="button"
-            onClick={() => setModalOpen(true)}
-            disabled={!canAct}
-            className="rounded bg-blue-600 px-2.5 py-1 text-white hover:bg-blue-700 disabled:opacity-50"
-          >
-            {isRunning ? "发布中" : hasPending ? "改期" : "安排发布"}
-          </button>
-        )}
-        {canPublish && hasPending && (
-          <button
-            type="button"
-            onClick={onCancel}
-            disabled={!canAct}
-            className="rounded border border-red-200 px-2.5 py-1 text-red-600 hover:bg-red-50 disabled:opacity-50"
-          >
-            取消
-          </button>
-        )}
-        {canPublish && hasFailed && onRetry && (
-          <button
-            type="button"
-            onClick={onRetry}
-            disabled={!canAct}
-            className="rounded border border-orange-300 px-2.5 py-1 text-orange-700 hover:bg-orange-50 disabled:opacity-50"
-          >
-            重试
-          </button>
-        )}
-      </div>
-
-      <SchedulePublishModal
-        open={modalOpen}
-        onClose={() => setModalOpen(false)}
-        onSchedule={handleSchedule}
-        currentSchedule={currentSchedule}
-        submitting={busy}
-      />
+      <div className="mt-3 flex flex-wrap items-center gap-2">{actions}</div>
+      {modal}
     </section>
   );
 });
