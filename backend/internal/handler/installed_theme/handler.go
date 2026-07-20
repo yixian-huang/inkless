@@ -2,9 +2,10 @@ package installed_theme
 
 import (
 	"net/http"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
+
+	"github.com/yixian-huang/inkless/backend/internal/handlerutil"
 
 	"github.com/yixian-huang/inkless/backend/pkg/apierror"
 
@@ -89,9 +90,8 @@ func (h *Handler) AdminList(c *gin.Context) {
 // @Failure      404 {object} object{error=string}
 // @Router       /admin/themes/{id} [get]
 func (h *Handler) AdminGetByID(c *gin.Context) {
-	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
-	if err != nil {
-		apierror.Message(c, http.StatusBadRequest, "无效的 ID")
+	id, ok := handlerutil.ParseUintParam(c, "id")
+	if !ok {
 		return
 	}
 
@@ -103,7 +103,7 @@ func (h *Handler) AdminGetByID(c *gin.Context) {
 	}
 
 	for _, t := range themes {
-		if t.ID == uint(id) {
+		if t.ID == id {
 			c.JSON(http.StatusOK, t)
 			return
 		}
@@ -204,9 +204,8 @@ type updateInput struct {
 // @Failure      404 {object} object{error=string}
 // @Router       /admin/themes/{id} [put]
 func (h *Handler) AdminUpdate(c *gin.Context) {
-	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
-	if err != nil {
-		apierror.Message(c, http.StatusBadRequest, "无效的 ID")
+	id, ok := handlerutil.ParseUintParam(c, "id")
+	if !ok {
 		return
 	}
 
@@ -219,7 +218,7 @@ func (h *Handler) AdminUpdate(c *gin.Context) {
 
 	var existing *model.InstalledTheme
 	for _, t := range themes {
-		if t.ID == uint(id) {
+		if t.ID == id {
 			existing = t
 			break
 		}
@@ -283,9 +282,8 @@ func (h *Handler) AdminUpdate(c *gin.Context) {
 // @Failure      400 {object} object{error=string}
 // @Router       /admin/themes/{id} [delete]
 func (h *Handler) AdminDelete(c *gin.Context) {
-	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
-	if err != nil {
-		apierror.Message(c, http.StatusBadRequest, "无效的 ID")
+	id, ok := handlerutil.ParseUintParam(c, "id")
+	if !ok {
 		return
 	}
 
@@ -298,7 +296,7 @@ func (h *Handler) AdminDelete(c *gin.Context) {
 
 	var existing *model.InstalledTheme
 	for _, t := range themes {
-		if t.ID == uint(id) {
+		if t.ID == id {
 			existing = t
 			break
 		}
@@ -320,7 +318,7 @@ func (h *Handler) AdminDelete(c *gin.Context) {
 		return
 	}
 
-	if err := h.themeRepo.Delete(c.Request.Context(), uint(id)); err != nil {
+	if err := h.themeRepo.Delete(c.Request.Context(), id); err != nil {
 		apierror.Message(c, http.StatusNotFound, "主题不存在")
 		return
 	}
@@ -338,9 +336,8 @@ func (h *Handler) AdminDelete(c *gin.Context) {
 // @Success      200 {object} object
 // @Router       /admin/themes/{id}/activate [put]
 func (h *Handler) AdminActivate(c *gin.Context) {
-	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
-	if err != nil {
-		apierror.Message(c, http.StatusBadRequest, "无效的 ID")
+	id, ok := handlerutil.ParseUintParam(c, "id")
+	if !ok {
 		return
 	}
 
@@ -353,7 +350,7 @@ func (h *Handler) AdminActivate(c *gin.Context) {
 
 	var target *model.InstalledTheme
 	for _, t := range themes {
-		if t.ID == uint(id) {
+		if t.ID == id {
 			target = t
 			break
 		}

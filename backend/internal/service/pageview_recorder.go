@@ -20,9 +20,9 @@ const (
 // PageViewRecorder enqueues page views and persists them asynchronously in batches
 // so public read handlers never block on DB inserts.
 type PageViewRecorder struct {
-	repo      repository.PageViewRepository
-	ch        chan *model.PageView
-	batchSize int
+	repo       repository.PageViewRepository
+	ch         chan *model.PageView
+	batchSize  int
 	flushEvery time.Duration
 
 	wg     sync.WaitGroup

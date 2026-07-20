@@ -1,8 +1,8 @@
 package feed_test
 
 import (
-	"github.com/yixian-huang/inkless/backend/internal/repository"
 	"context"
+	"github.com/yixian-huang/inkless/backend/internal/repository"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -116,4 +116,3 @@ func (m *mockArticleRepo) UpdateIfMatch(context.Context, *model.Article, time.Ti
 func (m *mockArticleRepo) ListFilter(context.Context, repository.ArticleListFilter) ([]*model.Article, int64, error) {
 	return nil, 0, nil
 }
-

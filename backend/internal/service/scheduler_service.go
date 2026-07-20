@@ -19,10 +19,10 @@ const (
 )
 
 type SchedulerService struct {
-	jobRepo repository.ScheduledPublishJobRepository
-	kernel  *PublicationKernel
-	logger  *slog.Logger
-	done    chan struct{}
+	jobRepo   repository.ScheduledPublishJobRepository
+	kernel    *PublicationKernel
+	logger    *slog.Logger
+	done      chan struct{}
 	startOnce sync.Once
 	stopOnce  sync.Once
 	wg        sync.WaitGroup

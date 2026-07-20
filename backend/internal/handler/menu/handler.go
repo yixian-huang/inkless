@@ -2,9 +2,10 @@ package menu
 
 import (
 	"net/http"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
+
+	"github.com/yixian-huang/inkless/backend/internal/handlerutil"
 
 	"github.com/yixian-huang/inkless/backend/pkg/apierror"
 
@@ -78,13 +79,12 @@ func (h *Handler) CreateGroup(c *gin.Context) {
 // @Failure      404 {object} object{error=string}
 // @Router       /admin/menus/{id} [get]
 func (h *Handler) GetGroup(c *gin.Context) {
-	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
-	if err != nil {
-		apierror.Message(c, http.StatusBadRequest, "无效的 ID")
+	id, ok := handlerutil.ParseUintParam(c, "id")
+	if !ok {
 		return
 	}
 
-	group, err := h.menuRepo.FindGroupByID(c.Request.Context(), uint(id))
+	group, err := h.menuRepo.FindGroupByID(c.Request.Context(), id)
 	if err != nil {
 		apierror.Message(c, http.StatusNotFound, "菜单不存在")
 		return
@@ -106,13 +106,12 @@ func (h *Handler) GetGroup(c *gin.Context) {
 // @Failure      404 {object} object{error=string}
 // @Router       /admin/menus/{id} [put]
 func (h *Handler) UpdateGroup(c *gin.Context) {
-	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
-	if err != nil {
-		apierror.Message(c, http.StatusBadRequest, "无效的 ID")
+	id, ok := handlerutil.ParseUintParam(c, "id")
+	if !ok {
 		return
 	}
 
-	existing, err := h.menuRepo.FindGroupByID(c.Request.Context(), uint(id))
+	existing, err := h.menuRepo.FindGroupByID(c.Request.Context(), id)
 	if err != nil {
 		apierror.Message(c, http.StatusNotFound, "菜单不存在")
 		return
@@ -146,13 +145,12 @@ func (h *Handler) UpdateGroup(c *gin.Context) {
 // @Failure      404 {object} object{error=string}
 // @Router       /admin/menus/{id} [delete]
 func (h *Handler) DeleteGroup(c *gin.Context) {
-	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
-	if err != nil {
-		apierror.Message(c, http.StatusBadRequest, "无效的 ID")
+	id, ok := handlerutil.ParseUintParam(c, "id")
+	if !ok {
 		return
 	}
 
-	if err := h.menuRepo.DeleteGroup(c.Request.Context(), uint(id)); err != nil {
+	if err := h.menuRepo.DeleteGroup(c.Request.Context(), id); err != nil {
 		apierror.Message(c, http.StatusNotFound, "菜单不存在")
 		return
 	}
@@ -170,13 +168,12 @@ func (h *Handler) DeleteGroup(c *gin.Context) {
 // @Success      200 {object} object{message=string}
 // @Router       /admin/menus/{id}/primary [put]
 func (h *Handler) SetPrimary(c *gin.Context) {
-	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
-	if err != nil {
-		apierror.Message(c, http.StatusBadRequest, "无效的 ID")
+	id, ok := handlerutil.ParseUintParam(c, "id")
+	if !ok {
 		return
 	}
 
-	if err := h.menuRepo.SetPrimary(c.Request.Context(), uint(id)); err != nil {
+	if err := h.menuRepo.SetPrimary(c.Request.Context(), id); err != nil {
 		apierror.Message(c, http.StatusBadRequest, err.Error())
 		return
 	}
@@ -196,14 +193,13 @@ func (h *Handler) SetPrimary(c *gin.Context) {
 // @Success      201 {object} object
 // @Router       /admin/menus/{id}/items [post]
 func (h *Handler) CreateItem(c *gin.Context) {
-	groupID, err := strconv.ParseUint(c.Param("id"), 10, 32)
-	if err != nil {
-		apierror.Message(c, http.StatusBadRequest, "无效的 ID")
+	groupID, ok := handlerutil.ParseUintParam(c, "id")
+	if !ok {
 		return
 	}
 
 	// Verify group exists
-	if _, err := h.menuRepo.FindGroupByID(c.Request.Context(), uint(groupID)); err != nil {
+	if _, err := h.menuRepo.FindGroupByID(c.Request.Context(), groupID); err != nil {
 		apierror.Message(c, http.StatusNotFound, "菜单不存在")
 		return
 	}
@@ -214,7 +210,7 @@ func (h *Handler) CreateItem(c *gin.Context) {
 		return
 	}
 
-	input.GroupID = uint(groupID)
+	input.GroupID = groupID
 
 	if err := h.menuRepo.CreateItem(c.Request.Context(), &input); err != nil {
 		apierror.Message(c, http.StatusBadRequest, err.Error())
@@ -237,13 +233,12 @@ func (h *Handler) CreateItem(c *gin.Context) {
 // @Success      200 {object} object
 // @Router       /admin/menus/{id}/items/{itemId} [put]
 func (h *Handler) UpdateItem(c *gin.Context) {
-	itemID, err := strconv.ParseUint(c.Param("itemId"), 10, 32)
-	if err != nil {
-		apierror.Message(c, http.StatusBadRequest, "无效的 ID")
+	itemID, ok := handlerutil.ParseUintParam(c, "itemId")
+	if !ok {
 		return
 	}
 
-	existing, err := h.menuRepo.FindItemByID(c.Request.Context(), uint(itemID))
+	existing, err := h.menuRepo.FindItemByID(c.Request.Context(), itemID)
 	if err != nil {
 		apierror.Message(c, http.StatusNotFound, "菜单项不存在")
 		return
@@ -286,13 +281,12 @@ func (h *Handler) UpdateItem(c *gin.Context) {
 // @Success      200 {object} object{message=string}
 // @Router       /admin/menus/{id}/items/{itemId} [delete]
 func (h *Handler) DeleteItem(c *gin.Context) {
-	itemID, err := strconv.ParseUint(c.Param("itemId"), 10, 32)
-	if err != nil {
-		apierror.Message(c, http.StatusBadRequest, "无效的 ID")
+	itemID, ok := handlerutil.ParseUintParam(c, "itemId")
+	if !ok {
 		return
 	}
 
-	if err := h.menuRepo.DeleteItem(c.Request.Context(), uint(itemID)); err != nil {
+	if err := h.menuRepo.DeleteItem(c.Request.Context(), itemID); err != nil {
 		apierror.Message(c, http.StatusNotFound, "菜单项不存在")
 		return
 	}
@@ -312,9 +306,8 @@ func (h *Handler) DeleteItem(c *gin.Context) {
 // @Success      200 {object} object{message=string}
 // @Router       /admin/menus/{id}/items/reorder [put]
 func (h *Handler) ReorderItems(c *gin.Context) {
-	groupID, err := strconv.ParseUint(c.Param("id"), 10, 32)
-	if err != nil {
-		apierror.Message(c, http.StatusBadRequest, "无效的 ID")
+	groupID, ok := handlerutil.ParseUintParam(c, "id")
+	if !ok {
 		return
 	}
 
@@ -326,7 +319,7 @@ func (h *Handler) ReorderItems(c *gin.Context) {
 		return
 	}
 
-	if err := h.menuRepo.ReorderItems(c.Request.Context(), uint(groupID), input.ItemIDs); err != nil {
+	if err := h.menuRepo.ReorderItems(c.Request.Context(), groupID, input.ItemIDs); err != nil {
 		apierror.Message(c, http.StatusInternalServerError, "排序失败")
 		return
 	}

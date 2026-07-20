@@ -15,8 +15,8 @@ import (
 
 	"github.com/yixian-huang/inkless/backend/internal/cache"
 	"github.com/yixian-huang/inkless/backend/internal/db"
-	commentMod "github.com/yixian-huang/inkless/backend/internal/modules/comment"
 	"github.com/yixian-huang/inkless/backend/internal/middleware"
+	commentMod "github.com/yixian-huang/inkless/backend/internal/modules/comment"
 	pluginruntime "github.com/yixian-huang/inkless/backend/internal/plugin"
 	"github.com/yixian-huang/inkless/backend/internal/service"
 	"github.com/yixian-huang/inkless/backend/pkg/apierror"

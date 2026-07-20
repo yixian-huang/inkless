@@ -3,9 +3,10 @@ package page_template
 import (
 	"fmt"
 	"net/http"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
+
+	"github.com/yixian-huang/inkless/backend/internal/handlerutil"
 
 	"github.com/yixian-huang/inkless/backend/pkg/apierror"
 
@@ -24,13 +25,7 @@ func NewHandler(tmplRepo repository.PageTemplateRepository) *Handler {
 }
 
 func parseID(c *gin.Context) (uint, bool) {
-	idStr := c.Param("id")
-	id, err := strconv.ParseUint(idStr, 10, 64)
-	if err != nil {
-		apierror.Message(c, http.StatusBadRequest, "invalid id")
-		return 0, false
-	}
-	return uint(id), true
+	return handlerutil.ParseUintParam(c, "id")
 }
 
 // List returns all templates with optional category filter.
@@ -75,7 +70,7 @@ func (h *Handler) Create(c *gin.Context) {
 	}
 
 	if err := h.tmplRepo.Create(c.Request.Context(), tmpl); err != nil {
-		apierror.Message(c, http.StatusInternalServerError, "failed to create template: " + err.Error())
+		apierror.Message(c, http.StatusInternalServerError, "failed to create template: "+err.Error())
 		return
 	}
 	c.JSON(http.StatusCreated, tmpl)
@@ -116,7 +111,7 @@ func (h *Handler) Update(c *gin.Context) {
 	existing.Thumbnail = input.Thumbnail
 
 	if err := h.tmplRepo.Update(c.Request.Context(), existing); err != nil {
-		apierror.Message(c, http.StatusInternalServerError, "failed to update template: " + err.Error())
+		apierror.Message(c, http.StatusInternalServerError, "failed to update template: "+err.Error())
 		return
 	}
 	c.JSON(http.StatusOK, existing)
@@ -171,7 +166,7 @@ func (h *Handler) Duplicate(c *gin.Context) {
 	}
 
 	if err := h.tmplRepo.Create(c.Request.Context(), dup); err != nil {
-		apierror.Message(c, http.StatusInternalServerError, "failed to duplicate template: " + err.Error())
+		apierror.Message(c, http.StatusInternalServerError, "failed to duplicate template: "+err.Error())
 		return
 	}
 	c.JSON(http.StatusCreated, dup)

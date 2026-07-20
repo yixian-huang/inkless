@@ -85,7 +85,7 @@ func (h *Handler) adminPublish(c *gin.Context) {
 		return
 	}
 	if _, err := validateGlobalConfig(doc.DraftConfig); err != nil {
-		apierror.Message(c, http.StatusBadRequest, "current draft fails validation: " + err.Error())
+		apierror.Message(c, http.StatusBadRequest, "current draft fails validation: "+err.Error())
 		return
 	}
 	newPub := doc.PublishedVersion + 1

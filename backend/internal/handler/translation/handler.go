@@ -8,6 +8,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"github.com/yixian-huang/inkless/backend/internal/handlerutil"
+
 	"github.com/yixian-huang/inkless/backend/pkg/apierror"
 
 	"github.com/yixian-huang/inkless/backend/internal/model"
@@ -161,13 +163,12 @@ func (h *Handler) BatchTranslate(c *gin.Context) {
 // TranslateArticle translates an article's content fields
 // POST /admin/translate/article/:id
 func (h *Handler) TranslateArticle(c *gin.Context) {
-	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
-	if err != nil {
-		apierror.Message(c, http.StatusBadRequest, "invalid article ID")
+	id, ok := handlerutil.ParseUintParam(c, "id")
+	if !ok {
 		return
 	}
 
-	article, err := h.articleRepo.FindByID(c.Request.Context(), uint(id))
+	article, err := h.articleRepo.FindByID(c.Request.Context(), id)
 	if err != nil {
 		apierror.Message(c, http.StatusNotFound, "article not found")
 		return
@@ -403,13 +404,12 @@ func (h *Handler) GlossaryCreate(c *gin.Context) {
 // GlossaryUpdate updates a glossary term
 // PUT /admin/glossary/:id
 func (h *Handler) GlossaryUpdate(c *gin.Context) {
-	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
-	if err != nil {
-		apierror.Message(c, http.StatusBadRequest, "invalid ID")
+	id, ok := handlerutil.ParseUintParam(c, "id")
+	if !ok {
 		return
 	}
 
-	existing, err := h.glossaryRepo.FindByID(c.Request.Context(), uint(id))
+	existing, err := h.glossaryRepo.FindByID(c.Request.Context(), id)
 	if err != nil {
 		apierror.Message(c, http.StatusNotFound, "glossary term not found")
 		return
@@ -438,13 +438,12 @@ func (h *Handler) GlossaryUpdate(c *gin.Context) {
 // GlossaryDelete deletes a glossary term
 // DELETE /admin/glossary/:id
 func (h *Handler) GlossaryDelete(c *gin.Context) {
-	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
-	if err != nil {
-		apierror.Message(c, http.StatusBadRequest, "invalid ID")
+	id, ok := handlerutil.ParseUintParam(c, "id")
+	if !ok {
 		return
 	}
 
-	if err := h.glossaryRepo.Delete(c.Request.Context(), uint(id)); err != nil {
+	if err := h.glossaryRepo.Delete(c.Request.Context(), id); err != nil {
 		apierror.Message(c, http.StatusNotFound, "glossary term not found")
 		return
 	}

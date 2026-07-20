@@ -8,6 +8,7 @@ import (
 
 	"github.com/yixian-huang/inkless/backend/pkg/apierror"
 
+	"github.com/yixian-huang/inkless/backend/internal/handlerutil"
 	"github.com/yixian-huang/inkless/backend/internal/provider"
 )
 
@@ -39,14 +40,8 @@ func (h *Handler) PublicSearch(c *gin.Context) {
 	}
 	locale := c.DefaultQuery("locale", "zh")
 	contentType := c.Query("type")
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	pageSize, _ := strconv.Atoi(c.DefaultQuery("pageSize", "10"))
-	if page < 1 {
-		page = 1
-	}
-	if pageSize < 1 || pageSize > 50 {
-		pageSize = 10
-	}
+	p := handlerutil.ParsePagination(c, 10, 50)
+	page, pageSize := p.Page, p.PageSize
 
 	resp, err := h.search.Search(c.Request.Context(), query, locale, contentType, page, pageSize)
 	if err != nil {

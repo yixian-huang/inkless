@@ -694,7 +694,7 @@ func (h *Handler) AdminDelete(c *gin.Context) {
 			Type: eventbus.ContentDeleted,
 			Payload: eventbus.ContentEventPayload{
 				ContentType: "page",
-				ContentID:   uint(id),
+				ContentID:   id,
 				Slug:        page.Slug,
 				Title:       page.ZhTitle,
 				ActorID:     getUserID(c),
@@ -716,15 +716,9 @@ func (h *Handler) AdminListVersions(c *gin.Context) {
 		return
 	}
 
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	pageSize, _ := strconv.Atoi(c.DefaultQuery("pageSize", "20"))
-	if page < 1 {
-		page = 1
-	}
-	if pageSize < 1 || pageSize > 100 {
-		pageSize = 20
-	}
-	offset := (page - 1) * pageSize
+	p := handlerutil.ParsePagination(c, 20, 100)
+	page, pageSize := p.Page, p.PageSize
+	offset := p.Offset
 
 	versions, total, err := h.versionRepo.ListByPageID(c.Request.Context(), id, offset, pageSize)
 	if err != nil {

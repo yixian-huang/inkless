@@ -317,7 +317,7 @@ func authorizeContentType(c *gin.Context, contentType model.ScheduledContentType
 	user, ok := c.Get("rbac_user")
 	rbacUser, valid := user.(*model.User)
 	if !ok || !valid || !rbacUser.HasRBACPermission(resource, "publish") {
-		apierror.Message(c, http.StatusForbidden, "permission denied: " + resource + ":publish")
+		apierror.Message(c, http.StatusForbidden, "permission denied: "+resource+":publish")
 		return false
 	}
 	return true

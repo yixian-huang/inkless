@@ -84,7 +84,7 @@ func (h *Handler) getAI(c *gin.Context) provider.AIProvider {
 func (h *Handler) Chat(c *gin.Context) {
 	var input chatInput
 	if err := c.ShouldBindJSON(&input); err != nil {
-		apierror.Message(c, http.StatusBadRequest, "invalid request: " + err.Error())
+		apierror.Message(c, http.StatusBadRequest, "invalid request: "+err.Error())
 		return
 	}
 
@@ -110,7 +110,7 @@ func (h *Handler) Chat(c *gin.Context) {
 func (h *Handler) Summarize(c *gin.Context) {
 	var input summarizeInput
 	if err := c.ShouldBindJSON(&input); err != nil {
-		apierror.Message(c, http.StatusBadRequest, "invalid request: " + err.Error())
+		apierror.Message(c, http.StatusBadRequest, "invalid request: "+err.Error())
 		return
 	}
 
@@ -136,7 +136,7 @@ func (h *Handler) Summarize(c *gin.Context) {
 func (h *Handler) SuggestTitles(c *gin.Context) {
 	var input suggestTitlesInput
 	if err := c.ShouldBindJSON(&input); err != nil {
-		apierror.Message(c, http.StatusBadRequest, "invalid request: " + err.Error())
+		apierror.Message(c, http.StatusBadRequest, "invalid request: "+err.Error())
 		return
 	}
 
@@ -162,7 +162,7 @@ func (h *Handler) SuggestTitles(c *gin.Context) {
 func (h *Handler) SuggestTags(c *gin.Context) {
 	var input suggestTagsInput
 	if err := c.ShouldBindJSON(&input); err != nil {
-		apierror.Message(c, http.StatusBadRequest, "invalid request: " + err.Error())
+		apierror.Message(c, http.StatusBadRequest, "invalid request: "+err.Error())
 		return
 	}
 
@@ -183,7 +183,7 @@ func (h *Handler) SuggestTags(c *gin.Context) {
 func (h *Handler) Complete(c *gin.Context) {
 	var input completeInput
 	if err := c.ShouldBindJSON(&input); err != nil {
-		apierror.Message(c, http.StatusBadRequest, "invalid request: " + err.Error())
+		apierror.Message(c, http.StatusBadRequest, "invalid request: "+err.Error())
 		return
 	}
 
@@ -236,7 +236,7 @@ func (h *Handler) GetConfig(c *gin.Context) {
 func (h *Handler) UpdateConfig(c *gin.Context) {
 	var input configInput
 	if err := c.ShouldBindJSON(&input); err != nil {
-		apierror.Message(c, http.StatusBadRequest, "invalid request: " + err.Error())
+		apierror.Message(c, http.StatusBadRequest, "invalid request: "+err.Error())
 		return
 	}
 
@@ -272,7 +272,7 @@ func (h *Handler) UpdateConfig(c *gin.Context) {
 	case "noop", "":
 		newProvider = service.NewNoopAIProvider()
 	default:
-		apierror.Message(c, http.StatusBadRequest, "unsupported provider: " + input.Provider)
+		apierror.Message(c, http.StatusBadRequest, "unsupported provider: "+input.Provider)
 		return
 	}
 
@@ -293,7 +293,7 @@ func (h *Handler) TestConfig(c *gin.Context) {
 
 	var input configInput
 	if err := c.ShouldBindJSON(&input); err != nil {
-		apierror.Message(c, http.StatusBadRequest, "invalid request: " + err.Error())
+		apierror.Message(c, http.StatusBadRequest, "invalid request: "+err.Error())
 		return
 	}
 

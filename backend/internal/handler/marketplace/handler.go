@@ -2,12 +2,12 @@ package marketplace
 
 import (
 	"net/http"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
 
 	"github.com/yixian-huang/inkless/backend/pkg/apierror"
 
+	"github.com/yixian-huang/inkless/backend/internal/handlerutil"
 	"github.com/yixian-huang/inkless/backend/internal/model"
 	"github.com/yixian-huang/inkless/backend/internal/repository"
 	"github.com/yixian-huang/inkless/backend/internal/service"
@@ -37,8 +37,8 @@ func NewHandler(svc *service.MarketplaceService) *Handler {
 // @Success      200 {object} object
 // @Router       /admin/marketplace/items [get]
 func (h *Handler) AdminListItems(c *gin.Context) {
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	pageSize, _ := strconv.Atoi(c.DefaultQuery("pageSize", "20"))
+	p := handlerutil.ParsePagination(c, 20, 100)
+	page, pageSize := p.Page, p.PageSize
 
 	filter := repository.MarketplaceFilter{
 		Type:     c.Query("type"),

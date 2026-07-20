@@ -2,9 +2,10 @@ package category
 
 import (
 	"net/http"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
+
+	"github.com/yixian-huang/inkless/backend/internal/handlerutil"
 
 	"github.com/yixian-huang/inkless/backend/pkg/apierror"
 
@@ -54,13 +55,12 @@ func (h *Handler) List(c *gin.Context) {
 // @Failure      404 {object} object{error=string}
 // @Router       /admin/categories/{id} [get]
 func (h *Handler) GetByID(c *gin.Context) {
-	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
-	if err != nil {
-		apierror.Message(c, http.StatusBadRequest, "无效的 ID")
+	id, ok := handlerutil.ParseUintParam(c, "id")
+	if !ok {
 		return
 	}
 
-	category, err := h.categoryRepo.FindByID(c.Request.Context(), uint(id))
+	category, err := h.categoryRepo.FindByID(c.Request.Context(), id)
 	if err != nil {
 		apierror.Message(c, http.StatusNotFound, "分类不存在")
 		return
@@ -126,13 +126,12 @@ func (h *Handler) Create(c *gin.Context) {
 // @Failure      404 {object} object{error=string}
 // @Router       /admin/categories/{id} [put]
 func (h *Handler) Update(c *gin.Context) {
-	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
-	if err != nil {
-		apierror.Message(c, http.StatusBadRequest, "无效的 ID")
+	id, ok := handlerutil.ParseUintParam(c, "id")
+	if !ok {
 		return
 	}
 
-	existing, err := h.categoryRepo.FindByID(c.Request.Context(), uint(id))
+	existing, err := h.categoryRepo.FindByID(c.Request.Context(), id)
 	if err != nil {
 		apierror.Message(c, http.StatusNotFound, "分类不存在")
 		return
@@ -175,13 +174,12 @@ func (h *Handler) Update(c *gin.Context) {
 // @Failure      404 {object} object{error=string}
 // @Router       /admin/categories/{id} [delete]
 func (h *Handler) Delete(c *gin.Context) {
-	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
-	if err != nil {
-		apierror.Message(c, http.StatusBadRequest, "无效的 ID")
+	id, ok := handlerutil.ParseUintParam(c, "id")
+	if !ok {
 		return
 	}
 
-	if err := h.categoryRepo.Delete(c.Request.Context(), uint(id)); err != nil {
+	if err := h.categoryRepo.Delete(c.Request.Context(), id); err != nil {
 		apierror.Message(c, http.StatusNotFound, "分类不存在")
 		return
 	}
@@ -236,15 +234,9 @@ func (h *Handler) PublicGetBySlug(c *gin.Context) {
 		return
 	}
 
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	pageSize, _ := strconv.Atoi(c.DefaultQuery("pageSize", "10"))
-	if page < 1 {
-		page = 1
-	}
-	if pageSize < 1 || pageSize > 100 {
-		pageSize = 10
-	}
-	offset := (page - 1) * pageSize
+	p := handlerutil.ParsePagination(c, 10, 100)
+	page, pageSize := p.Page, p.PageSize
+	offset := p.Offset
 
 	articles, total, err := h.articleRepo.ListPublished(c.Request.Context(), offset, pageSize, slug, "")
 	if err != nil {

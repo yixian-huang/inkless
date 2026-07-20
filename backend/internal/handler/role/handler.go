@@ -5,9 +5,10 @@ import (
 	"errors"
 	"io"
 	"net/http"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
+
+	"github.com/yixian-huang/inkless/backend/internal/handlerutil"
 
 	"github.com/yixian-huang/inkless/backend/pkg/apierror"
 
@@ -130,13 +131,12 @@ func (h *Handler) List(c *gin.Context) {
 // @Success      200 {object} RoleResponse
 // @Router       /admin/roles/{id} [get]
 func (h *Handler) GetByID(c *gin.Context) {
-	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
-	if err != nil {
-		apierror.Message(c, http.StatusBadRequest, "Invalid ID")
+	id, ok := handlerutil.ParseUintParam(c, "id")
+	if !ok {
 		return
 	}
 
-	role, err := h.roleRepo.FindByID(c.Request.Context(), uint(id))
+	role, err := h.roleRepo.FindByID(c.Request.Context(), id)
 	if err != nil {
 		apierror.Message(c, http.StatusNotFound, "Role not found")
 		return
@@ -231,9 +231,8 @@ type UpdateRequest struct {
 // @Success      200 {object} RoleResponse
 // @Router       /admin/roles/{id} [put]
 func (h *Handler) Update(c *gin.Context) {
-	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
-	if err != nil {
-		apierror.Message(c, http.StatusBadRequest, "Invalid ID")
+	id, ok := handlerutil.ParseUintParam(c, "id")
+	if !ok {
 		return
 	}
 
@@ -243,7 +242,7 @@ func (h *Handler) Update(c *gin.Context) {
 		return
 	}
 
-	role, err := h.roleRepo.FindByID(c.Request.Context(), uint(id))
+	role, err := h.roleRepo.FindByID(c.Request.Context(), id)
 	if err != nil {
 		apierror.Message(c, http.StatusNotFound, "Role not found")
 		return
@@ -287,13 +286,12 @@ func (h *Handler) Update(c *gin.Context) {
 // @Success      200 {object} object{message=string}
 // @Router       /admin/roles/{id} [delete]
 func (h *Handler) Delete(c *gin.Context) {
-	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
-	if err != nil {
-		apierror.Message(c, http.StatusBadRequest, "Invalid ID")
+	id, ok := handlerutil.ParseUintParam(c, "id")
+	if !ok {
 		return
 	}
 
-	role, err := h.roleRepo.FindByID(c.Request.Context(), uint(id))
+	role, err := h.roleRepo.FindByID(c.Request.Context(), id)
 	if err != nil {
 		apierror.Message(c, http.StatusNotFound, "Role not found")
 		return
@@ -306,7 +304,7 @@ func (h *Handler) Delete(c *gin.Context) {
 	}
 
 	// Cannot delete roles with assigned users
-	count, err := h.roleRepo.CountUsersWithRole(c.Request.Context(), uint(id))
+	count, err := h.roleRepo.CountUsersWithRole(c.Request.Context(), id)
 	if err != nil {
 		apierror.Message(c, http.StatusInternalServerError, "Failed to check role usage")
 		return
@@ -316,7 +314,7 @@ func (h *Handler) Delete(c *gin.Context) {
 		return
 	}
 
-	if err := h.roleRepo.Delete(c.Request.Context(), uint(id)); err != nil {
+	if err := h.roleRepo.Delete(c.Request.Context(), id); err != nil {
 		apierror.Message(c, http.StatusInternalServerError, "Failed to delete role")
 		return
 	}
@@ -449,13 +447,12 @@ func (h *Handler) UnassignRole(c *gin.Context) {
 // @Success      200 {object} object{items=[]RoleResponse}
 // @Router       /admin/roles/user/{userId} [get]
 func (h *Handler) GetUserRoles(c *gin.Context) {
-	userID, err := strconv.ParseUint(c.Param("userId"), 10, 32)
-	if err != nil {
-		apierror.Message(c, http.StatusBadRequest, "Invalid user ID")
+	userID, ok := handlerutil.ParseUintParam(c, "userId")
+	if !ok {
 		return
 	}
 
-	userRoles, err := h.roleRepo.GetUserRoles(c.Request.Context(), uint(userID))
+	userRoles, err := h.roleRepo.GetUserRoles(c.Request.Context(), userID)
 	if err != nil {
 		apierror.Message(c, http.StatusInternalServerError, "Failed to get user roles")
 		return

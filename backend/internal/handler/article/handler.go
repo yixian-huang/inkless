@@ -95,14 +95,8 @@ func (h *Handler) WithViewTracker(t pageViewTracker) *Handler {
 // @Success      200 {object} object{items=[]object,total=int,page=int,pageSize=int}
 // @Router       /public/articles [get]
 func (h *Handler) PublicList(c *gin.Context) {
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	pageSize, _ := strconv.Atoi(c.DefaultQuery("pageSize", "10"))
-	if page < 1 {
-		page = 1
-	}
-	if pageSize < 1 || pageSize > 100 {
-		pageSize = 10
-	}
+	p := handlerutil.ParsePagination(c, 10, 100)
+	page, pageSize := p.Page, p.PageSize
 
 	categorySlug := c.Query("category")
 	tagSlug := c.Query("tag")
@@ -528,13 +522,12 @@ func (h *Handler) AdminCreate(c *gin.Context) {
 // @Failure      404 {object} object{error=string}
 // @Router       /admin/articles/{id} [put]
 func (h *Handler) AdminUpdate(c *gin.Context) {
-	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
-	if err != nil {
-		apierror.Message(c, http.StatusBadRequest, "无效的 ID")
+	id, ok := handlerutil.ParseUintParam(c, "id")
+	if !ok {
 		return
 	}
 
-	existing, err := h.articleRepo.FindByID(c.Request.Context(), uint(id))
+	existing, err := h.articleRepo.FindByID(c.Request.Context(), id)
 	if err != nil {
 		apierror.Message(c, http.StatusNotFound, "文章不存在")
 		return
@@ -687,13 +680,12 @@ func (h *Handler) AdminUpdate(c *gin.Context) {
 // @Failure      404 {object} object{error=string}
 // @Router       /admin/articles/{id} [delete]
 func (h *Handler) AdminDelete(c *gin.Context) {
-	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
-	if err != nil {
-		apierror.Message(c, http.StatusBadRequest, "无效的 ID")
+	id, ok := handlerutil.ParseUintParam(c, "id")
+	if !ok {
 		return
 	}
 
-	if err := h.articleRepo.Delete(c.Request.Context(), uint(id)); err != nil {
+	if err := h.articleRepo.Delete(c.Request.Context(), id); err != nil {
 		apierror.Message(c, http.StatusNotFound, "文章不存在")
 		return
 	}
@@ -701,7 +693,7 @@ func (h *Handler) AdminDelete(c *gin.Context) {
 	// Remove from search index
 	if h.searchService != nil {
 		go func() {
-			h.searchService.RemoveFromIndex(context.Background(), "article", uint(id))
+			h.searchService.RemoveFromIndex(context.Background(), "article", id)
 		}()
 	}
 
@@ -711,7 +703,7 @@ func (h *Handler) AdminDelete(c *gin.Context) {
 			Type: eventbus.ContentDeleted,
 			Payload: eventbus.ContentEventPayload{
 				ContentType: "article",
-				ContentID:   uint(id),
+				ContentID:   id,
 				Action:      eventbus.ContentDeleted,
 			},
 		})
@@ -728,22 +720,15 @@ func (h *Handler) AdminListVersions(c *gin.Context) {
 		apierror.Message(c, http.StatusNotImplemented, "版本历史未启用")
 		return
 	}
-	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
-	if err != nil {
-		apierror.Message(c, http.StatusBadRequest, "无效的 ID")
+	id, ok := handlerutil.ParseUintParam(c, "id")
+	if !ok {
 		return
 	}
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	pageSize, _ := strconv.Atoi(c.DefaultQuery("pageSize", "20"))
-	if page < 1 {
-		page = 1
-	}
-	if pageSize < 1 || pageSize > 100 {
-		pageSize = 20
-	}
-	offset := (page - 1) * pageSize
+	p := handlerutil.ParsePagination(c, 20, 100)
+	page, pageSize := p.Page, p.PageSize
+	offset := p.Offset
 
-	versions, total, err := h.versionRepo.ListByArticleID(c.Request.Context(), uint(id), offset, pageSize)
+	versions, total, err := h.versionRepo.ListByArticleID(c.Request.Context(), id, offset, pageSize)
 	if err != nil {
 		apierror.Message(c, http.StatusInternalServerError, "查询版本失败")
 		return
@@ -781,9 +766,8 @@ func (h *Handler) AdminGetVersion(c *gin.Context) {
 		apierror.Message(c, http.StatusNotImplemented, "版本历史未启用")
 		return
 	}
-	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
-	if err != nil {
-		apierror.Message(c, http.StatusBadRequest, "无效的 ID")
+	id, ok := handlerutil.ParseUintParam(c, "id")
+	if !ok {
 		return
 	}
 	versionNum, err := strconv.Atoi(c.Param("version"))
@@ -791,7 +775,7 @@ func (h *Handler) AdminGetVersion(c *gin.Context) {
 		apierror.Message(c, http.StatusBadRequest, "无效的版本号")
 		return
 	}
-	v, err := h.versionRepo.FindByArticleIDAndVersion(c.Request.Context(), uint(id), versionNum)
+	v, err := h.versionRepo.FindByArticleIDAndVersion(c.Request.Context(), id, versionNum)
 	if err != nil {
 		apierror.Message(c, http.StatusNotFound, "版本不存在")
 		return
@@ -806,12 +790,11 @@ func (h *Handler) AdminCompareVersions(c *gin.Context) {
 		apierror.Message(c, http.StatusNotImplemented, "版本历史未启用")
 		return
 	}
-	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
-	if err != nil {
-		apierror.Message(c, http.StatusBadRequest, "无效的 ID")
+	id, ok := handlerutil.ParseUintParam(c, "id")
+	if !ok {
 		return
 	}
-	articleID := uint(id)
+	articleID := id
 
 	leftNum, _ := strconv.Atoi(c.Query("left"))
 	rightNum, _ := strconv.Atoi(c.Query("right"))

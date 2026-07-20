@@ -14,7 +14,6 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"strconv"
 	"strings"
 	"time"
 
@@ -270,7 +269,7 @@ func (h *Handler) Delete(c *gin.Context) {
 	}
 
 	// Delete database record
-	if err := h.mediaRepo.Delete(c.Request.Context(), uint(id)); err != nil {
+	if err := h.mediaRepo.Delete(c.Request.Context(), id); err != nil {
 		apierror.Message(c, http.StatusInternalServerError, "删除记录失败")
 		return
 	}
@@ -315,14 +314,12 @@ func storageLocation(media *model.Media) (string, string) {
 // @Failure      404 {object} object{error=string}
 // @Router       /admin/media/{id}/recrop [post]
 func (h *Handler) Recrop(c *gin.Context) {
-	idStr := c.Param("id")
-	id, err := strconv.ParseUint(idStr, 10, 32)
-	if err != nil {
-		apierror.Message(c, http.StatusBadRequest, "无效的 ID")
+	id, ok := handlerutil.ParseUintParam(c, "id")
+	if !ok {
 		return
 	}
 
-	media, err := h.mediaRepo.FindByID(c.Request.Context(), uint(id))
+	media, err := h.mediaRepo.FindByID(c.Request.Context(), id)
 	if err != nil {
 		apierror.Message(c, http.StatusNotFound, "未找到该媒体文件")
 		return
@@ -401,14 +398,12 @@ func (h *Handler) Recrop(c *gin.Context) {
 // @Failure      404 {object} object{error=string}
 // @Router       /admin/media/{id}/usages [get]
 func (h *Handler) GetUsages(c *gin.Context) {
-	idStr := c.Param("id")
-	id, err := strconv.ParseUint(idStr, 10, 32)
-	if err != nil {
-		apierror.Message(c, http.StatusBadRequest, "无效的 ID")
+	id, ok := handlerutil.ParseUintParam(c, "id")
+	if !ok {
 		return
 	}
 
-	media, err := h.mediaRepo.FindByID(c.Request.Context(), uint(id))
+	media, err := h.mediaRepo.FindByID(c.Request.Context(), id)
 	if err != nil {
 		apierror.Message(c, http.StatusNotFound, "未找到该媒体文件")
 		return
@@ -437,10 +432,8 @@ func (h *Handler) GetUsages(c *gin.Context) {
 // @Failure      404 {object} object{error=string}
 // @Router       /admin/media/{id}/rename [put]
 func (h *Handler) Rename(c *gin.Context) {
-	idStr := c.Param("id")
-	id, err := strconv.ParseUint(idStr, 10, 32)
-	if err != nil {
-		apierror.Message(c, http.StatusBadRequest, "无效的 ID")
+	id, ok := handlerutil.ParseUintParam(c, "id")
+	if !ok {
 		return
 	}
 
@@ -458,7 +451,7 @@ func (h *Handler) Rename(c *gin.Context) {
 		return
 	}
 
-	media, err := h.mediaRepo.FindByID(c.Request.Context(), uint(id))
+	media, err := h.mediaRepo.FindByID(c.Request.Context(), id)
 	if err != nil {
 		apierror.Message(c, http.StatusNotFound, "未找到该媒体文件")
 		return

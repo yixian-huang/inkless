@@ -2,10 +2,11 @@ package user
 
 import (
 	"net/http"
-	"strconv"
 	"strings"
 
 	"github.com/gin-gonic/gin"
+
+	"github.com/yixian-huang/inkless/backend/internal/handlerutil"
 
 	"github.com/yixian-huang/inkless/backend/pkg/apierror"
 
@@ -63,15 +64,9 @@ func toUserResponse(u *model.User) UserResponse {
 // @Success      200 {object} object{items=[]object,total=int,page=int}
 // @Router       /admin/users [get]
 func (h *Handler) List(c *gin.Context) {
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	pageSize, _ := strconv.Atoi(c.DefaultQuery("pageSize", "20"))
-	if page < 1 {
-		page = 1
-	}
-	if pageSize < 1 || pageSize > 100 {
-		pageSize = 20
-	}
-	offset := (page - 1) * pageSize
+	p := handlerutil.ParsePagination(c, 20, 100)
+	page, pageSize := p.Page, p.PageSize
+	offset := p.Offset
 
 	users, total, err := h.userRepo.List(c.Request.Context(), offset, pageSize)
 	if err != nil {
@@ -102,13 +97,12 @@ func (h *Handler) List(c *gin.Context) {
 // @Failure      404 {object} object{error=string}
 // @Router       /admin/users/{id} [get]
 func (h *Handler) GetByID(c *gin.Context) {
-	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
-	if err != nil {
-		apierror.Message(c, http.StatusBadRequest, "无效的 ID")
+	id, ok := handlerutil.ParseUintParam(c, "id")
+	if !ok {
 		return
 	}
 
-	user, err := h.userRepo.FindByID(c.Request.Context(), uint(id))
+	user, err := h.userRepo.FindByID(c.Request.Context(), id)
 	if err != nil {
 		apierror.Message(c, http.StatusNotFound, "用户不存在")
 		return
@@ -140,7 +134,7 @@ type CreateRequest struct {
 func (h *Handler) Create(c *gin.Context) {
 	var req CreateRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		apierror.Message(c, http.StatusBadRequest, "请求参数错误: " + err.Error())
+		apierror.Message(c, http.StatusBadRequest, "请求参数错误: "+err.Error())
 		return
 	}
 
@@ -208,19 +202,18 @@ type UpdateRequest struct {
 // @Failure      404 {object} object{error=string}
 // @Router       /admin/users/{id} [put]
 func (h *Handler) Update(c *gin.Context) {
-	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
-	if err != nil {
-		apierror.Message(c, http.StatusBadRequest, "无效的 ID")
+	id, ok := handlerutil.ParseUintParam(c, "id")
+	if !ok {
 		return
 	}
 
 	var req UpdateRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		apierror.Message(c, http.StatusBadRequest, "请求参数错误: " + err.Error())
+		apierror.Message(c, http.StatusBadRequest, "请求参数错误: "+err.Error())
 		return
 	}
 
-	user, err := h.userRepo.FindByID(c.Request.Context(), uint(id))
+	user, err := h.userRepo.FindByID(c.Request.Context(), id)
 	if err != nil {
 		apierror.Message(c, http.StatusNotFound, "用户不存在")
 		return
@@ -292,9 +285,8 @@ func (h *Handler) Update(c *gin.Context) {
 // @Failure      400 {object} object{error=string}
 // @Router       /admin/users/{id} [delete]
 func (h *Handler) Delete(c *gin.Context) {
-	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
-	if err != nil {
-		apierror.Message(c, http.StatusBadRequest, "无效的 ID")
+	id, ok := handlerutil.ParseUintParam(c, "id")
+	if !ok {
 		return
 	}
 
@@ -306,13 +298,13 @@ func (h *Handler) Delete(c *gin.Context) {
 	}
 
 	// Cannot delete yourself
-	if userCtx.UserID == uint(id) {
+	if userCtx.UserID == id {
 		apierror.Message(c, http.StatusBadRequest, "不能删除自己的账号")
 		return
 	}
 
 	// Check if target user exists and is super admin
-	targetUser, err := h.userRepo.FindByID(c.Request.Context(), uint(id))
+	targetUser, err := h.userRepo.FindByID(c.Request.Context(), id)
 	if err != nil {
 		apierror.Message(c, http.StatusNotFound, "用户不存在")
 		return
@@ -331,7 +323,7 @@ func (h *Handler) Delete(c *gin.Context) {
 		}
 	}
 
-	if err := h.userRepo.Delete(c.Request.Context(), uint(id)); err != nil {
+	if err := h.userRepo.Delete(c.Request.Context(), id); err != nil {
 		apierror.Message(c, http.StatusInternalServerError, "删除用户失败")
 		return
 	}

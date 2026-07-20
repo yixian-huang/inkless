@@ -3,9 +3,10 @@ package media_folder
 import (
 	"fmt"
 	"net/http"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
+
+	"github.com/yixian-huang/inkless/backend/internal/handlerutil"
 
 	"github.com/yixian-huang/inkless/backend/pkg/apierror"
 
@@ -88,9 +89,8 @@ type RenameRequest struct {
 // Rename renames a media folder
 // PUT /admin/media/folders/:id
 func (h *Handler) Rename(c *gin.Context) {
-	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
-	if err != nil {
-		apierror.Message(c, http.StatusBadRequest, "无效的 ID")
+	id, ok := handlerutil.ParseUintParam(c, "id")
+	if !ok {
 		return
 	}
 
@@ -100,7 +100,7 @@ func (h *Handler) Rename(c *gin.Context) {
 		return
 	}
 
-	folder, err := h.folderRepo.FindByID(c.Request.Context(), uint(id))
+	folder, err := h.folderRepo.FindByID(c.Request.Context(), id)
 	if err != nil {
 		apierror.Message(c, http.StatusNotFound, "文件夹不存在")
 		return
@@ -128,20 +128,19 @@ func (h *Handler) Rename(c *gin.Context) {
 // Delete deletes a media folder and moves its contents to the parent folder
 // DELETE /admin/media/folders/:id
 func (h *Handler) Delete(c *gin.Context) {
-	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
-	if err != nil {
-		apierror.Message(c, http.StatusBadRequest, "无效的 ID")
+	id, ok := handlerutil.ParseUintParam(c, "id")
+	if !ok {
 		return
 	}
 
-	folder, err := h.folderRepo.FindByID(c.Request.Context(), uint(id))
+	folder, err := h.folderRepo.FindByID(c.Request.Context(), id)
 	if err != nil {
 		apierror.Message(c, http.StatusNotFound, "文件夹不存在")
 		return
 	}
 
 	// Move child folders to parent
-	children, err := h.folderRepo.FindChildren(c.Request.Context(), uint(id))
+	children, err := h.folderRepo.FindChildren(c.Request.Context(), id)
 	if err != nil {
 		apierror.Message(c, http.StatusInternalServerError, "获取子文件夹失败")
 		return
@@ -164,7 +163,7 @@ func (h *Handler) Delete(c *gin.Context) {
 	}
 
 	// Delete the folder
-	if err := h.folderRepo.Delete(c.Request.Context(), uint(id)); err != nil {
+	if err := h.folderRepo.Delete(c.Request.Context(), id); err != nil {
 		apierror.Message(c, http.StatusInternalServerError, "删除文件夹失败")
 		return
 	}
@@ -180,9 +179,8 @@ type MoveMediaRequest struct {
 // MoveMedia moves a media item to a folder
 // PUT /admin/media/:id/move
 func (h *Handler) MoveMedia(c *gin.Context) {
-	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
-	if err != nil {
-		apierror.Message(c, http.StatusBadRequest, "无效的 ID")
+	id, ok := handlerutil.ParseUintParam(c, "id")
+	if !ok {
 		return
 	}
 
@@ -193,7 +191,7 @@ func (h *Handler) MoveMedia(c *gin.Context) {
 	}
 
 	// Verify media exists
-	if _, err := h.mediaRepo.FindByID(c.Request.Context(), uint(id)); err != nil {
+	if _, err := h.mediaRepo.FindByID(c.Request.Context(), id); err != nil {
 		apierror.Message(c, http.StatusNotFound, "媒体文件不存在")
 		return
 	}
@@ -206,7 +204,7 @@ func (h *Handler) MoveMedia(c *gin.Context) {
 		}
 	}
 
-	if err := h.folderRepo.UpdateMediaFolder(c.Request.Context(), uint(id), req.FolderID); err != nil {
+	if err := h.folderRepo.UpdateMediaFolder(c.Request.Context(), id, req.FolderID); err != nil {
 		apierror.Message(c, http.StatusInternalServerError, "移动媒体文件失败")
 		return
 	}

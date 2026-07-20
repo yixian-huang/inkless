@@ -2,13 +2,13 @@ package auditlog
 
 import (
 	"net/http"
-	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
 
 	"github.com/yixian-huang/inkless/backend/pkg/apierror"
 
+	"github.com/yixian-huang/inkless/backend/internal/handlerutil"
 	"github.com/yixian-huang/inkless/backend/internal/repository"
 )
 
@@ -37,17 +37,9 @@ func NewHandler(auditEventRepo repository.AuditEventRepository) *Handler {
 // @Success      200 {object} object{items=[]object,total=int,page=int,pageSize=int}
 // @Router       /admin/audit-logs [get]
 func (h *Handler) List(c *gin.Context) {
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	pageSize, _ := strconv.Atoi(c.DefaultQuery("pageSize", "20"))
-
-	if page < 1 {
-		page = 1
-	}
-	if pageSize < 1 || pageSize > 100 {
-		pageSize = 20
-	}
-
-	offset := (page - 1) * pageSize
+	p := handlerutil.ParsePagination(c, 20, 100)
+	page, pageSize := p.Page, p.PageSize
+	offset := p.Offset
 
 	action := c.Query("action")
 	actor := c.Query("actor")

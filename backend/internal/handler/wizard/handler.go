@@ -29,7 +29,7 @@ func NewHandler(svc *service.WizardService) *Handler {
 func (h *Handler) GeneratePlan(c *gin.Context) {
 	var q model.Questionnaire
 	if err := c.ShouldBindJSON(&q); err != nil {
-		apierror.Message(c, http.StatusBadRequest, "invalid request: " + err.Error())
+		apierror.Message(c, http.StatusBadRequest, "invalid request: "+err.Error())
 		return
 	}
 
@@ -49,7 +49,7 @@ func (h *Handler) GeneratePlan(c *gin.Context) {
 func (h *Handler) ApplyPlan(c *gin.Context) {
 	var plan model.SitePlan
 	if err := c.ShouldBindJSON(&plan); err != nil {
-		apierror.Message(c, http.StatusBadRequest, "invalid request: " + err.Error())
+		apierror.Message(c, http.StatusBadRequest, "invalid request: "+err.Error())
 		return
 	}
 
@@ -69,7 +69,7 @@ func (h *Handler) ApplyPlan(c *gin.Context) {
 func (h *Handler) SuggestColors(c *gin.Context) {
 	var req model.ColorSuggestionRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		apierror.Message(c, http.StatusBadRequest, "invalid request: " + err.Error())
+		apierror.Message(c, http.StatusBadRequest, "invalid request: "+err.Error())
 		return
 	}
 
@@ -89,7 +89,7 @@ func (h *Handler) SuggestColors(c *gin.Context) {
 func (h *Handler) GenerateContent(c *gin.Context) {
 	var req model.GenerateContentRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		apierror.Message(c, http.StatusBadRequest, "invalid request: " + err.Error())
+		apierror.Message(c, http.StatusBadRequest, "invalid request: "+err.Error())
 		return
 	}
 

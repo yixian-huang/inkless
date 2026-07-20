@@ -8,30 +8,30 @@ import (
 
 // repos groups data-access dependencies constructed once at process start.
 type repos struct {
-	user                 repository.UserRepository
-	refreshToken         repository.RefreshTokenRepository
-	contentDoc           repository.ContentDocumentRepository
-	media                repository.MediaRepository
-	pageView             repository.PageViewRepository
-	category             repository.CategoryRepository
-	tag                  repository.TagRepository
-	article              repository.ArticleRepository
-	articleVersion       repository.ArticleVersionRepository
-	auditEvent           repository.AuditEventRepository
-	page                 repository.PageRepository
-	installedTheme       repository.InstalledThemeRepository
-	menu                 repository.MenuRepository
-	role                 repository.RoleRepository
-	marketplace          repository.MarketplaceRepository
-	mediaFolder          repository.MediaFolderRepository
-	chunkedUpload        repository.ChunkedUploadRepository
-	glossary             repository.GlossaryRepository
-	storageConfig        repository.StorageConfigRepository
-	unifiedPage          repository.UnifiedPageRepository
-	pageVersion          repository.PageVersionRepository
-	scheduledPublishJob  repository.ScheduledPublishJobRepository
-	pageTemplate         repository.PageTemplateRepository
-	siteConfig           repository.SiteConfigRepository
+	user                repository.UserRepository
+	refreshToken        repository.RefreshTokenRepository
+	contentDoc          repository.ContentDocumentRepository
+	media               repository.MediaRepository
+	pageView            repository.PageViewRepository
+	category            repository.CategoryRepository
+	tag                 repository.TagRepository
+	article             repository.ArticleRepository
+	articleVersion      repository.ArticleVersionRepository
+	auditEvent          repository.AuditEventRepository
+	page                repository.PageRepository
+	installedTheme      repository.InstalledThemeRepository
+	menu                repository.MenuRepository
+	role                repository.RoleRepository
+	marketplace         repository.MarketplaceRepository
+	mediaFolder         repository.MediaFolderRepository
+	chunkedUpload       repository.ChunkedUploadRepository
+	glossary            repository.GlossaryRepository
+	storageConfig       repository.StorageConfigRepository
+	unifiedPage         repository.UnifiedPageRepository
+	pageVersion         repository.PageVersionRepository
+	scheduledPublishJob repository.ScheduledPublishJobRepository
+	pageTemplate        repository.PageTemplateRepository
+	siteConfig          repository.SiteConfigRepository
 }
 
 func wireRepos(gdb *gorm.DB) *repos {
