@@ -78,8 +78,9 @@ diagnosis.
 
 ## External identity cutover snapshot
 
-Read-only checks performed at `2026-07-19T16:24Z` against commit `a8b6290`
-found the following external state:
+Read-only checks performed at `2026-07-20T02:41Z` after the GitHub identity
+cutover, with `main` still at commit `a8b6290`, found the following external
+state:
 
 | Surface | Observed state | Cutover implication |
 | --- | --- | --- |
@@ -87,13 +88,13 @@ found the following external state:
 | DNS delegation | Authoritative nameservers are `elsa.ns.cloudflare.com` and `donovan.ns.cloudflare.com`. | Cloudflare is the DNS control plane. |
 | DNS records | The authoritative nameservers return no apex A/AAAA and no `www` A/AAAA/CNAME. | The domain does not currently route to a host. |
 | TLS/HTTP | Neither apex nor `www` resolves, so no HTTPS endpoint or served certificate can be validated. | DNS and certificate issuance remain gated external actions. |
-| GitHub | `yixian-huang/impress` is public at `a8b6290`; `yixian-huang/inkless` returns 404. The local remote still points to the old name. | Repository rename is the blocking action for README, docs, clone URLs, and the Go module path. |
+| GitHub | `yixian-huang/inkless` is public at `a8b6290`; the previous web URL returns HTTP 301 to the new repository, and Git operations through both clone URLs resolve the same HEAD. The maintained local remote points to the new name. | Repository rename and redirect validation are complete. Do not reuse the old repository name while compatibility redirects are needed. |
 | GitHub Actions | Quality Gate succeeded for `a8b6290`. Automatic Deploy built artifacts but failed because the remote Inkless destination directory did not exist. | Bootstrap `/opt/inkless` before enabling another automatic deployment. |
-| GitHub variables | `AUTO_DEPLOY_ENABLED=true`, `BACKEND_SERVICE=impress`, `BACKEND_HEALTH_URL=http://127.0.0.1:8088/health`, `DEPLOY_ENVIRONMENT=production`. | Disable auto deploy during cutover and change the service variable to `inkless`. |
+| GitHub variables | `AUTO_DEPLOY_ENABLED=false`, `BACKEND_SERVICE=inkless`, `BACKEND_HEALTH_URL=http://127.0.0.1:8088/health`, `DEPLOY_ENVIRONMENT=production`. | Identity variables are cut over. Keep automatic deployment disabled until the origin preflight succeeds. |
 | GitHub secrets | Actions has `DEPLOY_HOST`, `DEPLOY_KNOWN_HOSTS`, `DEPLOY_ROOT`, `DEPLOY_SSH_PRIVATE_KEY`, and `DEPLOY_USER`; values are unreadable by design. | An authorized operator must verify that `DEPLOY_ROOT` is `/opt/inkless`. |
 | GitHub Pages/badges/self-actions | No Pages site, badges, or `uses: yixian-huang/impress@...` references were found. | Normal repository redirects are sufficient; the non-redirecting renamed-action exception does not currently apply. |
 | Releases/tags | No GitHub release exists. The only tag is root tag `v0.1.0-alpha.1`. | Release history will follow the repository rename, but this tag does not publish the module located in `backend/`. |
-| Go module | Source declares `github.com/yixian-huang/inkless/backend`; the repository does not yet exist at that path and no `backend/v*` tag exists. | After rename, publish a `backend/vX.Y.Z` tag; a root `vX.Y.Z` tag is not a version of a subdirectory module. |
+| Go module | Source declares `github.com/yixian-huang/inkless/backend`; the repository now exists at that path, but no `backend/v*` tag exists. | Publish a `backend/vX.Y.Z` tag only after separate release authorization; a root `vX.Y.Z` tag is not a version of a subdirectory module. |
 | npm | The root, frontend, and docs packages are private. Registry lookups for `inkless`, `@inkless/web`, and `@inkless/cms` return 404; this machine is not authenticated to npm. | npm publication is not required for the product cutover. Reserve an npm scope only if a public SDK/package release is approved. |
 | Public old links | GitHub code search found no indexed external references to `yixian-huang/impress`. | There is no known consumer migration list, but private clones and bookmarks may still exist. |
 | Existing operated site | `yx.ink` resolves through Cloudflare but returned HTTP 502 during the check. Direct health checks to both `103.73.220.161:8088` and the older `82.158.226.66:8088` endpoint were not reachable. | No currently documented host is ready to receive `inkless.run` traffic. Restore origin health before any DNS write. |
@@ -121,7 +122,7 @@ After the external actions, require the cutover assertions:
 | Badges and Pages | No badges or Pages configuration currently exist. | Add new-name badges only after the rename. The operated site remains `inkless.run`, not a GitHub Pages URL. | Remove new badges or restore their old URLs if the rename is rolled back. |
 | Releases and artifacts | Existing tags and release objects stay on the same repository; Actions artifact names are already brand-neutral or Inkless. | Create future releases only after rename. Keep binary names `inkless` and `inkless-api-*`. | Existing objects follow a repository-name rollback. |
 | Go module consumers | The declared module path resolves only when the new GitHub repository exists. Go proxy content is immutable once published. | Create and push a submodule tag such as `backend/v0.1.0-alpha.1`, then run the proxy verification command below. Never move a published tag. | Before publication, delete a local mistaken tag. After publication, publish a new version; do not retarget the old tag. |
-| Documentation and QuickBox | Current files already use the new clone URL, so they are intentionally broken until the rename. | Verify README, docs-site, `ops/qb-init-hk-artifact.json`, and deployment clone operations immediately after rename. | A repository-name rollback restores the old endpoint, but current docs would need a reverting commit. |
+| Documentation and QuickBox | Current files use the new clone URL, which now resolves to the renamed repository. | Keep README, docs-site, `ops/qb-init-hk-artifact.json`, and deployment clone operations on the canonical URL. | A repository-name rollback restores the old endpoint, but current docs would need a reverting commit. |
 
 ## External authorization gate
 
@@ -130,22 +131,23 @@ explicit authorization.
 
 ### GitHub repository and Actions
 
+Completed on 2026-07-20 under explicit authorization:
+
+- Renamed `yixian-huang/impress` to `yixian-huang/inkless`.
+- Set Actions variable `AUTO_DEPLOY_ENABLED=false`.
+- Set Actions variable `BACKEND_SERVICE=inkless`.
+- Updated the maintained local remote to `https://github.com/yixian-huang/inkless.git`.
+- Verified the previous web URL returns HTTP 301 and both old and new Git URLs
+  resolve `main` at `a8b6290`.
+
+The following repository metadata remains optional and was not part of that
+authorization:
+
 Exact objects:
 
-- Rename `yixian-huang/impress` to `yixian-huang/inkless`.
 - Set repository description to `Inkless CMS — a self-hosted bilingual publishing and site-building system`.
 - Set repository homepage to `https://inkless.run` and topics to include `cms`, `self-hosted`, `golang`, `react`, and `bilingual`.
-- Temporarily set Actions variable `AUTO_DEPLOY_ENABLED=false`.
-- Set Actions variable `BACKEND_SERVICE=inkless`.
 - Verify secret `DEPLOY_ROOT` contains `/opt/inkless`; secret values must not be printed.
-- Update maintained local/CI/QuickBox remotes to `https://github.com/yixian-huang/inkless.git`.
-
-Preconditions:
-
-1. The `inkless` repository name is still unoccupied.
-2. No newly discovered public consumer uses this repository as a GitHub Action.
-3. Main is at the intended cutover commit and Quality Gate is green.
-4. Auto deploy is disabled before the next commit or manual workflow run.
 
 ### DNS, origin, and TLS
 
@@ -203,10 +205,10 @@ organization scope is available.
 
 ## Authorized cutover order
 
-1. Freeze deployments; set `AUTO_DEPLOY_ENABLED=false`.
+1. **Complete:** freeze deployments; set `AUTO_DEPLOY_ENABLED=false`.
 2. Bootstrap `/opt/inkless`, install `inkless.service`, and verify the origin locally.
-3. Change `BACKEND_SERVICE` and verify `DEPLOY_ROOT` in GitHub Actions.
-4. Rename the GitHub repository, update metadata/remotes, and validate old/new redirects.
+3. **Partially complete:** `BACKEND_SERVICE=inkless`; `DEPLOY_ROOT` still requires operator verification without printing its value.
+4. **Complete for identity:** rename the GitHub repository, update the maintained remote, and validate old/new redirects. Repository description, homepage, and topics remain optional metadata follow-up.
 5. Run Quality Gate manually. Do not re-enable deployment until the remote root preflight passes.
 6. Publish the correctly prefixed Go module tag only if public SDK consumption is intended.
 7. Write DNS records, issue the two-name certificate, install Nginx, and run HTTPS/canonical/CORS smoke tests.
