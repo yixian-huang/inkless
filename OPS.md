@@ -5,6 +5,24 @@ Primary deploy target: **`hk`** → `82.158.226.66`
 Environment id (`hk`): `53e1049c-72fd-4c2a-9d18-251f70e46415`  
 Server id: `4eaa0086-d435-4249-a76f-356fddde5261`
 
+## Site isolation (read first)
+
+**yx.ink ≠ inkless.run.** Incident write-up: [`docs/ops-lessons-yx-ink-vs-inkless-run.md`](docs/ops-lessons-yx-ink-vs-inkless-run.md).
+
+On **gomami** (current dual-process layout):
+
+| Public site | systemd | Port | Tree / DB |
+|-------------|---------|------|-----------|
+| yx.ink (personal) | `inkless` | 8088 | `/opt/inkless` + `data/inkless.db` |
+| inkless.run (product) | `inkless-ops` | 8089 | `/opt/inkless-ops` + `data/inkless.db` |
+
+Caddy must reverse-proxy each hostname to its own port. Sharing code symlinks is OK; sharing data/env is not.
+
+Helpers:
+
+- `scripts/ops-bootstrap-inkless-run.sh` — second process for product site  
+- `scripts/ops-product-site-cutover.py` — product DB only (`INKLESS_DB=...`)
+
 ## Recommended: `artifact` deploy (build server → hk)
 
 **Do not** build Docker images on hk. Use a separate **build server** to compile artifacts; hk only **activates** versioned tarballs.

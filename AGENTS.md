@@ -36,18 +36,35 @@ pnpm type-check     # run TypeScript type checking
 - Recommended commit style: short, imperative subject line (e.g., `Add pricing page CTA`).
 - PRs should include: a concise summary, linked issues (if any), and screenshots for UI changes, plus the commands run (e.g., `pnpm lint`, `pnpm type-check`).
 
+## Production site isolation (mandatory)
+
+**yx.ink and inkless.run are different sites.** Domain ≠ instance. Full lesson: [`docs/ops-lessons-yx-ink-vs-inkless-run.md`](docs/ops-lessons-yx-ink-vs-inkless-run.md).
+
+| Site | Role | Host (gomami) | Unit | Port | Data |
+|------|------|---------------|------|------|------|
+| **yx.ink** | Personal blog | gomami | `inkless` | `8088` | `/opt/inkless/data/` |
+| **inkless.run** | Product ops | gomami | `inkless-ops` | `8089` | `/opt/inkless-ops/data/` |
+
+- Never rewrite theme/content/DB for one domain without confirming **unit + port + `DB_DSN` + Caddy upstream**.
+- Never point both domains at one process when the user asked for a separate product site.
+- Product cutover only: `INKLESS_DB=/opt/inkless-ops/data/inkless.db` (never personal DB).
+- Before any production DB write: backup; after: verify **both** sites' `/public/bootstrap` identity.
+
 ## Default delivery (commit + deploy)
 After finishing a coherent feature/fix/improvement (verification passes), **agents should by default**:
 
 1. **Commit** the related changes with a focused message (do not commit secrets or unrelated dirty files).
 2. **Push** to the tracking remote branch (usually `main` when work is on main).
-3. **Deploy** the live Inkless environment via NoPanel:
+3. **Deploy** only the intended instance (do not assume one deploy covers both sites):
 
 ```bash
+# personal (yx.ink) — existing hk-artifact → /opt/inkless
 npc deploy impress hk-artifact --ref <branch-or-sha> --wait
+# product (inkless.run) — separate process; code may share artifact symlinks;
+# runtime state is /opt/inkless-ops + inkless-ops.service (see ops lesson doc)
 ```
 
-- Default production-like target: project **`impress`**, environment **`hk-artifact`** (gomami / artifact runtime under `/opt/inkless`).
+- Default personal artifact target: project **`impress`**, environment **`hk-artifact`** (gomami `/opt/inkless`).
 - Prefer the ref that contains the commit just pushed (`main` after merge/push, or the feature branch when deploying a branch build).
 - Skip auto-deploy only when the user says so, the change is docs-only with no runtime impact, or deploy readiness is blocked — then report why and stop.
 
