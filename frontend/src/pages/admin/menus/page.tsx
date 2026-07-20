@@ -16,6 +16,7 @@ import {
   AdminErrorBanner,
   AdminLoading,
   AdminPageHeader,
+  useAdminConfirm,
 } from "@/components/admin/ui";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import TreeItemRow from "./MenuTree";
@@ -27,6 +28,7 @@ import MenuItemForm from "./MenuItemForm";
 
 export default function MenusPage() {
   useDocumentTitle("菜单管理");
+  const { confirm, confirmDialog } = useAdminConfirm();
   // -- Group state --
   const [groups, setGroups] = useState<MenuGroup[]>([]);
   const [selectedGroupId, setSelectedGroupId] = useState<number | null>(null);
@@ -140,7 +142,13 @@ export default function MenusPage() {
   };
 
   const handleDeleteGroup = async (group: MenuGroup) => {
-    if (!confirm(`删除菜单组「${group.name}」？此操作不可恢复。`)) return;
+    const ok = await confirm({
+      title: "删除菜单组",
+      message: `删除菜单组「${group.name}」？此操作不可恢复。`,
+      confirmLabel: "删除",
+      danger: true,
+    });
+    if (!ok) return;
     setError(null);
     try {
       await deleteMenuGroup(group.id);
@@ -257,7 +265,14 @@ export default function MenusPage() {
   };
 
   const handleDeleteItem = async (item: MenuItem) => {
-    if (!selectedGroupId || !confirm(`删除菜单项「${item.zhName}」？`)) return;
+    if (!selectedGroupId) return;
+    const ok = await confirm({
+      title: "删除菜单项",
+      message: `删除菜单项「${item.zhName}」？`,
+      confirmLabel: "删除",
+      danger: true,
+    });
+    if (!ok) return;
     setError(null);
     try {
       await deleteMenuItem(selectedGroupId, item.id);
@@ -337,6 +352,7 @@ export default function MenusPage() {
 
   return (
     <div>
+      {confirmDialog}
       <AdminPageHeader
         title="菜单管理"
         description="管理导航菜单组和菜单项，支持多级嵌套"

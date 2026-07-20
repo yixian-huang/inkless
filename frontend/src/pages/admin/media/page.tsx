@@ -3,13 +3,19 @@ import { listMedia, deleteMedia, uploadMedia, getMediaUsages, renameMedia } from
 import type { MediaItem, MediaUsage } from "@/api/media";
 import ImageCropUpload from "@/components/admin/ImageCropUpload";
 import RecropModal from "@/components/admin/RecropModal";
-import { AdminButton, AdminErrorBanner, AdminPageHeader } from "@/components/admin/ui";
+import {
+  AdminButton,
+  AdminErrorBanner,
+  AdminPageHeader,
+  useAdminConfirm,
+} from "@/components/admin/ui";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { invalidateAdminQueryPrefix, useAdminQuery } from "@/lib/adminQuery";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
 
 export default function MediaPage() {
   useDocumentTitle("媒体管理");
+  const { confirm, confirmDialog } = useAdminConfirm();
   const [actionError, setActionError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const [deleting, setDeleting] = useState<number | null>(null);
@@ -107,7 +113,13 @@ export default function MediaPage() {
   };
 
   const handleDelete = async (item: MediaItem) => {
-    if (!confirm(`确定要删除 ${item.filename} 吗？`)) return;
+    const ok = await confirm({
+      title: "删除媒体",
+      message: `确定要删除「${item.filename}」吗？此操作不可撤销。`,
+      confirmLabel: "删除",
+      danger: true,
+    });
+    if (!ok) return;
 
     setDeleting(item.id);
     setActionError(null);
@@ -200,6 +212,7 @@ export default function MediaPage() {
       onDrop={handleDrop}
       className="relative"
     >
+      {confirmDialog}
       {/* Drag overlay */}
       {isDragging && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-blue-500/10 backdrop-blur-sm">

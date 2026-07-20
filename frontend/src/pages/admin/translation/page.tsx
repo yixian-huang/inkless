@@ -7,7 +7,16 @@ import {
   type GlossaryTerm,
   type GlossaryListResponse,
 } from "@/api/translation";
-import { AdminPageHeader } from "@/components/admin/ui";
+import {
+  AdminPageHeader,
+  AdminPagination,
+  AdminTable,
+  AdminTableBody,
+  AdminTableHead,
+  AdminTd,
+  AdminTh,
+  useAdminConfirm,
+} from "@/components/admin/ui";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 
 const LANG_OPTIONS = [
@@ -150,6 +159,7 @@ function GlossaryManagement() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
+  const { confirm, confirmDialog } = useAdminConfirm();
 
   // Add form state
   const [addForm, setAddForm] = useState({
@@ -195,7 +205,13 @@ function GlossaryManagement() {
   };
 
   const handleDelete = async (id: number) => {
-    if (!window.confirm("确认删除此术语？")) return;
+    const ok = await confirm({
+      title: "删除术语",
+      message: "确认删除此术语？此操作不可撤销。",
+      confirmLabel: "删除",
+      danger: true,
+    });
+    if (!ok) return;
     try {
       await deleteGlossaryTerm(id);
       await fetchData();
@@ -207,12 +223,13 @@ function GlossaryManagement() {
   const totalPages = data ? Math.ceil(data.total / PAGE_SIZE) : 0;
 
   return (
-    <div className="bg-white shadow rounded-lg p-6">
-      <h3 className="text-lg font-semibold text-gray-900 mb-4">术语管理</h3>
+    <div className="space-y-4">
+      {confirmDialog}
+      <h3 className="text-lg font-semibold text-slate-900">术语管理</h3>
 
       {/* Add form */}
-      <form onSubmit={handleAdd} className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
-        <h4 className="text-sm font-medium text-gray-700 mb-3">添加术语</h4>
+      <form onSubmit={handleAdd} className="p-4 bg-slate-50 rounded-lg border border-slate-200">
+        <h4 className="text-sm font-medium text-slate-700 mb-3">添加术语</h4>
         {addError && (
           <div className="mb-3 p-2 bg-red-50 border border-red-200 rounded text-red-700 text-sm">
             {addError}
@@ -220,33 +237,33 @@ function GlossaryManagement() {
         )}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <div>
-            <label className="block text-xs text-gray-600 mb-1">源术语</label>
+            <label className="block text-xs text-slate-600 mb-1">源术语</label>
             <input
               type="text"
               value={addForm.sourceTerm}
               onChange={(e) => setAddForm((f) => ({ ...f, sourceTerm: e.target.value }))}
               placeholder="源术语"
-              className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-slate-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               required
             />
           </div>
           <div>
-            <label className="block text-xs text-gray-600 mb-1">目标术语</label>
+            <label className="block text-xs text-slate-600 mb-1">目标术语</label>
             <input
               type="text"
               value={addForm.targetTerm}
               onChange={(e) => setAddForm((f) => ({ ...f, targetTerm: e.target.value }))}
               placeholder="目标术语"
-              className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-slate-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               required
             />
           </div>
           <div>
-            <label className="block text-xs text-gray-600 mb-1">源语言</label>
+            <label className="block text-xs text-slate-600 mb-1">源语言</label>
             <select
               value={addForm.sourceLang}
               onChange={(e) => setAddForm((f) => ({ ...f, sourceLang: e.target.value }))}
-              className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-slate-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               {LANG_OPTIONS.map((opt) => (
                 <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -254,11 +271,11 @@ function GlossaryManagement() {
             </select>
           </div>
           <div>
-            <label className="block text-xs text-gray-600 mb-1">目标语言</label>
+            <label className="block text-xs text-slate-600 mb-1">目标语言</label>
             <select
               value={addForm.targetLang}
               onChange={(e) => setAddForm((f) => ({ ...f, targetLang: e.target.value }))}
-              className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-slate-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               {LANG_OPTIONS.map((opt) => (
                 <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -278,81 +295,62 @@ function GlossaryManagement() {
       </form>
 
       {error && (
-        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md text-red-700 text-sm">
+        <div className="p-3 bg-red-50 border border-red-200 rounded-md text-red-700 text-sm">
           {error}
         </div>
       )}
 
       {loading && !data ? (
-        <div className="text-center py-8 text-gray-500">加载中...</div>
+        <div className="text-center py-8 text-slate-500">加载中...</div>
       ) : (
         <>
-          <div className="overflow-hidden border border-gray-200 rounded-lg">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">源术语</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">目标术语</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">源语言</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">目标语言</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
+          <AdminTable>
+            <AdminTableHead>
+              <tr>
+                <AdminTh>源术语</AdminTh>
+                <AdminTh>目标术语</AdminTh>
+                <AdminTh>源语言</AdminTh>
+                <AdminTh>目标语言</AdminTh>
+                <AdminTh>操作</AdminTh>
+              </tr>
+            </AdminTableHead>
+            <AdminTableBody>
+              {data?.items.map((term: GlossaryTerm) => (
+                <tr key={term.id} className="hover:bg-slate-50/80">
+                  <AdminTd className="text-slate-900">{term.sourceTerm}</AdminTd>
+                  <AdminTd className="text-slate-700">{term.targetTerm}</AdminTd>
+                  <AdminTd className="text-slate-500">
+                    {LANG_OPTIONS.find((o) => o.value === term.sourceLang)?.label || term.sourceLang}
+                  </AdminTd>
+                  <AdminTd className="text-slate-500">
+                    {LANG_OPTIONS.find((o) => o.value === term.targetLang)?.label || term.targetLang}
+                  </AdminTd>
+                  <AdminTd>
+                    <button
+                      onClick={() => handleDelete(term.id)}
+                      className="text-red-600 hover:text-red-800 text-xs font-medium"
+                    >
+                      删除
+                    </button>
+                  </AdminTd>
                 </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {data?.items.map((term: GlossaryTerm) => (
-                  <tr key={term.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-3 text-sm text-gray-900">{term.sourceTerm}</td>
-                    <td className="px-4 py-3 text-sm text-gray-700">{term.targetTerm}</td>
-                    <td className="px-4 py-3 text-sm text-gray-500">
-                      {LANG_OPTIONS.find((o) => o.value === term.sourceLang)?.label || term.sourceLang}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-gray-500">
-                      {LANG_OPTIONS.find((o) => o.value === term.targetLang)?.label || term.targetLang}
-                    </td>
-                    <td className="px-4 py-3 text-sm">
-                      <button
-                        onClick={() => handleDelete(term.id)}
-                        className="text-red-600 hover:text-red-800 text-xs font-medium"
-                      >
-                        删除
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-                {data?.items.length === 0 && (
-                  <tr>
-                    <td colSpan={5} className="px-6 py-8 text-center text-sm text-gray-500">
-                      暂无术语记录
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+              ))}
+              {data?.items.length === 0 && (
+                <tr>
+                  <AdminTd colSpan={5} className="py-8 text-center text-slate-500">
+                    暂无术语记录
+                  </AdminTd>
+                </tr>
+              )}
+            </AdminTableBody>
+          </AdminTable>
 
-          {totalPages > 1 && (
-            <div className="mt-4 flex items-center justify-between">
-              <p className="text-sm text-gray-500">
-                共 {data?.total} 条，第 {page}/{totalPages} 页
-              </p>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  disabled={page <= 1}
-                  className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  上一页
-                </button>
-                <button
-                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                  disabled={page >= totalPages}
-                  className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  下一页
-                </button>
-              </div>
-            </div>
-          )}
+          <AdminPagination
+            page={page}
+            totalPages={totalPages}
+            total={data?.total ?? 0}
+            onPageChange={setPage}
+          />
         </>
       )}
     </div>

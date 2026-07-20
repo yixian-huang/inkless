@@ -8,11 +8,17 @@ import {
   type ScheduledPublicationStatus,
 } from "@/api/scheduledPublications";
 import {
+  AdminBadge,
   AdminButton,
   AdminErrorBanner,
   AdminLoading,
   AdminPageHeader,
   AdminPagination,
+  AdminTable,
+  AdminTableBody,
+  AdminTableHead,
+  AdminTd,
+  AdminTh,
 } from "@/components/admin/ui";
 import { useAuth } from "@/contexts/AuthContext";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
@@ -34,12 +40,12 @@ const resourceOptions: Array<{ value: ScheduledPublicationResourceType | ""; lab
   { value: "article", label: "文章" },
 ];
 
-const statusClasses: Record<ScheduledPublicationStatus, string> = {
-  pending: "bg-blue-50 text-blue-700",
-  running: "bg-indigo-50 text-indigo-700",
-  succeeded: "bg-green-50 text-green-700",
-  failed: "bg-red-50 text-red-700",
-  cancelled: "bg-gray-100 text-gray-600",
+const statusBadgeTone: Record<ScheduledPublicationStatus, "info" | "warning" | "success" | "danger" | "neutral"> = {
+  pending: "info",
+  running: "info",
+  succeeded: "success",
+  failed: "danger",
+  cancelled: "neutral",
 };
 
 const statusLabels: Record<ScheduledPublicationStatus, string> = {
@@ -189,76 +195,74 @@ export default function AdminScheduledPublicationsPage() {
           暂无定时发布任务
         </div>
       ) : (
-        <div className="overflow-hidden rounded-lg bg-white shadow">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">内容</th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">类型</th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">计划时间</th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">状态</th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">失败信息</th>
-                <th className="px-6 py-3 text-right text-xs font-medium uppercase text-gray-500">操作</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {items.map((item) => {
-                const canManage = canManageResource(item.resourceType);
-                return (
-                  <tr key={item.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4">
-                      <div className="max-w-xs truncate text-sm font-medium text-gray-900">
-                        {item.title || `#${item.resourceId}`}
-                      </div>
-                      <div className="max-w-xs truncate font-mono text-xs text-gray-500">
-                        {item.slug ? `/${item.slug}` : `ID ${item.resourceId}`}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-600">
-                      {item.resourceType === "page" ? "页面" : "文章"}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                      {formatDateTime(item.scheduledAt)}
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className={`inline-flex rounded-full px-2 py-0.5 text-xs ${statusClasses[item.status]}`}>
-                        {statusLabels[item.status]}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-sm text-red-700">
-                      <div className="max-w-sm truncate" title={item.lastError ?? undefined}>
-                        {item.lastError || "-"}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-right text-sm">
-                      {item.status === "pending" && canManage && (
-                        <button
-                          type="button"
-                          onClick={() => handleCancel(item)}
-                          disabled={busyId === item.id}
-                          className="text-red-600 hover:text-red-800 disabled:opacity-50"
-                        >
-                          {busyId === item.id ? "处理中..." : "取消"}
-                        </button>
-                      )}
-                      {item.status === "failed" && canManage && (
-                        <button
-                          type="button"
-                          onClick={() => handleRetry(item)}
-                          disabled={busyId === item.id}
-                          className="text-orange-700 hover:text-orange-900 disabled:opacity-50"
-                        >
-                          {busyId === item.id ? "处理中..." : "重试"}
-                        </button>
-                      )}
-                      {!canManage && <span className="text-gray-400">无权限</span>}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+        <AdminTable>
+          <AdminTableHead>
+            <tr>
+              <AdminTh>内容</AdminTh>
+              <AdminTh>类型</AdminTh>
+              <AdminTh>计划时间</AdminTh>
+              <AdminTh>状态</AdminTh>
+              <AdminTh>失败信息</AdminTh>
+              <AdminTh className="text-right">操作</AdminTh>
+            </tr>
+          </AdminTableHead>
+          <AdminTableBody>
+            {items.map((item) => {
+              const canManage = canManageResource(item.resourceType);
+              return (
+                <tr key={item.id} className="hover:bg-slate-50/80">
+                  <AdminTd>
+                    <div className="max-w-xs truncate text-sm font-medium text-slate-900">
+                      {item.title || `#${item.resourceId}`}
+                    </div>
+                    <div className="max-w-xs truncate font-mono text-xs text-slate-500">
+                      {item.slug ? `/${item.slug}` : `ID ${item.resourceId}`}
+                    </div>
+                  </AdminTd>
+                  <AdminTd className="text-slate-600">
+                    {item.resourceType === "page" ? "页面" : "文章"}
+                  </AdminTd>
+                  <AdminTd className="whitespace-nowrap text-slate-700">
+                    {formatDateTime(item.scheduledAt)}
+                  </AdminTd>
+                  <AdminTd>
+                    <AdminBadge tone={statusBadgeTone[item.status]}>
+                      {statusLabels[item.status]}
+                    </AdminBadge>
+                  </AdminTd>
+                  <AdminTd className="text-red-700">
+                    <div className="max-w-sm truncate" title={item.lastError ?? undefined}>
+                      {item.lastError || "-"}
+                    </div>
+                  </AdminTd>
+                  <AdminTd className="text-right">
+                    {item.status === "pending" && canManage && (
+                      <button
+                        type="button"
+                        onClick={() => handleCancel(item)}
+                        disabled={busyId === item.id}
+                        className="text-sm font-medium text-red-600 hover:text-red-800 disabled:opacity-50"
+                      >
+                        {busyId === item.id ? "处理中..." : "取消"}
+                      </button>
+                    )}
+                    {item.status === "failed" && canManage && (
+                      <button
+                        type="button"
+                        onClick={() => handleRetry(item)}
+                        disabled={busyId === item.id}
+                        className="text-sm font-medium text-orange-700 hover:text-orange-900 disabled:opacity-50"
+                      >
+                        {busyId === item.id ? "处理中..." : "重试"}
+                      </button>
+                    )}
+                    {!canManage && <span className="text-slate-400">无权限</span>}
+                  </AdminTd>
+                </tr>
+              );
+            })}
+          </AdminTableBody>
+        </AdminTable>
       )}
 
       <AdminPagination

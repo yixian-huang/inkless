@@ -6,11 +6,13 @@ import {
   AdminButton,
   AdminErrorBanner,
   AdminPageHeader,
+  useAdminConfirm,
 } from "@/components/admin/ui";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 
 export default function TagsPage() {
   useDocumentTitle("标签管理");
+  const { confirm, confirmDialog } = useAdminConfirm();
 
   const [tags, setTags] = useState<Tag[]>([]);
   const [loading, setLoading] = useState(true);
@@ -122,7 +124,14 @@ export default function TagsPage() {
   };
 
   const handleDelete = async (tag: Tag) => {
-    if (!confirm(`Delete tag "${tag.zhName || tag.enName}"?`)) return;
+    const name = tag.zhName || tag.enName;
+    const ok = await confirm({
+      title: "删除标签",
+      message: `确定删除标签「${name}」吗？此操作不可撤销。`,
+      confirmLabel: "删除",
+      danger: true,
+    });
+    if (!ok) return;
 
     setDeleting(tag.id);
     setError(null);
@@ -130,7 +139,7 @@ export default function TagsPage() {
       await deleteTag(tag.id);
       setTags((prev) => prev.filter((t) => t.id !== tag.id));
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Delete failed");
+      setError(err instanceof Error ? err.message : "删除失败");
     } finally {
       setDeleting(null);
     }
@@ -138,6 +147,7 @@ export default function TagsPage() {
 
   return (
     <div>
+      {confirmDialog}
       <AdminPageHeader
         title="标签管理"
         description="管理文章标签"
@@ -365,7 +375,7 @@ export default function TagsPage() {
                         disabled={deleting === tag.id}
                         className="text-red-600 hover:text-red-800 text-sm disabled:opacity-50"
                       >
-                        {deleting === tag.id ? "..." : "Delete"}
+                        {deleting === tag.id ? "..." : "删除"}
                       </button>
                     </div>
                   </div>

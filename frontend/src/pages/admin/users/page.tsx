@@ -8,7 +8,20 @@ import {
   type CreateUserRequest,
   type UpdateUserRequest,
 } from "@/api/users";
-import { AdminButton, AdminErrorBanner, AdminPageHeader } from "@/components/admin/ui";
+import {
+  AdminBadge,
+  AdminButton,
+  AdminErrorBanner,
+  AdminLoading,
+  AdminPageHeader,
+  AdminPagination,
+  AdminTable,
+  AdminTableBody,
+  AdminTableHead,
+  AdminTd,
+  AdminTh,
+  useAdminConfirm,
+} from "@/components/admin/ui";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { invalidateAdminQueryPrefix, useAdminQuery } from "@/lib/adminQuery";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
@@ -53,10 +66,7 @@ export default function AdminUsersPage() {
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState("");
 
-  // Delete dialog
-  const [deleteTarget, setDeleteTarget] = useState<UserDTO | null>(null);
-  const [deleting, setDeleting] = useState(false);
-
+  const { confirm, confirmDialog } = useAdminConfirm();
   const pageSize = 20;
 
   const { data, error, loading, refetch } = useAdminQuery(
@@ -136,18 +146,20 @@ export default function AdminUsersPage() {
     }
   };
 
-  const handleDelete = async () => {
-    if (!deleteTarget) return;
-    setDeleting(true);
+  const handleDelete = async (user: UserDTO) => {
+    const ok = await confirm({
+      title: "删除用户",
+      message: `确定删除用户「${user.username}」吗？此操作不可撤销。`,
+      confirmLabel: "删除",
+      danger: true,
+    });
+    if (!ok) return;
     try {
-      await deleteUser(deleteTarget.id);
-      setDeleteTarget(null);
-      fetchUsers();
+      await deleteUser(user.id);
+      await fetchUsers();
     } catch (err: any) {
       const msg = err?.response?.data?.error?.message || "删除失败";
       alert(msg);
-    } finally {
-      setDeleting(false);
     }
   };
 
@@ -173,6 +185,7 @@ export default function AdminUsersPage() {
 
   return (
     <div className="space-y-6">
+      {confirmDialog}
       <AdminPageHeader
         title="用户管理"
         description="管理后台账号与基础权限"
@@ -185,104 +198,78 @@ export default function AdminUsersPage() {
 
       {error && <AdminErrorBanner message={error.message || "加载用户列表失败"} />}
 
-      {/* Table */}
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">用户名</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">角色</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">超管</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">权限数</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">创建时间</th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">操作</th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {loading ? (
+      {loading ? (
+        <AdminLoading />
+      ) : (
+        <>
+          <AdminTable>
+            <AdminTableHead>
               <tr>
-                <td colSpan={6} className="px-6 py-8 text-center text-gray-500">
-                  加载中...
-                </td>
+                <AdminTh>用户名</AdminTh>
+                <AdminTh>角色</AdminTh>
+                <AdminTh>超管</AdminTh>
+                <AdminTh>权限数</AdminTh>
+                <AdminTh>创建时间</AdminTh>
+                <AdminTh className="text-right">操作</AdminTh>
               </tr>
-            ) : users.length === 0 ? (
-              <tr>
-                <td colSpan={6} className="px-6 py-8 text-center text-gray-500">
-                  暂无用户
-                </td>
-              </tr>
-            ) : (
-              users.map((u) => (
-                <tr key={u.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 text-sm font-medium text-gray-900">{u.username}</td>
-                  <td className="px-6 py-4 text-sm text-gray-600">
-                    {u.role === "admin" ? "管理员" : "编辑"}
-                  </td>
-                  <td className="px-6 py-4 text-sm">
-                    {u.isSuperAdmin ? (
-                      <span className="inline-flex px-2 py-0.5 text-xs font-medium rounded-full bg-amber-100 text-amber-700">
-                        超级管理员
-                      </span>
-                    ) : (
-                      <span className="text-gray-400">-</span>
-                    )}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-600">
-                    {u.isSuperAdmin ? "全部" : u.permissions.length}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-500">
-                    {new Date(u.createdAt).toLocaleDateString("zh-CN")}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-right space-x-2">
-                    <button
-                      onClick={() => openEdit(u)}
-                      className="text-blue-600 hover:text-blue-800"
-                    >
-                      编辑
-                    </button>
-                    {!u.isSuperAdmin && (
-                      <button
-                        onClick={() => setDeleteTarget(u)}
-                        className="text-red-600 hover:text-red-800"
-                      >
-                        删除
-                      </button>
-                    )}
-                  </td>
+            </AdminTableHead>
+            <AdminTableBody>
+              {users.length === 0 ? (
+                <tr>
+                  <AdminTd colSpan={6} className="py-8 text-center text-slate-500">
+                    暂无用户
+                  </AdminTd>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+              ) : (
+                users.map((u) => (
+                  <tr key={u.id} className="hover:bg-slate-50/80">
+                    <AdminTd className="font-medium text-slate-900">{u.username}</AdminTd>
+                    <AdminTd>{u.role === "admin" ? "管理员" : "编辑"}</AdminTd>
+                    <AdminTd>
+                      {u.isSuperAdmin ? (
+                        <AdminBadge tone="warning">超级管理员</AdminBadge>
+                      ) : (
+                        <span className="text-slate-400">—</span>
+                      )}
+                    </AdminTd>
+                    <AdminTd className="tabular-nums">
+                      {u.isSuperAdmin ? "全部" : u.permissions.length}
+                    </AdminTd>
+                    <AdminTd className="whitespace-nowrap text-slate-500">
+                      {new Date(u.createdAt).toLocaleDateString("zh-CN")}
+                    </AdminTd>
+                    <AdminTd className="space-x-2 text-right">
+                      <button
+                        type="button"
+                        onClick={() => openEdit(u)}
+                        className="text-sm font-medium text-blue-600 hover:text-blue-800"
+                      >
+                        编辑
+                      </button>
+                      {!u.isSuperAdmin && (
+                        <button
+                          type="button"
+                          onClick={() => handleDelete(u)}
+                          className="text-sm font-medium text-red-600 hover:text-red-800"
+                        >
+                          删除
+                        </button>
+                      )}
+                    </AdminTd>
+                  </tr>
+                ))
+              )}
+            </AdminTableBody>
+          </AdminTable>
 
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <div className="flex items-center justify-between px-6 py-3 border-t border-gray-200">
-            <span className="text-sm text-gray-500">
-              共 {total} 位用户
-            </span>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                disabled={page === 1}
-                className="px-3 py-1 text-sm border rounded disabled:opacity-50"
-              >
-                上一页
-              </button>
-              <span className="px-3 py-1 text-sm">
-                {page} / {totalPages}
-              </span>
-              <button
-                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                disabled={page === totalPages}
-                className="px-3 py-1 text-sm border rounded disabled:opacity-50"
-              >
-                下一页
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
+          <AdminPagination
+            page={page}
+            totalPages={totalPages}
+            total={total}
+            onPageChange={setPage}
+          />
+        </>
+      )}
 
       {/* Create/Edit Dialog */}
       {showDialog && (
@@ -400,33 +387,6 @@ export default function AdminUsersPage() {
         </div>
       )}
 
-      {/* Delete Confirmation Dialog */}
-      {deleteTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div className="absolute inset-0 bg-black/50" onClick={() => setDeleteTarget(null)} />
-          <div className="relative bg-white rounded-xl shadow-xl w-full max-w-sm mx-4 p-6 space-y-4">
-            <h2 className="text-lg font-bold text-gray-900">确认删除</h2>
-            <p className="text-sm text-gray-600">
-              确定要删除用户 <strong>{deleteTarget.username}</strong> 吗？此操作不可撤销。
-            </p>
-            <div className="flex justify-end gap-3">
-              <button
-                onClick={() => setDeleteTarget(null)}
-                className="px-4 py-2 text-sm font-medium text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50"
-              >
-                取消
-              </button>
-              <button
-                onClick={handleDelete}
-                disabled={deleting}
-                className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 disabled:opacity-50"
-              >
-                {deleting ? "删除中..." : "删除"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

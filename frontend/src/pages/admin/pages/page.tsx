@@ -16,6 +16,7 @@ import {
   AdminTableHead,
   AdminTd,
   AdminTh,
+  useAdminConfirm,
 } from "@/components/admin/ui";
 import { useAuth } from "@/contexts/AuthContext";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
@@ -27,6 +28,7 @@ export default function AdminPagesPage() {
   useDocumentTitle("页面管理");
   const [statusFilter, setStatusFilter] = useState("");
   const [modeFilter, setModeFilter] = useState("");
+  const { confirm, confirmDialog } = useAdminConfirm();
 
   const navigate = useNavigate();
 
@@ -52,7 +54,13 @@ export default function AdminPagesPage() {
   const pages: UnifiedPageItem[] = data ?? [];
 
   const handleDelete = async (id: number) => {
-    if (!confirm("确定删除此页面？此操作不可撤销。")) return;
+    const ok = await confirm({
+      title: "删除页面",
+      message: "确定删除此页面？此操作不可撤销。",
+      confirmLabel: "删除",
+      danger: true,
+    });
+    if (!ok) return;
     try {
       await deleteUnifiedPage(id);
       invalidateAdminQueryPrefix(adminQueryKeys.pages);
@@ -65,6 +73,7 @@ export default function AdminPagesPage() {
 
   return (
     <div>
+      {confirmDialog}
       <AdminPageHeader
         title="页面管理"
         description={

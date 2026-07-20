@@ -10,7 +10,19 @@ import {
   type CreateRoleRequest,
   type UpdateRoleRequest,
 } from "@/api/roles";
-import { AdminButton, AdminErrorBanner, AdminPageHeader } from "@/components/admin/ui";
+import {
+  AdminBadge,
+  AdminButton,
+  AdminErrorBanner,
+  AdminLoading,
+  AdminPageHeader,
+  AdminTable,
+  AdminTableBody,
+  AdminTableHead,
+  AdminTd,
+  AdminTh,
+  useAdminConfirm,
+} from "@/components/admin/ui";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { invalidateAdminQueryPrefix, useAdminQuery } from "@/lib/adminQuery";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
@@ -37,9 +49,9 @@ export default function AdminRolesPage() {
   const [form, setForm] = useState<RoleFormData>(emptyForm);
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState("");
-
-  const [deleteTarget, setDeleteTarget] = useState<RoleDTO | null>(null);
   const [deleting, setDeleting] = useState(false);
+
+  const { confirm, confirmDialog } = useAdminConfirm();
 
   const { data, error, loading, refetch } = useAdminQuery(
     adminQueryKeys.roles,
@@ -117,13 +129,18 @@ export default function AdminRolesPage() {
     }
   };
 
-  const handleDelete = async () => {
-    if (!deleteTarget) return;
+  const handleDelete = async (role: RoleDTO) => {
+    const ok = await confirm({
+      title: "删除角色",
+      message: `确定要删除角色「${role.display_name}」吗？此操作不可撤销。`,
+      confirmLabel: "删除",
+      danger: true,
+    });
+    if (!ok) return;
     setDeleting(true);
     try {
-      await deleteRole(deleteTarget.id);
-      setDeleteTarget(null);
-      fetchData();
+      await deleteRole(role.id);
+      await fetchData();
     } catch (err: any) {
       const msg = err?.response?.data?.error?.message || "删除失败";
       alert(msg);
@@ -166,6 +183,7 @@ export default function AdminRolesPage() {
 
   return (
     <div className="space-y-6">
+      {confirmDialog}
       <AdminPageHeader
         title="角色管理"
         description="配置角色与权限集合"
@@ -178,37 +196,32 @@ export default function AdminRolesPage() {
 
       {error && <AdminErrorBanner message={error.message || "加载数据失败"} />}
 
-      {/* Table */}
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
+      {loading ? (
+        <AdminLoading />
+      ) : (
+        <AdminTable>
+          <AdminTableHead>
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">角色名称</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">标识</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">描述</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">权限数</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">类型</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">创建时间</th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">操作</th>
+              <AdminTh>角色名称</AdminTh>
+              <AdminTh>标识</AdminTh>
+              <AdminTh>描述</AdminTh>
+              <AdminTh>权限数</AdminTh>
+              <AdminTh>类型</AdminTh>
+              <AdminTh>创建时间</AdminTh>
+              <AdminTh className="text-right">操作</AdminTh>
             </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {loading ? (
+          </AdminTableHead>
+          <AdminTableBody>
+            {roles.length === 0 ? (
               <tr>
-                <td colSpan={7} className="px-6 py-8 text-center text-gray-500">
-                  加载中...
-                </td>
-              </tr>
-            ) : roles.length === 0 ? (
-              <tr>
-                <td colSpan={7} className="px-6 py-8 text-center text-gray-500">
+                <AdminTd colSpan={7} className="py-8 text-center text-slate-500">
                   暂无角色
-                </td>
+                </AdminTd>
               </tr>
             ) : (
               roles.map((role) => (
-                <tr key={role.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 text-sm font-medium text-gray-900">
+                <tr key={role.id} className="hover:bg-slate-50/80">
+                  <AdminTd className="font-medium text-slate-900">
                     <div className="flex items-center gap-2">
                       {role.is_system && (
                         <svg className="w-4 h-4 text-amber-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -217,46 +230,45 @@ export default function AdminRolesPage() {
                       )}
                       {role.display_name}
                     </div>
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-600 font-mono">{role.name}</td>
-                  <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">{role.description || "-"}</td>
-                  <td className="px-6 py-4 text-sm text-gray-600">{role.permissions.length}</td>
-                  <td className="px-6 py-4 text-sm">
+                  </AdminTd>
+                  <AdminTd className="font-mono text-slate-600">{role.name}</AdminTd>
+                  <AdminTd className="max-w-xs truncate text-slate-500">{role.description || "-"}</AdminTd>
+                  <AdminTd className="text-slate-600">{role.permissions.length}</AdminTd>
+                  <AdminTd>
                     {role.is_system ? (
-                      <span className="inline-flex px-2 py-0.5 text-xs font-medium rounded-full bg-amber-100 text-amber-700">
-                        系统角色
-                      </span>
+                      <AdminBadge tone="warning">系统角色</AdminBadge>
                     ) : (
-                      <span className="inline-flex px-2 py-0.5 text-xs font-medium rounded-full bg-blue-100 text-blue-700">
-                        自定义
-                      </span>
+                      <AdminBadge tone="info">自定义</AdminBadge>
                     )}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-500">
+                  </AdminTd>
+                  <AdminTd className="text-slate-500">
                     {new Date(role.created_at).toLocaleDateString("zh-CN")}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-right space-x-2">
+                  </AdminTd>
+                  <AdminTd className="space-x-2 text-right">
                     <button
+                      type="button"
                       onClick={() => openEdit(role)}
-                      className="text-blue-600 hover:text-blue-800"
+                      className="text-sm font-medium text-blue-600 hover:text-blue-800"
                     >
                       编辑
                     </button>
                     {!role.is_system && (
                       <button
-                        onClick={() => setDeleteTarget(role)}
-                        className="text-red-600 hover:text-red-800"
+                        type="button"
+                        onClick={() => handleDelete(role)}
+                        disabled={deleting}
+                        className="text-sm font-medium text-red-600 hover:text-red-800 disabled:opacity-50"
                       >
                         删除
                       </button>
                     )}
-                  </td>
+                  </AdminTd>
                 </tr>
               ))
             )}
-          </tbody>
-        </table>
-      </div>
+          </AdminTableBody>
+        </AdminTable>
+      )}
 
       {/* Create/Edit Dialog */}
       {showDialog && (
@@ -377,34 +389,6 @@ export default function AdminRolesPage() {
                   {saving ? "保存中..." : "保存"}
                 </button>
               </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Delete Confirmation Dialog */}
-      {deleteTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div className="absolute inset-0 bg-black/50" onClick={() => setDeleteTarget(null)} />
-          <div className="relative bg-white rounded-xl shadow-xl w-full max-w-sm mx-4 p-6 space-y-4">
-            <h2 className="text-lg font-bold text-gray-900">确认删除</h2>
-            <p className="text-sm text-gray-600">
-              确定要删除角色 <strong>{deleteTarget.display_name}</strong> 吗？此操作不可撤销。
-            </p>
-            <div className="flex justify-end gap-3">
-              <button
-                onClick={() => setDeleteTarget(null)}
-                className="px-4 py-2 text-sm font-medium text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50"
-              >
-                取消
-              </button>
-              <button
-                onClick={handleDelete}
-                disabled={deleting}
-                className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 disabled:opacity-50"
-              >
-                {deleting ? "删除中..." : "删除"}
-              </button>
             </div>
           </div>
         </div>

@@ -16,3 +16,7 @@ export {
   AdminTh,
   AdminTd,
 } from "./AdminTable";
+export { default as AdminConfirmDialog } from "./AdminConfirmDialog";
+export type { AdminConfirmDialogProps } from "./AdminConfirmDialog";
+export { useAdminConfirm } from "./useAdminConfirm";
+export type { AdminConfirmOptions } from "./useAdminConfirm";

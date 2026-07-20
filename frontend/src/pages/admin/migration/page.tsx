@@ -9,7 +9,15 @@ import {
   type MigrationFormat,
   type MigrationJobPhase,
 } from "@/api/migration";
-import { AdminPageHeader } from "@/components/admin/ui";
+import {
+  AdminBadge,
+  AdminPageHeader,
+  AdminTable,
+  AdminTableBody,
+  AdminTableHead,
+  AdminTd,
+  AdminTh,
+} from "@/components/admin/ui";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { isAxiosError } from "axios";
 
@@ -31,11 +39,11 @@ const formatOptions: { value: MigrationFormat; label: string; description: strin
   },
 ];
 
-const phaseConfig: Record<MigrationJobPhase, { label: string; className: string }> = {
-  parsing: { label: "解析中", className: "bg-gray-100 text-gray-700" },
-  importing: { label: "导入中", className: "bg-blue-100 text-blue-700" },
-  done: { label: "已完成", className: "bg-green-100 text-green-700" },
-  failed: { label: "失败", className: "bg-red-100 text-red-700" },
+const phaseConfig: Record<MigrationJobPhase, { label: string; tone: "neutral" | "info" | "success" | "danger" }> = {
+  parsing: { label: "解析中", tone: "neutral" },
+  importing: { label: "导入中", tone: "info" },
+  done: { label: "已完成", tone: "success" },
+  failed: { label: "失败", tone: "danger" },
 };
 
 const streamReconnectDelays = [1000, 2000, 4000, 8000, 16000];
@@ -466,126 +474,122 @@ function JobsTable() {
   };
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200">
-      <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
-        <h3 className="text-base font-semibold text-gray-900">导入任务</h3>
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h3 className="text-base font-semibold text-slate-900">导入任务</h3>
         <button
           onClick={fetchJobs}
           disabled={loading}
-          className="px-3 py-1.5 text-sm text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50"
+          className="px-3 py-1.5 text-sm text-slate-600 border border-slate-300 rounded-md hover:bg-slate-50 disabled:opacity-50"
         >
           {loading ? "刷新中..." : "刷新"}
         </button>
       </div>
 
       {error && (
-        <div className="mx-6 mt-4 p-3 bg-red-50 border border-red-200 rounded-md text-red-700 text-sm">
+        <div className="p-3 bg-red-50 border border-red-200 rounded-md text-red-700 text-sm">
           {error}
         </div>
       )}
 
       {loading && jobs.length === 0 ? (
-        <div className="py-12 text-center text-gray-500 text-sm">加载中...</div>
+        <div className="py-12 text-center text-slate-500 text-sm">加载中...</div>
       ) : jobs.length === 0 ? (
-        <div className="px-6 py-12 text-center">
-          <div className="text-sm font-medium text-gray-700">暂无导入任务</div>
-          <div className="mt-1 text-sm text-gray-400">
+        <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50/80 px-6 py-12 text-center">
+          <div className="text-sm font-medium text-slate-700">暂无导入任务</div>
+          <div className="mt-1 text-sm text-slate-400">
             上传 WordPress、Halo 或 Markdown 文件后，导入进度和结果会显示在这里。
           </div>
         </div>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">格式</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">状态</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">进度</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">条目数</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">结果</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">创建时间</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">错误</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {jobs.map((job) => {
-                const phaseInfo = phaseConfig[job.phase];
-                const showErrors = expandedErrors.has(job.jobId);
-                const progressPct = getProgressPct(job);
-                return (
-                  <Fragment key={job.jobId}>
-                    <tr key={job.jobId} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {sourceLabel[job.source] || job.source}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${phaseInfo.className}`}>
-                          {phaseInfo.label}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap" style={{ minWidth: 140 }}>
-                        <div className="flex items-center gap-2">
-                          <ProgressBar value={progressPct} />
-                          <span className="text-xs text-gray-500 shrink-0">{progressPct}%</span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                        {job.processed} / {job.total}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-600">
-                        <ResultSummary job={job} />
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {new Date(job.startedAt).toLocaleString("zh-CN")}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm">
-                        {job.errors && job.errors.length > 0 ? (
-                          <button
-                            onClick={() => toggleErrors(job.jobId)}
-                            className="text-red-600 hover:text-red-800 font-medium"
-                          >
-                            {job.errors.length} 个错误 {showErrors ? "▲" : "▼"}
-                          </button>
-                        ) : (
-                          <span className="text-gray-400">无</span>
-                        )}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm">
-                        {job.phase === "failed" && job.retryable !== false ? (
-                          <button
-                            onClick={() => handleRetry(job.jobId)}
-                            disabled={retryingJobId === job.jobId}
-                            className="px-3 py-1.5 text-sm text-blue-600 border border-blue-200 rounded-md hover:bg-blue-50 disabled:opacity-50"
-                          >
-                            {retryingJobId === job.jobId ? "重试中..." : "重试"}
-                          </button>
-                        ) : (
-                          <span className="text-gray-400">-</span>
-                        )}
-                      </td>
+        <AdminTable>
+          <AdminTableHead>
+            <tr>
+              <AdminTh>格式</AdminTh>
+              <AdminTh>状态</AdminTh>
+              <AdminTh>进度</AdminTh>
+              <AdminTh>条目数</AdminTh>
+              <AdminTh>结果</AdminTh>
+              <AdminTh>创建时间</AdminTh>
+              <AdminTh>错误</AdminTh>
+              <AdminTh>操作</AdminTh>
+            </tr>
+          </AdminTableHead>
+          <AdminTableBody>
+            {jobs.map((job) => {
+              const phaseInfo = phaseConfig[job.phase];
+              const showErrors = expandedErrors.has(job.jobId);
+              const progressPct = getProgressPct(job);
+              return (
+                <Fragment key={job.jobId}>
+                  <tr className="hover:bg-slate-50/80">
+                    <AdminTd className="whitespace-nowrap text-slate-900">
+                      {sourceLabel[job.source] || job.source}
+                    </AdminTd>
+                    <AdminTd className="whitespace-nowrap">
+                      <AdminBadge tone={phaseInfo.tone}>{phaseInfo.label}</AdminBadge>
+                    </AdminTd>
+                    <AdminTd className="whitespace-nowrap">
+                      <div className="flex min-w-[140px] items-center gap-2">
+                        <ProgressBar value={progressPct} />
+                        <span className="text-xs text-slate-500 shrink-0">{progressPct}%</span>
+                      </div>
+                    </AdminTd>
+                    <AdminTd className="whitespace-nowrap text-slate-600">
+                      {job.processed} / {job.total}
+                    </AdminTd>
+                    <AdminTd className="text-slate-600">
+                      <ResultSummary job={job} />
+                    </AdminTd>
+                    <AdminTd className="whitespace-nowrap text-slate-500">
+                      {new Date(job.startedAt).toLocaleString("zh-CN")}
+                    </AdminTd>
+                    <AdminTd className="whitespace-nowrap">
+                      {job.errors && job.errors.length > 0 ? (
+                        <button
+                          onClick={() => toggleErrors(job.jobId)}
+                          className="text-red-600 hover:text-red-800 font-medium text-sm"
+                        >
+                          {job.errors.length} 个错误 {showErrors ? "▲" : "▼"}
+                        </button>
+                      ) : (
+                        <span className="text-slate-400">无</span>
+                      )}
+                    </AdminTd>
+                    <AdminTd className="whitespace-nowrap">
+                      {job.phase === "failed" && job.retryable !== false ? (
+                        <button
+                          onClick={() => handleRetry(job.jobId)}
+                          disabled={retryingJobId === job.jobId}
+                          className="px-3 py-1.5 text-sm text-blue-600 border border-blue-200 rounded-md hover:bg-blue-50 disabled:opacity-50"
+                        >
+                          {retryingJobId === job.jobId ? "重试中..." : "重试"}
+                        </button>
+                      ) : (
+                        <span className="text-slate-400">-</span>
+                      )}
+                    </AdminTd>
+                  </tr>
+                  {showErrors && job.errors && job.errors.length > 0 && (
+                    <tr>
+                      <AdminTd colSpan={8} className="bg-red-50">
+                        <div className="text-xs font-medium text-red-700 mb-2">错误详情：</div>
+                        <ul className="space-y-1 max-h-40 overflow-y-auto">
+                          {job.errors.map((err, i) => (
+                            <li key={i} className="text-xs text-red-600 flex gap-2">
+                              <span className="shrink-0 text-red-400">{i + 1}.</span>
+                              <span>{err}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </AdminTd>
                     </tr>
-                    {showErrors && job.errors && job.errors.length > 0 && (
-                      <tr key={`${job.jobId}-errors`}>
-                        <td colSpan={8} className="px-6 py-3 bg-red-50">
-                          <div className="text-xs font-medium text-red-700 mb-2">错误详情：</div>
-                          <ul className="space-y-1 max-h-40 overflow-y-auto">
-                            {job.errors.map((err, i) => (
-                              <li key={i} className="text-xs text-red-600 flex gap-2">
-                                <span className="shrink-0 text-red-400">{i + 1}.</span>
-                                <span>{err}</span>
-                              </li>
-                            ))}
-                          </ul>
-                        </td>
-                      </tr>
-                    )}
-                  </Fragment>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+                  )}
+                </Fragment>
+              );
+            })}
+          </AdminTableBody>
+        </AdminTable>
       )}
     </div>
   );

@@ -1,10 +1,17 @@
 import { useState } from "react";
 import { getAuditLogs, type AuditEvent, type AuditLogFilters } from "@/api/auditLogs";
 import {
+  AdminBadge,
   AdminButton,
   AdminErrorBanner,
   AdminLoading,
   AdminPageHeader,
+  AdminPagination,
+  AdminTable,
+  AdminTableBody,
+  AdminTableHead,
+  AdminTd,
+  AdminTh,
 } from "@/components/admin/ui";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { useAdminQuery } from "@/lib/adminQuery";
@@ -141,96 +148,52 @@ export default function AdminAuditLogsPage() {
         <AdminLoading />
       ) : data ? (
         <>
-          <div className="bg-white shadow rounded-lg overflow-hidden">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    时间
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    操作
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    操作人
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    资源
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    结果
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    详情
-                  </th>
+          <AdminTable>
+            <AdminTableHead>
+              <tr>
+                <AdminTh>时间</AdminTh>
+                <AdminTh>操作</AdminTh>
+                <AdminTh>操作人</AdminTh>
+                <AdminTh>资源</AdminTh>
+                <AdminTh>结果</AdminTh>
+                <AdminTh>详情</AdminTh>
+              </tr>
+            </AdminTableHead>
+            <AdminTableBody>
+              {data.items.map((event: AuditEvent) => (
+                <tr key={event.id} className="hover:bg-slate-50/80">
+                  <AdminTd className="whitespace-nowrap">
+                    {new Date(event.createdAt).toLocaleString("zh-CN")}
+                  </AdminTd>
+                  <AdminTd className="font-medium text-slate-900">{event.action}</AdminTd>
+                  <AdminTd>{event.actor}</AdminTd>
+                  <AdminTd>{event.resource}</AdminTd>
+                  <AdminTd>
+                    <AdminBadge tone={event.result === "success" ? "success" : "danger"}>
+                      {event.result}
+                    </AdminBadge>
+                  </AdminTd>
+                  <AdminTd className="max-w-xs truncate text-slate-500" title={event.details}>
+                    {formatDetailsSummary(event.details)}
+                  </AdminTd>
                 </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {data.items.map((event: AuditEvent) => (
-                  <tr key={event.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                      {new Date(event.createdAt).toLocaleString("zh-CN")}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">
-                      {event.action}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                      {event.actor}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                      {event.resource}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      <span
-                        className={
-                          event.result === "success"
-                            ? "inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800"
-                            : "inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800"
-                        }
-                      >
-                        {event.result}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate" title={event.details}>
-                      {formatDetailsSummary(event.details)}
-                    </td>
-                  </tr>
-                ))}
-                {data.items.length === 0 && (
-                  <tr>
-                    <td colSpan={6} className="px-6 py-8 text-center text-sm text-gray-500">
-                      暂无审计日志
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+              ))}
+              {data.items.length === 0 && (
+                <tr>
+                  <AdminTd colSpan={6} className="py-8 text-center text-slate-500">
+                    暂无审计日志
+                  </AdminTd>
+                </tr>
+              )}
+            </AdminTableBody>
+          </AdminTable>
 
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="mt-4 flex items-center justify-between">
-              <p className="text-sm text-gray-500">
-                共 {data.total} 条，第 {page}/{totalPages} 页
-              </p>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  disabled={page <= 1}
-                  className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  上一页
-                </button>
-                <button
-                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                  disabled={page >= totalPages}
-                  className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  下一页
-                </button>
-              </div>
-            </div>
-          )}
+          <AdminPagination
+            page={page}
+            totalPages={totalPages}
+            total={data.total}
+            onPageChange={setPage}
+          />
         </>
       ) : null}
     </div>

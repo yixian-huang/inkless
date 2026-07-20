@@ -1,9 +1,17 @@
 import { useState, Fragment } from "react";
 import {
+  AdminBadge,
   AdminButton,
   AdminErrorBanner,
   AdminLoading,
   AdminPageHeader,
+  AdminPagination,
+  AdminTable,
+  AdminTableBody,
+  AdminTableHead,
+  AdminTd,
+  AdminTh,
+  useAdminConfirm,
 } from "@/components/admin/ui";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { invalidateAdminQueryPrefix, useAdminQuery } from "@/lib/adminQuery";
@@ -28,10 +36,16 @@ const STATUS_TABS: { label: string; value: StatusFilter }[] = [
   { label: "已拒绝", value: "rejected" },
 ];
 
-const STATUS_BADGE: Record<string, { label: string; className: string }> = {
-  pending: { label: "待审核", className: "bg-yellow-100 text-yellow-800" },
-  approved: { label: "已通过", className: "bg-green-100 text-green-800" },
-  rejected: { label: "已拒绝", className: "bg-red-100 text-red-800" },
+const STATUS_BADGE_TONE: Record<string, "warning" | "success" | "danger" | "neutral"> = {
+  pending: "warning",
+  approved: "success",
+  rejected: "danger",
+};
+
+const STATUS_BADGE_LABEL: Record<string, string> = {
+  pending: "待审核",
+  approved: "已通过",
+  rejected: "已拒绝",
 };
 
 const PAGE_SIZE = 20;
@@ -44,6 +58,8 @@ export default function AdminCommentsPage() {
   const [actionLoading, setActionLoading] = useState(false);
   const [replyTarget, setReplyTarget] = useState<AdminComment | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+
+  const { confirm, confirmDialog } = useAdminConfirm();
 
   const { data, error, loading, isFetching, refetch } = useAdminQuery(
     [...adminQueryKeys.comments, page, PAGE_SIZE, statusFilter],
@@ -110,7 +126,13 @@ export default function AdminCommentsPage() {
   };
 
   const handleDelete = async (id: number) => {
-    if (!window.confirm("确认删除此评论？此操作不可撤销。")) return;
+    const ok = await confirm({
+      title: "删除评论",
+      message: "确认删除此评论？此操作不可撤销。",
+      confirmLabel: "删除",
+      danger: true,
+    });
+    if (!ok) return;
     setActionLoading(true);
     try {
       await deleteComment(id);
@@ -157,7 +179,13 @@ export default function AdminCommentsPage() {
 
   const handleBulkDelete = async () => {
     if (selectedIds.size === 0) return;
-    if (!window.confirm(`确认删除选中的 ${selectedIds.size} 条评论？此操作不可撤销。`)) return;
+    const ok = await confirm({
+      title: "批量删除评论",
+      message: `确认删除选中的 ${selectedIds.size} 条评论？此操作不可撤销。`,
+      confirmLabel: "删除",
+      danger: true,
+    });
+    if (!ok) return;
     setActionLoading(true);
     try {
       await Promise.all(Array.from(selectedIds).map((id) => deleteComment(id)));
@@ -181,6 +209,7 @@ export default function AdminCommentsPage() {
 
   return (
     <div>
+      {confirmDialog}
       <AdminPageHeader
         title="评论管理"
         description="审核与回复访客评论"
@@ -252,165 +281,129 @@ export default function AdminCommentsPage() {
         <AdminLoading />
       ) : data ? (
         <>
-          <div className="bg-white shadow rounded-lg overflow-hidden">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-4 py-3 text-left">
-                    <input
-                      type="checkbox"
-                      checked={data.comments.length > 0 && selectedIds.size === data.comments.length}
-                      onChange={handleSelectAll}
-                      className="rounded border-gray-300"
-                    />
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    作者
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    内容
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    文章
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    状态
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    时间
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    操作
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {data.comments.map((item: AdminComment) => {
-                  const badge = STATUS_BADGE[item.status] || { label: item.status, className: "bg-gray-100 text-gray-800" };
-                  return (
-                    <Fragment key={item.id}>
-                      <tr className="hover:bg-gray-50">
-                        <td className="px-4 py-4">
-                          <input
-                            type="checkbox"
-                            checked={selectedIds.has(item.id)}
-                            onChange={() => handleToggleSelect(item.id)}
-                            className="rounded border-gray-300"
-                          />
-                        </td>
-                        <td className="px-4 py-4 text-sm text-gray-900">
-                          <div className="font-medium">
-                            {adminCommentAuthorName(item)}
-                            {item.authorRole === "author" && (
-                              <span className="ml-1 text-xs text-blue-600">作者</span>
-                            )}
-                          </div>
-                          {(item.authorEmail || item.author_email) && (
-                            <div className="text-xs text-gray-500 mt-0.5">
-                              {item.authorEmail || item.author_email}
-                            </div>
-                          )}
-                        </td>
-                        <td className="px-4 py-4 text-sm text-gray-700 max-w-xs">
-                          {truncate(item.content)}
-                        </td>
-                        <td className="px-4 py-4 text-sm text-gray-500">
-                          {item.article_title ? (
-                            <span className="text-xs">{truncate(item.article_title, 40)}</span>
-                          ) : item.article_id ? (
-                            <span className="text-xs text-gray-400">文章 #{item.article_id}</span>
-                          ) : (
-                            <span className="text-xs text-gray-400">—</span>
-                          )}
-                        </td>
-                        <td className="px-4 py-4 text-sm">
-                          <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${badge.className}`}>
-                            {badge.label}
-                          </span>
-                        </td>
-                        <td className="px-4 py-4 text-sm text-gray-500 whitespace-nowrap">
-                          {formatTime(adminCommentCreatedAt(item))}
-                        </td>
-                        <td className="px-4 py-4 text-sm">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <button
-                              type="button"
-                              onClick={() => setReplyTarget(item)}
-                              disabled={actionLoading}
-                              className="text-blue-600 hover:text-blue-800 text-xs font-medium disabled:opacity-50"
-                            >
-                              回复
-                            </button>
-                            {item.status !== "approved" && (
-                              <button
-                                type="button"
-                                onClick={() => handleApprove(item.id)}
-                                disabled={actionLoading}
-                                className="text-green-600 hover:text-green-800 text-xs font-medium disabled:opacity-50"
-                              >
-                                通过
-                              </button>
-                            )}
-                            {item.status !== "rejected" && (
-                              <button
-                                type="button"
-                                onClick={() => handleReject(item.id)}
-                                disabled={actionLoading}
-                                className="text-yellow-600 hover:text-yellow-800 text-xs font-medium disabled:opacity-50"
-                              >
-                                拒绝
-                              </button>
-                            )}
-                            <button
-                              type="button"
-                              onClick={() => handleDelete(item.id)}
-                              disabled={actionLoading}
-                              className="text-red-600 hover:text-red-800 text-xs font-medium disabled:opacity-50"
-                            >
-                              删除
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    </Fragment>
-                  );
-                })}
-                {data.comments.length === 0 && (
-                  <tr>
-                    <td colSpan={7} className="px-6 py-8 text-center text-sm text-gray-500">
-                      暂无评论记录
-                    </td>
+          <AdminTable>
+            <AdminTableHead>
+              <tr>
+                <AdminTh>
+                  <input
+                    type="checkbox"
+                    checked={data.comments.length > 0 && selectedIds.size === data.comments.length}
+                    onChange={handleSelectAll}
+                    className="rounded border-gray-300"
+                  />
+                </AdminTh>
+                <AdminTh>作者</AdminTh>
+                <AdminTh>内容</AdminTh>
+                <AdminTh>文章</AdminTh>
+                <AdminTh>状态</AdminTh>
+                <AdminTh>时间</AdminTh>
+                <AdminTh>操作</AdminTh>
+              </tr>
+            </AdminTableHead>
+            <AdminTableBody>
+              {data.comments.map((item: AdminComment) => (
+                <Fragment key={item.id}>
+                  <tr className="hover:bg-slate-50/80">
+                    <AdminTd>
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.has(item.id)}
+                        onChange={() => handleToggleSelect(item.id)}
+                        className="rounded border-gray-300"
+                      />
+                    </AdminTd>
+                    <AdminTd className="text-slate-900">
+                      <div className="font-medium">
+                        {adminCommentAuthorName(item)}
+                        {item.authorRole === "author" && (
+                          <span className="ml-1 text-xs text-blue-600">作者</span>
+                        )}
+                      </div>
+                      {(item.authorEmail || item.author_email) && (
+                        <div className="text-xs text-slate-500 mt-0.5">
+                          {item.authorEmail || item.author_email}
+                        </div>
+                      )}
+                    </AdminTd>
+                    <AdminTd className="max-w-xs text-slate-700">
+                      {truncate(item.content)}
+                    </AdminTd>
+                    <AdminTd className="text-slate-500">
+                      {item.article_title ? (
+                        <span className="text-xs">{truncate(item.article_title, 40)}</span>
+                      ) : item.article_id ? (
+                        <span className="text-xs text-slate-400">文章 #{item.article_id}</span>
+                      ) : (
+                        <span className="text-xs text-slate-400">—</span>
+                      )}
+                    </AdminTd>
+                    <AdminTd>
+                      <AdminBadge tone={STATUS_BADGE_TONE[item.status] || "neutral"}>
+                        {STATUS_BADGE_LABEL[item.status] || item.status}
+                      </AdminBadge>
+                    </AdminTd>
+                    <AdminTd className="whitespace-nowrap text-slate-500">
+                      {formatTime(adminCommentCreatedAt(item))}
+                    </AdminTd>
+                    <AdminTd>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <button
+                          type="button"
+                          onClick={() => setReplyTarget(item)}
+                          disabled={actionLoading}
+                          className="text-blue-600 hover:text-blue-800 text-xs font-medium disabled:opacity-50"
+                        >
+                          回复
+                        </button>
+                        {item.status !== "approved" && (
+                          <button
+                            type="button"
+                            onClick={() => handleApprove(item.id)}
+                            disabled={actionLoading}
+                            className="text-green-600 hover:text-green-800 text-xs font-medium disabled:opacity-50"
+                          >
+                            通过
+                          </button>
+                        )}
+                        {item.status !== "rejected" && (
+                          <button
+                            type="button"
+                            onClick={() => handleReject(item.id)}
+                            disabled={actionLoading}
+                            className="text-yellow-600 hover:text-yellow-800 text-xs font-medium disabled:opacity-50"
+                          >
+                            拒绝
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => handleDelete(item.id)}
+                          disabled={actionLoading}
+                          className="text-red-600 hover:text-red-800 text-xs font-medium disabled:opacity-50"
+                        >
+                          删除
+                        </button>
+                      </div>
+                    </AdminTd>
                   </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+                </Fragment>
+              ))}
+              {data.comments.length === 0 && (
+                <tr>
+                  <AdminTd colSpan={7} className="py-8 text-center text-slate-500">
+                    暂无评论记录
+                  </AdminTd>
+                </tr>
+              )}
+            </AdminTableBody>
+          </AdminTable>
 
-          {totalPages > 1 && (
-            <div className="mt-4 flex items-center justify-between">
-              <p className="text-sm text-gray-500">
-                共 {data.total} 条，第 {page}/{totalPages} 页
-              </p>
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  disabled={page <= 1}
-                  className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  上一页
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                  disabled={page >= totalPages}
-                  className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  下一页
-                </button>
-              </div>
-            </div>
-          )}
+          <AdminPagination
+            page={page}
+            totalPages={totalPages}
+            total={data.total}
+            onPageChange={setPage}
+          />
         </>
       ) : null}
 

@@ -10,7 +10,17 @@ import {
   type ExportRecord,
   type ValidationResult,
 } from "@/api/backups";
-import { AdminPageHeader } from "@/components/admin/ui";
+import {
+  AdminEmptyState,
+  AdminErrorBanner,
+  AdminLoading,
+  AdminPageHeader,
+  AdminTable,
+  AdminTableBody,
+  AdminTableHead,
+  AdminTd,
+  AdminTh,
+} from "@/components/admin/ui";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { removeStoredAccessToken, removeStoredRefreshToken } from "@/lib/browserStorage";
 
@@ -91,58 +101,37 @@ function DatabaseBackupTab() {
       </div>
 
       {successMsg && (
-        <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-md text-green-700 text-sm">
+        <div className="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
           {successMsg}
         </div>
       )}
-      {error && (
-        <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-md text-red-700 text-sm">
-          {error}
-        </div>
-      )}
+      {error && <AdminErrorBanner message={error} />}
 
       {loading && backups.length === 0 ? (
-        <div className="text-center py-12 text-gray-500">加载中...</div>
+        <AdminLoading />
+      ) : backups.length === 0 ? (
+        <AdminEmptyState title="暂无备份记录" description="点击「手动备份」创建第一份数据库备份。" />
       ) : (
-        <div className="bg-white shadow rounded-lg overflow-hidden">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  文件名
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  大小
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  创建时间
-                </th>
+        <AdminTable>
+          <AdminTableHead>
+            <tr>
+              <AdminTh>文件名</AdminTh>
+              <AdminTh className="text-right">大小</AdminTh>
+              <AdminTh className="text-right">创建时间</AdminTh>
+            </tr>
+          </AdminTableHead>
+          <AdminTableBody>
+            {backups.map((backup) => (
+              <tr key={backup.id} className="hover:bg-slate-50/80">
+                <AdminTd className="font-medium text-slate-900">{backup.filename}</AdminTd>
+                <AdminTd className="text-right tabular-nums">{formatFileSize(backup.size)}</AdminTd>
+                <AdminTd className="text-right whitespace-nowrap">
+                  {new Date(backup.createdAt).toLocaleString("zh-CN")}
+                </AdminTd>
               </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {backups.map((backup) => (
-                <tr key={backup.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                    {backup.filename}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 text-right">
-                    {formatFileSize(backup.size)}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 text-right">
-                    {new Date(backup.createdAt).toLocaleString("zh-CN")}
-                  </td>
-                </tr>
-              ))}
-              {backups.length === 0 && (
-                <tr>
-                  <td colSpan={3} className="px-6 py-8 text-center text-sm text-gray-500">
-                    暂无备份记录
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+            ))}
+          </AdminTableBody>
+        </AdminTable>
       )}
     </div>
   );
@@ -333,23 +322,23 @@ function SiteImportTab() {
             <p>数据记录: {totalRecords} 条</p>
           </div>
 
-          <div className="bg-white rounded border border-gray-200 overflow-hidden mb-4">
-            <table className="min-w-full text-sm">
-              <thead className="bg-gray-50">
+          <div className="mb-4">
+            <AdminTable>
+              <AdminTableHead>
                 <tr>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">表名</th>
-                  <th className="px-4 py-2 text-right text-xs font-medium text-gray-500">记录数</th>
+                  <AdminTh>表名</AdminTh>
+                  <AdminTh className="text-right">记录数</AdminTh>
                 </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
+              </AdminTableHead>
+              <AdminTableBody>
                 {Object.entries(validation.tables).map(([name, info]) => (
-                  <tr key={name}>
-                    <td className="px-4 py-2 text-gray-700">{name}</td>
-                    <td className="px-4 py-2 text-right text-gray-700">{info.count}</td>
+                  <tr key={name} className="hover:bg-slate-50/80">
+                    <AdminTd>{name}</AdminTd>
+                    <AdminTd className="text-right tabular-nums">{info.count}</AdminTd>
                   </tr>
                 ))}
-              </tbody>
-            </table>
+              </AdminTableBody>
+            </AdminTable>
           </div>
 
           {!showConfirm ? (

@@ -8,10 +8,18 @@ import {
 } from "@/api/formSubmissions";
 import type { FormSubmission } from "@/api/formSubmissions";
 import {
+  AdminBadge,
   AdminButton,
   AdminErrorBanner,
   AdminLoading,
   AdminPageHeader,
+  AdminPagination,
+  AdminTable,
+  AdminTableBody,
+  AdminTableHead,
+  AdminTd,
+  AdminTh,
+  useAdminConfirm,
 } from "@/components/admin/ui";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { invalidateAdminQueryPrefix, useAdminQuery } from "@/lib/adminQuery";
@@ -26,10 +34,16 @@ const STATUS_TABS: { label: string; value: StatusFilter }[] = [
   { label: "已归档", value: "archived" },
 ];
 
-const STATUS_BADGE: Record<string, { label: string; className: string }> = {
-  unread: { label: "未读", className: "bg-blue-100 text-blue-800" },
-  read: { label: "已读", className: "bg-gray-100 text-gray-800" },
-  archived: { label: "已归档", className: "bg-yellow-100 text-yellow-800" },
+const STATUS_BADGE_TONE: Record<string, "info" | "neutral" | "warning"> = {
+  unread: "info",
+  read: "neutral",
+  archived: "warning",
+};
+
+const STATUS_BADGE_LABEL: Record<string, string> = {
+  unread: "未读",
+  read: "已读",
+  archived: "已归档",
 };
 
 const PAGE_SIZE = 20;
@@ -41,6 +55,8 @@ export default function AdminFormSubmissionsPage() {
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+
+  const { confirm, confirmDialog } = useAdminConfirm();
 
   const { data, error, loading, refetch } = useAdminQuery(
     [...adminQueryKeys.formSubmissions, "list", page, PAGE_SIZE, statusFilter],
@@ -120,7 +136,13 @@ export default function AdminFormSubmissionsPage() {
   };
 
   const handleDelete = async (id: number) => {
-    if (!window.confirm("确认删除此提交记录？此操作不可撤销。")) return;
+    const ok = await confirm({
+      title: "删除提交记录",
+      message: "确认删除此提交记录？此操作不可撤销。",
+      confirmLabel: "删除",
+      danger: true,
+    });
+    if (!ok) return;
     try {
       await deleteFormSubmission(id);
       await fetchData();
@@ -140,6 +162,7 @@ export default function AdminFormSubmissionsPage() {
 
   return (
     <div>
+      {confirmDialog}
       <AdminPageHeader
         title="表单提交"
         description="查看与处理站点表单线索"
@@ -221,203 +244,169 @@ export default function AdminFormSubmissionsPage() {
         <AdminLoading />
       ) : data ? (
         <>
-          <div className="bg-white shadow rounded-lg overflow-hidden">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-4 py-3 text-left">
-                    <input
-                      type="checkbox"
-                      checked={data.items.length > 0 && selectedIds.size === data.items.length}
-                      onChange={handleSelectAll}
-                      className="rounded border-gray-300"
-                    />
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    姓名
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    邮箱
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    类型
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    状态
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    提交时间
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    操作
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {data.items.map((item: FormSubmission) => {
-                  const badge = STATUS_BADGE[item.status] || STATUS_BADGE.unread;
-                  const isExpanded = expandedId === item.id;
-                  return (
-                    <Fragment key={item.id}>
-                      <tr
-                        className={`hover:bg-gray-50 cursor-pointer ${
-                          item.status === "unread" ? "font-medium" : ""
-                        }`}
-                        onClick={() => handleToggleExpand(item.id)}
-                      >
-                        <td className="px-4 py-4" onClick={(e) => e.stopPropagation()}>
+          <AdminTable>
+            <AdminTableHead>
+              <tr>
+                <AdminTh>
+                  <input
+                    type="checkbox"
+                    checked={data.items.length > 0 && selectedIds.size === data.items.length}
+                    onChange={handleSelectAll}
+                    className="rounded border-gray-300"
+                  />
+                </AdminTh>
+                <AdminTh>姓名</AdminTh>
+                <AdminTh>邮箱</AdminTh>
+                <AdminTh>类型</AdminTh>
+                <AdminTh>状态</AdminTh>
+                <AdminTh>提交时间</AdminTh>
+                <AdminTh>操作</AdminTh>
+              </tr>
+            </AdminTableHead>
+            <AdminTableBody>
+              {data.items.map((item: FormSubmission) => {
+                const isExpanded = expandedId === item.id;
+                return (
+                  <Fragment key={item.id}>
+                    <tr
+                      className={`hover:bg-slate-50/80 cursor-pointer ${
+                        item.status === "unread" ? "font-medium" : ""
+                      }`}
+                      onClick={() => handleToggleExpand(item.id)}
+                    >
+                      <AdminTd>
+                        <span onClick={(e) => e.stopPropagation()}>
                           <input
                             type="checkbox"
                             checked={selectedIds.has(item.id)}
                             onChange={() => handleToggleSelect(item.id)}
                             className="rounded border-gray-300"
                           />
-                        </td>
-                        <td className="px-4 py-4 text-sm text-gray-900">
-                          {item.name}
-                        </td>
-                        <td className="px-4 py-4 text-sm text-gray-700">
-                          {item.email}
-                        </td>
-                        <td className="px-4 py-4 text-sm text-gray-700">
-                          {item.formType}
-                        </td>
-                        <td className="px-4 py-4 text-sm">
-                          <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${badge.className}`}>
-                            {badge.label}
-                          </span>
-                        </td>
-                        <td className="px-4 py-4 text-sm text-gray-500 whitespace-nowrap">
-                          {formatTime(item.createdAt)}
-                        </td>
-                        <td className="px-4 py-4 text-sm" onClick={(e) => e.stopPropagation()}>
-                          <div className="flex items-center gap-2">
-                            {item.status === "unread" ? (
-                              <button
-                                onClick={() => handleStatusChange(item.id, "read")}
-                                className="text-blue-600 hover:text-blue-800 text-xs"
-                                title="标为已读"
-                              >
-                                已读
-                              </button>
-                            ) : item.status === "read" ? (
-                              <button
-                                onClick={() => handleStatusChange(item.id, "unread")}
-                                className="text-blue-600 hover:text-blue-800 text-xs"
-                                title="标为未读"
-                              >
-                                未读
-                              </button>
-                            ) : null}
-                            {item.status !== "archived" && (
-                              <button
-                                onClick={() => handleStatusChange(item.id, "archived")}
-                                className="text-yellow-600 hover:text-yellow-800 text-xs"
-                                title="归档"
-                              >
-                                归档
-                              </button>
-                            )}
+                        </span>
+                      </AdminTd>
+                      <AdminTd className="text-slate-900">{item.name}</AdminTd>
+                      <AdminTd className="text-slate-700">{item.email}</AdminTd>
+                      <AdminTd className="text-slate-700">{item.formType}</AdminTd>
+                      <AdminTd>
+                        <AdminBadge tone={STATUS_BADGE_TONE[item.status] || "neutral"}>
+                          {STATUS_BADGE_LABEL[item.status] || item.status}
+                        </AdminBadge>
+                      </AdminTd>
+                      <AdminTd className="whitespace-nowrap text-slate-500">
+                        {formatTime(item.createdAt)}
+                      </AdminTd>
+                      <AdminTd>
+                        <div
+                          className="flex items-center gap-2"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          {item.status === "unread" ? (
                             <button
-                              onClick={() => handleDelete(item.id)}
-                              className="text-red-600 hover:text-red-800 text-xs"
-                              title="删除"
+                              onClick={() => handleStatusChange(item.id, "read")}
+                              className="text-blue-600 hover:text-blue-800 text-xs"
+                              title="标为已读"
                             >
-                              删除
+                              已读
                             </button>
+                          ) : item.status === "read" ? (
+                            <button
+                              onClick={() => handleStatusChange(item.id, "unread")}
+                              className="text-blue-600 hover:text-blue-800 text-xs"
+                              title="标为未读"
+                            >
+                              未读
+                            </button>
+                          ) : null}
+                          {item.status !== "archived" && (
+                            <button
+                              onClick={() => handleStatusChange(item.id, "archived")}
+                              className="text-yellow-600 hover:text-yellow-800 text-xs"
+                              title="归档"
+                            >
+                              归档
+                            </button>
+                          )}
+                          <button
+                            onClick={() => handleDelete(item.id)}
+                            className="text-red-600 hover:text-red-800 text-xs"
+                            title="删除"
+                          >
+                            删除
+                          </button>
+                        </div>
+                      </AdminTd>
+                    </tr>
+                    {isExpanded && (
+                      <tr>
+                        <AdminTd colSpan={7} className="bg-slate-50">
+                          <div className="space-y-2 text-sm">
+                            {item.phone && (
+                              <div>
+                                <span className="font-medium text-slate-700">电话：</span>
+                                <span className="text-slate-600">{item.phone}</span>
+                              </div>
+                            )}
+                            {item.company && (
+                              <div>
+                                <span className="font-medium text-slate-700">公司：</span>
+                                <span className="text-slate-600">{item.company}</span>
+                              </div>
+                            )}
+                            {item.message && (
+                              <div>
+                                <span className="font-medium text-slate-700">留言：</span>
+                                <p className="text-slate-600 mt-1 whitespace-pre-wrap">{item.message}</p>
+                              </div>
+                            )}
+                            {item.sourceUrl && (
+                              <div>
+                                <span className="font-medium text-slate-700">来源页面：</span>
+                                <span className="text-slate-600">{item.sourceUrl}</span>
+                              </div>
+                            )}
+                            {item.locale && (
+                              <div>
+                                <span className="font-medium text-slate-700">语言：</span>
+                                <span className="text-slate-600">{item.locale}</span>
+                              </div>
+                            )}
+                            {item.ipAddress && (
+                              <div>
+                                <span className="font-medium text-slate-700">IP：</span>
+                                <span className="text-slate-600">{item.ipAddress}</span>
+                              </div>
+                            )}
+                            {item.metadata && Object.keys(item.metadata).length > 0 && (
+                              <div>
+                                <span className="font-medium text-slate-700">元数据：</span>
+                                <pre className="mt-1 p-2 bg-white border border-slate-200 rounded text-xs text-slate-600 overflow-x-auto">
+                                  {JSON.stringify(item.metadata, null, 2)}
+                                </pre>
+                              </div>
+                            )}
                           </div>
-                        </td>
+                        </AdminTd>
                       </tr>
-                      {isExpanded && (
-                        <tr>
-                          <td colSpan={7} className="px-4 py-4 bg-gray-50">
-                            <div className="space-y-2 text-sm">
-                              {item.phone && (
-                                <div>
-                                  <span className="font-medium text-gray-700">电话：</span>
-                                  <span className="text-gray-600">{item.phone}</span>
-                                </div>
-                              )}
-                              {item.company && (
-                                <div>
-                                  <span className="font-medium text-gray-700">公司：</span>
-                                  <span className="text-gray-600">{item.company}</span>
-                                </div>
-                              )}
-                              {item.message && (
-                                <div>
-                                  <span className="font-medium text-gray-700">留言：</span>
-                                  <p className="text-gray-600 mt-1 whitespace-pre-wrap">{item.message}</p>
-                                </div>
-                              )}
-                              {item.sourceUrl && (
-                                <div>
-                                  <span className="font-medium text-gray-700">来源页面：</span>
-                                  <span className="text-gray-600">{item.sourceUrl}</span>
-                                </div>
-                              )}
-                              {item.locale && (
-                                <div>
-                                  <span className="font-medium text-gray-700">语言：</span>
-                                  <span className="text-gray-600">{item.locale}</span>
-                                </div>
-                              )}
-                              {item.ipAddress && (
-                                <div>
-                                  <span className="font-medium text-gray-700">IP：</span>
-                                  <span className="text-gray-600">{item.ipAddress}</span>
-                                </div>
-                              )}
-                              {item.metadata && Object.keys(item.metadata).length > 0 && (
-                                <div>
-                                  <span className="font-medium text-gray-700">元数据：</span>
-                                  <pre className="mt-1 p-2 bg-white border border-gray-200 rounded text-xs text-gray-600 overflow-x-auto">
-                                    {JSON.stringify(item.metadata, null, 2)}
-                                  </pre>
-                                </div>
-                              )}
-                            </div>
-                          </td>
-                        </tr>
-                      )}
-                    </Fragment>
-                  );
-                })}
-                {data.items.length === 0 && (
-                  <tr>
-                    <td colSpan={7} className="px-6 py-8 text-center text-sm text-gray-500">
-                      暂无表单提交记录
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+                    )}
+                  </Fragment>
+                );
+              })}
+              {data.items.length === 0 && (
+                <tr>
+                  <AdminTd colSpan={7} className="py-8 text-center text-slate-500">
+                    暂无表单提交记录
+                  </AdminTd>
+                </tr>
+              )}
+            </AdminTableBody>
+          </AdminTable>
 
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="mt-4 flex items-center justify-between">
-              <p className="text-sm text-gray-500">
-                共 {data.total} 条，第 {page}/{totalPages} 页
-              </p>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  disabled={page <= 1}
-                  className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  上一页
-                </button>
-                <button
-                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                  disabled={page >= totalPages}
-                  className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  下一页
-                </button>
-              </div>
-            </div>
-          )}
+          <AdminPagination
+            page={page}
+            totalPages={totalPages}
+            total={data.total}
+            onPageChange={setPage}
+          />
         </>
       ) : null}
     </div>

@@ -44,13 +44,15 @@ export function AdminTd({
   children,
   className = "",
   colSpan,
+  title,
 }: {
   children?: ReactNode;
   className?: string;
   colSpan?: number;
+  title?: string;
 }) {
   return (
-    <td colSpan={colSpan} className={`px-4 py-3 text-slate-700 ${className}`}>
+    <td colSpan={colSpan} title={title} className={`px-4 py-3 text-slate-700 ${className}`}>
       {children}
     </td>
   );

@@ -11,6 +11,7 @@ import {
   AdminButton,
   AdminErrorBanner,
   AdminPageHeader,
+  useAdminConfirm,
 } from "@/components/admin/ui";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 
@@ -40,6 +41,7 @@ function flattenAll(cats: Category[]): Category[] {
 
 export default function CategoriesPage() {
   useDocumentTitle("分类管理");
+  const { confirm, confirmDialog } = useAdminConfirm();
 
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
@@ -184,7 +186,14 @@ export default function CategoriesPage() {
   };
 
   const handleDelete = async (cat: Category) => {
-    if (!confirm(`Delete category "${cat.zhName || cat.enName}"?`)) return;
+    const name = cat.zhName || cat.enName;
+    const ok = await confirm({
+      title: "删除分类",
+      message: `确定删除分类「${name}」吗？此操作不可撤销。`,
+      confirmLabel: "删除",
+      danger: true,
+    });
+    if (!ok) return;
 
     setDeleting(cat.id);
     setError(null);
@@ -192,7 +201,7 @@ export default function CategoriesPage() {
       await deleteCategory(cat.id);
       await loadCategories();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Delete failed");
+      setError(err instanceof Error ? err.message : "删除失败");
     } finally {
       setDeleting(null);
     }
@@ -342,6 +351,7 @@ export default function CategoriesPage() {
 
   return (
     <div>
+      {confirmDialog}
       <AdminPageHeader
         title="分类管理"
         description="管理文章分类与层级"
@@ -481,7 +491,7 @@ export default function CategoriesPage() {
                       disabled={deleting === cat.id}
                       className="text-red-600 hover:text-red-800 text-sm disabled:opacity-50"
                     >
-                      {deleting === cat.id ? "..." : "Delete"}
+                      {deleting === cat.id ? "..." : "删除"}
                     </button>
                   </div>
                 </div>

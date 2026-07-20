@@ -15,6 +15,7 @@ import {
   AdminTableHead,
   AdminTd,
   AdminTh,
+  useAdminConfirm,
 } from "@/components/admin/ui";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { invalidateAdminQueryPrefix, useAdminQuery } from "@/lib/adminQuery";
@@ -26,6 +27,7 @@ const PAGE_SIZE = 15;
 export default function AdminArticlesPage() {
   useDocumentTitle("文章管理");
   const navigate = useNavigate();
+  const { confirm, confirmDialog } = useAdminConfirm();
 
   useEffect(() => {
     prefetchAdminEditors();
@@ -48,7 +50,13 @@ export default function AdminArticlesPage() {
 
   const handleDelete = async (article: Article) => {
     const title = article.zhTitle || article.enTitle || "未命名";
-    if (!confirm(`确定删除「${title}」吗？`)) return;
+    const ok = await confirm({
+      title: "删除文章",
+      message: `确定删除「${title}」吗？此操作不可撤销。`,
+      confirmLabel: "删除",
+      danger: true,
+    });
+    if (!ok) return;
 
     setDeleting(article.id);
     setActionError(null);
@@ -77,6 +85,7 @@ export default function AdminArticlesPage() {
 
   return (
     <div>
+      {confirmDialog}
       <AdminPageHeader
         title="文章管理"
         description={

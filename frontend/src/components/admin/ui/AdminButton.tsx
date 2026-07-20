@@ -1,4 +1,4 @@
-import type { ButtonHTMLAttributes, ReactNode } from "react";
+import { forwardRef, type ButtonHTMLAttributes, type ReactNode } from "react";
 import { adminTheme } from "./adminTheme";
 
 type Variant = "primary" | "secondary" | "danger" | "ghost";
@@ -22,17 +22,14 @@ const sizeClass: Record<Size, string> = {
   md: "px-4 py-2 text-sm",
 };
 
-export default function AdminButton({
-  variant = "primary",
-  size = "md",
-  className = "",
-  disabled,
-  children,
-  ...rest
-}: AdminButtonProps) {
+const AdminButton = forwardRef<HTMLButtonElement, AdminButtonProps>(function AdminButton(
+  { variant = "primary", size = "md", className = "", disabled, children, type = "button", ...rest },
+  ref,
+) {
   return (
     <button
-      type="button"
+      ref={ref}
+      type={type}
       disabled={disabled}
       className={`inline-flex items-center justify-center gap-1.5 rounded-lg font-medium transition-colors ${adminTheme.focusRing} ${variantClass[variant]} ${sizeClass[size]} ${
         disabled ? "opacity-50 cursor-not-allowed" : ""
@@ -42,4 +39,6 @@ export default function AdminButton({
       {children}
     </button>
   );
-}
+});
+
+export default AdminButton;
