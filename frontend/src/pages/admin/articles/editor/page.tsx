@@ -133,11 +133,13 @@ export default function ArticleEditorPage() {
 
   const wordStats = useWordStats({
     editorMode: editors.editorMode,
-    markdownContent: editors.markdownContent,
+    markdownZh: editors.markdownContent.zh ?? "",
+    markdownEn: editors.markdownContent.en ?? "",
     zhBody: form.zhBody,
     enBody: form.enBody,
     zhEditor: editors.zhEditor,
     enEditor: editors.enEditor,
+    includeEn: editors.enabledLangs.includes("en") || editors.viewLayout === "split",
     tick: `${dirty.isDirty}-${persistence.saving}`,
   });
 
@@ -412,71 +414,76 @@ export default function ArticleEditorPage() {
         onCancelSchedule={schedule.handleCancelSchedule}
         onRetrySchedule={schedule.handleRetrySchedule}
         onRefreshSchedule={schedule.loadArticleSchedule}
-        formSlug={form.slug}
-        setSlug={dirty.track(form.setSlug)}
-        formAuthor={form.author}
-        setAuthor={dirty.track(form.setAuthor)}
-        formCover={form.coverImage}
-        setCover={dirty.track(form.setCoverImage)}
-        showCoverPicker={shell.showCoverPicker}
-        setShowCoverPicker={shell.setShowCoverPicker}
-        categories={categories}
-        selectedCategoryIds={form.selectedCategoryIds}
-        onToggleCategory={(cid) => {
-          form.toggleCategory(cid);
-          dirty.touch();
+        meta={{
+          slug: form.slug,
+          setSlug: dirty.track(form.setSlug),
+          author: form.author,
+          setAuthor: dirty.track(form.setAuthor),
+          coverImage: form.coverImage,
+          setCoverImage: dirty.track(form.setCoverImage),
+          showCoverPicker: shell.showCoverPicker,
+          setShowCoverPicker: shell.setShowCoverPicker,
+          categories,
+          selectedCategoryIds: form.selectedCategoryIds,
+          onToggleCategory: (cid) => {
+            form.toggleCategory(cid);
+            dirty.touch();
+          },
+          tags,
+          selectedTagIds: form.selectedTagIds,
+          onToggleTag: (tid) => {
+            form.toggleTag(tid);
+            dirty.touch();
+          },
+          zhSeoTitle: form.zhSeoTitle,
+          setZhSeoTitle: dirty.track(form.setZhSeoTitle),
+          enSeoTitle: form.enSeoTitle,
+          setEnSeoTitle: dirty.track(form.setEnSeoTitle),
+          zhMetaDescription: form.zhMetaDescription,
+          setZhMetaDescription: dirty.track(form.setZhMetaDescription),
+          enMetaDescription: form.enMetaDescription,
+          setEnMetaDescription: dirty.track(form.setEnMetaDescription),
+          ogImage: form.ogImage,
+          setOgImage: dirty.track(form.setOgImage),
+          visibility: form.visibility,
+          setVisibility: dirty.track(form.setVisibility),
+          autoSummary: form.autoSummary,
+          setAutoSummary: dirty.track(form.setAutoSummary),
+          allowComments: form.allowComments,
+          setAllowComments: dirty.track(form.setAllowComments),
+          pinned: form.pinned,
+          setPinned: dirty.track(form.setPinned),
+          metadata: form.metadata,
+          setMetadata: dirty.track(form.setMetadata),
         }}
-        tags={tags}
-        selectedTagIds={form.selectedTagIds}
-        onToggleTag={(tid) => {
-          form.toggleTag(tid);
-          dirty.touch();
+        lang={{
+          enabledLangs: editors.enabledLangs,
+          activeLangIdx: editors.activeLangIdx,
+          viewLayout: editors.viewLayout,
+          wordStats,
+          editorMode: editors.editorMode,
+          translateBusy: bilingual.translateBusy,
+          showLangMenu: shell.showLangMenu,
+          langMenuRef,
+          onSelectLang: editors.setActiveLangIdx,
+          onRemoveLang: editors.removeLang,
+          onAddLang: (key) => {
+            editors.addLang(key);
+            shell.setShowLangMenu(false);
+          },
+          onToggleLangMenu: shell.toggleLangMenu,
+          onToggleSplit: () =>
+            editors.setViewLayout((v) => (v === "split" ? "focus" : "split")),
+          onCopyZhToEn: () => bilingual.handleCopyToOtherLang("zh"),
+          onTranslateZhToEn: () => void bilingual.handleTranslateToOtherLang("zh"),
+          onModeChange: editors.handleModeChange,
         }}
-        zhSeoTitle={form.zhSeoTitle}
-        setZhSeoTitle={dirty.track(form.setZhSeoTitle)}
-        enSeoTitle={form.enSeoTitle}
-        setEnSeoTitle={dirty.track(form.setEnSeoTitle)}
-        zhMetaDescription={form.zhMetaDescription}
-        setZhMetaDescription={dirty.track(form.setZhMetaDescription)}
-        enMetaDescription={form.enMetaDescription}
-        setEnMetaDescription={dirty.track(form.setEnMetaDescription)}
-        ogImage={form.ogImage}
-        setOgImage={dirty.track(form.setOgImage)}
-        visibility={form.visibility}
-        setVisibility={dirty.track(form.setVisibility)}
-        autoSummary={form.autoSummary}
-        setAutoSummary={dirty.track(form.setAutoSummary)}
-        allowComments={form.allowComments}
-        setAllowComments={dirty.track(form.setAllowComments)}
-        pinned={form.pinned}
-        setPinned={dirty.track(form.setPinned)}
-        metadata={form.metadata}
-        setMetadata={dirty.track(form.setMetadata)}
-        enabledLangs={editors.enabledLangs}
-        activeLangIdx={editors.activeLangIdx}
-        viewLayout={editors.viewLayout}
-        wordStats={wordStats}
-        editorMode={editors.editorMode}
-        translateBusy={bilingual.translateBusy}
-        showLangMenu={shell.showLangMenu}
-        langMenuRef={langMenuRef}
-        onSelectLang={editors.setActiveLangIdx}
-        onRemoveLang={editors.removeLang}
-        onAddLang={(key) => {
-          editors.addLang(key);
-          shell.setShowLangMenu(false);
+        toolbar={{
+          activeEditorEntry: editors.activeEntry,
+          markdownApi: editors.markdownApi,
+          findOpen: shell.findOpen,
+          onCloseFind: shell.closeFind,
         }}
-        onToggleLangMenu={shell.toggleLangMenu}
-        onToggleSplit={() =>
-          editors.setViewLayout((v) => (v === "split" ? "focus" : "split"))
-        }
-        onCopyZhToEn={() => bilingual.handleCopyToOtherLang("zh")}
-        onTranslateZhToEn={() => void bilingual.handleTranslateToOtherLang("zh")}
-        onModeChange={editors.handleModeChange}
-        activeEditorEntry={editors.activeEntry}
-        markdownApi={editors.markdownApi}
-        findOpen={shell.findOpen}
-        onCloseFind={shell.closeFind}
       />
 
       {localDraftOffer && (

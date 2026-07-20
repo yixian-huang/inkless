@@ -3,39 +3,72 @@ import type { Editor } from "@tiptap/react";
 import { countWords, htmlToPlainText } from "../bilingualUtils";
 import { WORD_STATS_DEBOUNCE_MS } from "../utils/constants";
 
+const EMPTY = { chars: 0, words: 0 };
+
+/**
+ * Debounced word/char counts for ZH (+ optional EN).
+ * Depends on scalar markdown strings, not the whole content object.
+ */
 export function useWordStats(opts: {
   editorMode: "richtext" | "markdown";
-  markdownContent: Record<string, string>;
+  markdownZh: string;
+  markdownEn: string;
   zhBody: string;
   enBody: string;
   zhEditor: Editor | null;
   enEditor: Editor | null;
+  /** When false, EN is reported as zeros without scanning the EN doc. */
+  includeEn?: boolean;
   /** Recompute when these flip (typing / save). */
   tick: unknown;
 }) {
-  const { editorMode, markdownContent, zhBody, enBody, zhEditor, enEditor, tick } = opts;
+  const {
+    editorMode,
+    markdownZh,
+    markdownEn,
+    zhBody,
+    enBody,
+    zhEditor,
+    enEditor,
+    includeEn = true,
+    tick,
+  } = opts;
+
   const [wordStats, setWordStats] = useState({
-    zh: { chars: 0, words: 0 },
-    en: { chars: 0, words: 0 },
+    zh: EMPTY,
+    en: EMPTY,
   });
 
   useEffect(() => {
     const t = window.setTimeout(() => {
       const zhText =
         editorMode === "markdown"
-          ? (markdownContent.zh ?? "")
+          ? markdownZh
           : (zhEditor?.getText() || htmlToPlainText(zhBody));
-      const enText =
-        editorMode === "markdown"
-          ? (markdownContent.en ?? "")
-          : (enEditor?.getText() || htmlToPlainText(enBody));
+
+      const enText = includeEn
+        ? editorMode === "markdown"
+          ? markdownEn
+          : (enEditor?.getText() || htmlToPlainText(enBody))
+        : "";
+
       setWordStats({
         zh: countWords(zhText),
-        en: countWords(enText),
+        en: includeEn ? countWords(enText) : EMPTY,
       });
     }, WORD_STATS_DEBOUNCE_MS);
     return () => window.clearTimeout(t);
-  }, [editorMode, markdownContent, zhBody, enBody, zhEditor, enEditor, tick]);
+  }, [
+    editorMode,
+    markdownZh,
+    markdownEn,
+    zhBody,
+    enBody,
+    zhEditor,
+    enEditor,
+    includeEn,
+    tick,
+  ]);
 
   return wordStats;
 }

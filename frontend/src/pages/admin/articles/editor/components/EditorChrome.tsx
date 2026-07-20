@@ -1,17 +1,15 @@
 import type { RefObject } from "react";
-import type { Category, Tag } from "@/api/articles";
 import type { ScheduledPublication } from "@/api/scheduledPublications";
 import type { Editor } from "@tiptap/react";
 import { EditorToolbar, type ModalControls } from "@/components/admin/RichTextEditor";
 import MarkdownToolbar from "@/components/admin/editor/MarkdownToolbar";
 import type { MarkdownSelectionApi } from "@/components/admin/editor/MarkdownToolbar";
-import ArticleForm from "../ArticleForm";
-import { SeoFieldsPanel, AdvancedSettingsPanel } from "../SeoFields";
 import type { EditorSavePhase } from "../saveStatusUtils";
 import type { EditorMetaPanel } from "../hooks/useEditorShell";
 import { EditorActionBar } from "./EditorActionBar";
 import { EditorLangBar } from "./EditorLangBar";
 import { FindReplaceBar } from "./FindReplaceBar";
+import { ChromeMetaPanels, type ChromeMetaFormProps } from "./ChromeMetaPanels";
 
 type WordStat = { chars: number; words: number };
 
@@ -20,97 +18,7 @@ type LangEntry = {
   modals: ModalControls;
 };
 
-/**
- * Sticky top chrome: action bar, meta panels, lang bar, toolbars, find bar.
- */
-export function EditorChrome({
-  zenMode,
-  title,
-  titlePlaceholder,
-  onTitleChange,
-  onBack,
-  savePhase,
-  lastSavedAt,
-  lastSaveWasAutosave,
-  metaPanel,
-  onToggleMetaPanel,
-  showVersionHistory,
-  isEditing,
-  canPublish,
-  saving,
-  articleStatus,
-  scheduledPublication,
-  scheduleLoading,
-  scheduleBusy,
-  onToggleZen,
-  onOpenHistory,
-  onOpenTemplate,
-  onPreview,
-  onFind,
-  onSave,
-  onPublish,
-  onSchedule,
-  onCancelSchedule,
-  onRetrySchedule,
-  onRefreshSchedule,
-  // meta forms
-  formSlug,
-  setSlug,
-  formAuthor,
-  setAuthor,
-  formCover,
-  setCover,
-  showCoverPicker,
-  setShowCoverPicker,
-  categories,
-  selectedCategoryIds,
-  onToggleCategory,
-  tags,
-  selectedTagIds,
-  onToggleTag,
-  zhSeoTitle,
-  setZhSeoTitle,
-  enSeoTitle,
-  setEnSeoTitle,
-  zhMetaDescription,
-  setZhMetaDescription,
-  enMetaDescription,
-  setEnMetaDescription,
-  ogImage,
-  setOgImage,
-  visibility,
-  setVisibility,
-  autoSummary,
-  setAutoSummary,
-  allowComments,
-  setAllowComments,
-  pinned,
-  setPinned,
-  metadata,
-  setMetadata,
-  // lang
-  enabledLangs,
-  activeLangIdx,
-  viewLayout,
-  wordStats,
-  editorMode,
-  translateBusy,
-  showLangMenu,
-  langMenuRef,
-  onSelectLang,
-  onRemoveLang,
-  onAddLang,
-  onToggleLangMenu,
-  onToggleSplit,
-  onCopyZhToEn,
-  onTranslateZhToEn,
-  onModeChange,
-  // toolbar / find
-  activeEditorEntry,
-  markdownApi,
-  findOpen,
-  onCloseFind,
-}: {
+export type ChromeActionProps = {
   zenMode: boolean;
   title: string;
   titlePlaceholder: string;
@@ -140,40 +48,9 @@ export function EditorChrome({
   onCancelSchedule: () => void;
   onRetrySchedule: () => void;
   onRefreshSchedule: () => void;
-  formSlug: string;
-  setSlug: (v: string) => void;
-  formAuthor: string;
-  setAuthor: (v: string) => void;
-  formCover: string;
-  setCover: (v: string) => void;
-  showCoverPicker: boolean;
-  setShowCoverPicker: (v: boolean) => void;
-  categories: Category[];
-  selectedCategoryIds: number[];
-  onToggleCategory: (id: number) => void;
-  tags: Tag[];
-  selectedTagIds: number[];
-  onToggleTag: (id: number) => void;
-  zhSeoTitle: string;
-  setZhSeoTitle: (v: string) => void;
-  enSeoTitle: string;
-  setEnSeoTitle: (v: string) => void;
-  zhMetaDescription: string;
-  setZhMetaDescription: (v: string) => void;
-  enMetaDescription: string;
-  setEnMetaDescription: (v: string) => void;
-  ogImage: string;
-  setOgImage: (v: string) => void;
-  visibility: string;
-  setVisibility: (v: string) => void;
-  autoSummary: boolean;
-  setAutoSummary: (v: boolean) => void;
-  allowComments: boolean;
-  setAllowComments: (v: boolean) => void;
-  pinned: boolean;
-  setPinned: (v: boolean) => void;
-  metadata: Record<string, unknown>;
-  setMetadata: (v: Record<string, unknown>) => void;
+};
+
+export type ChromeLangProps = {
   enabledLangs: string[];
   activeLangIdx: number;
   viewLayout: "focus" | "split";
@@ -190,114 +67,93 @@ export function EditorChrome({
   onCopyZhToEn: () => void;
   onTranslateZhToEn: () => void;
   onModeChange: (mode: "richtext" | "markdown") => void;
+};
+
+export type ChromeToolbarProps = {
   activeEditorEntry: LangEntry | undefined;
   markdownApi: MarkdownSelectionApi | null;
   findOpen: boolean;
   onCloseFind: () => void;
-}) {
+};
+
+export type EditorChromeProps = ChromeActionProps & {
+  meta: Omit<ChromeMetaFormProps, "metaPanel" | "zenMode">;
+  lang: ChromeLangProps;
+  toolbar: ChromeToolbarProps;
+};
+
+/**
+ * Sticky top chrome: action bar, meta panels, lang bar, toolbars, find bar.
+ * Props are grouped (action / meta / lang / toolbar) to keep the page call-site readable.
+ */
+export function EditorChrome({
+  meta,
+  lang,
+  toolbar,
+  ...action
+}: EditorChromeProps) {
+  const { zenMode, metaPanel, onToggleMetaPanel } = action;
+  const { editorMode } = lang;
+  const { activeEditorEntry, markdownApi, findOpen, onCloseFind } = toolbar;
+
   return (
     <div className="flex-shrink-0 z-20 bg-white border-b border-slate-200 shadow-sm">
       <EditorActionBar
-        title={title}
-        titlePlaceholder={titlePlaceholder}
-        onTitleChange={onTitleChange}
-        onBack={onBack}
-        savePhase={savePhase}
-        lastSavedAt={lastSavedAt}
-        lastSaveWasAutosave={lastSaveWasAutosave}
+        title={action.title}
+        titlePlaceholder={action.titlePlaceholder}
+        onTitleChange={action.onTitleChange}
+        onBack={action.onBack}
+        savePhase={action.savePhase}
+        lastSavedAt={action.lastSavedAt}
+        lastSaveWasAutosave={action.lastSaveWasAutosave}
         showBasicInfo={metaPanel === "basic"}
         showSeo={metaPanel === "seo"}
         showAdvanced={metaPanel === "advanced"}
-        showVersionHistory={showVersionHistory}
-        isEditing={isEditing}
-        canPublish={canPublish}
-        saving={saving}
-        articleStatus={articleStatus}
-        scheduledPublication={scheduledPublication}
-        scheduleLoading={scheduleLoading}
-        scheduleBusy={scheduleBusy}
+        showVersionHistory={action.showVersionHistory}
+        isEditing={action.isEditing}
+        canPublish={action.canPublish}
+        saving={action.saving}
+        articleStatus={action.articleStatus}
+        scheduledPublication={action.scheduledPublication}
+        scheduleLoading={action.scheduleLoading}
+        scheduleBusy={action.scheduleBusy}
         zenMode={zenMode}
-        onToggleZen={onToggleZen}
+        onToggleZen={action.onToggleZen}
         onToggleBasic={() => onToggleMetaPanel("basic")}
         onToggleSeo={() => onToggleMetaPanel("seo")}
         onToggleAdvanced={() => onToggleMetaPanel("advanced")}
-        onOpenHistory={onOpenHistory}
-        onOpenTemplate={onOpenTemplate}
-        onPreview={onPreview}
-        onFind={onFind}
-        onSave={onSave}
-        onPublish={onPublish}
-        onSchedule={onSchedule}
-        onCancelSchedule={onCancelSchedule}
-        onRetrySchedule={onRetrySchedule}
-        onRefreshSchedule={onRefreshSchedule}
+        onOpenHistory={action.onOpenHistory}
+        onOpenTemplate={action.onOpenTemplate}
+        onPreview={action.onPreview}
+        onFind={action.onFind}
+        onSave={action.onSave}
+        onPublish={action.onPublish}
+        onSchedule={action.onSchedule}
+        onCancelSchedule={action.onCancelSchedule}
+        onRetrySchedule={action.onRetrySchedule}
+        onRefreshSchedule={action.onRefreshSchedule}
       />
 
-      {!zenMode && metaPanel === "basic" && (
-        <ArticleForm
-          slug={formSlug}
-          setSlug={setSlug}
-          author={formAuthor}
-          setAuthor={setAuthor}
-          coverImage={formCover}
-          setCoverImage={setCover}
-          showCoverPicker={showCoverPicker}
-          setShowCoverPicker={setShowCoverPicker}
-          categories={categories}
-          selectedCategoryIds={selectedCategoryIds}
-          toggleCategory={onToggleCategory}
-          tags={tags}
-          selectedTagIds={selectedTagIds}
-          toggleTag={onToggleTag}
-        />
-      )}
-      {!zenMode && metaPanel === "seo" && (
-        <SeoFieldsPanel
-          zhSeoTitle={zhSeoTitle}
-          setZhSeoTitle={setZhSeoTitle}
-          enSeoTitle={enSeoTitle}
-          setEnSeoTitle={setEnSeoTitle}
-          zhMetaDescription={zhMetaDescription}
-          setZhMetaDescription={setZhMetaDescription}
-          enMetaDescription={enMetaDescription}
-          setEnMetaDescription={setEnMetaDescription}
-          ogImage={ogImage}
-          setOgImage={setOgImage}
-        />
-      )}
-      {!zenMode && metaPanel === "advanced" && (
-        <AdvancedSettingsPanel
-          visibility={visibility}
-          setVisibility={setVisibility}
-          autoSummary={autoSummary}
-          setAutoSummary={setAutoSummary}
-          allowComments={allowComments}
-          setAllowComments={setAllowComments}
-          pinned={pinned}
-          setPinned={setPinned}
-          metadata={metadata}
-          setMetadata={setMetadata}
-        />
-      )}
+      <ChromeMetaPanels metaPanel={metaPanel} zenMode={zenMode} {...meta} />
 
       {!zenMode && (
         <EditorLangBar
-          enabledLangs={enabledLangs}
-          activeLangIdx={activeLangIdx}
-          viewLayout={viewLayout}
-          wordStats={wordStats}
+          enabledLangs={lang.enabledLangs}
+          activeLangIdx={lang.activeLangIdx}
+          viewLayout={lang.viewLayout}
+          wordStats={lang.wordStats}
           editorMode={editorMode}
-          translateBusy={translateBusy}
-          showLangMenu={showLangMenu}
-          langMenuRef={langMenuRef}
-          onSelectLang={onSelectLang}
-          onRemoveLang={onRemoveLang}
-          onAddLang={onAddLang}
-          onToggleLangMenu={onToggleLangMenu}
-          onToggleSplit={onToggleSplit}
-          onCopyZhToEn={onCopyZhToEn}
-          onTranslateZhToEn={onTranslateZhToEn}
-          onModeChange={onModeChange}
+          translateBusy={lang.translateBusy}
+          showLangMenu={lang.showLangMenu}
+          langMenuRef={lang.langMenuRef}
+          onSelectLang={lang.onSelectLang}
+          onRemoveLang={lang.onRemoveLang}
+          onAddLang={lang.onAddLang}
+          onToggleLangMenu={lang.onToggleLangMenu}
+          onToggleSplit={lang.onToggleSplit}
+          onCopyZhToEn={lang.onCopyZhToEn}
+          onTranslateZhToEn={lang.onTranslateZhToEn}
+          onModeChange={lang.onModeChange}
         />
       )}
 
