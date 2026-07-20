@@ -28,10 +28,15 @@ export function useSEODefaults(): SEODefaultsView {
 
   function buildTitle(pageTitle: string): string {
     const trimmed = (pageTitle ?? "").trim();
-    if (!trimmed) return siteName || defaultTitle;
+    const site = (siteName || defaultTitle || "").trim();
+    if (!trimmed) return site || defaultTitle;
+    // Avoid "Site · Site" when callers pass the site name (e.g. theme home).
+    if (trimmed === site || trimmed === defaultTitle.trim()) {
+      return trimmed;
+    }
     return titleTemplate
       .replace("{page}", trimmed)
-      .replace("{site}", siteName || defaultTitle);
+      .replace("{site}", site || defaultTitle);
   }
 
   return { defaultTitle, titleTemplate, defaultDescription, defaultOgImage, buildTitle };

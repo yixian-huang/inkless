@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import type { Article } from "@/api/articles";
 import { useIsReadingLayout } from "@/plugins/hooks";
 import {
@@ -13,7 +14,13 @@ interface ArticleListProps {
   localeMode: LocaleMode;
   defaultLocale: Locale;
   currentLocale: Locale;
-  onSelect: (slug: string) => void;
+  /**
+   * Optional side-effect when a post is activated (analytics, focus).
+   * Navigation uses a real `<Link>` so middle-click / open-in-new-tab work.
+   */
+  onSelect?: (slug: string) => void;
+  /** Path builder; default `/blog/:slug`. */
+  hrefForSlug?: (slug: string) => string;
   loading?: boolean;
   loadingLabel?: string;
   emptyLabel?: string;
@@ -39,6 +46,7 @@ export default function ArticleList({
   defaultLocale,
   currentLocale,
   onSelect,
+  hrefForSlug = (slug) => `/blog/${slug}`,
   loading = false,
   loadingLabel = "Loading...",
   emptyLabel = "No posts yet.",
@@ -67,12 +75,13 @@ export default function ArticleList({
       {articles.map((article) => {
         const title = articleTitle(article, localeMode, defaultLocale, currentLocale);
         const body = articleBody(article, localeMode, defaultLocale, currentLocale);
+        const href = hrefForSlug(article.slug);
         return (
           <li key={article.id} className={isReading ? "py-6 first:pt-0" : "py-6 first:pt-0"}>
-            <button
-              type="button"
-              onClick={() => onSelect(article.slug)}
-              className="text-left w-full group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 rounded-sm"
+            <Link
+              to={href}
+              onClick={() => onSelect?.(article.slug)}
+              className="block text-left w-full group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 rounded-sm"
             >
               {isReading ? (
                 <div className="flex items-baseline justify-between gap-4">
@@ -110,7 +119,7 @@ export default function ArticleList({
               >
                 {articleExcerpt(body)}
               </p>
-            </button>
+            </Link>
           </li>
         );
       })}

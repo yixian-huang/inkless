@@ -94,7 +94,6 @@ export default function CategoryDetailPage() {
               localeMode={localeMode}
               defaultLocale={defaultLocale}
               currentLocale={currentLocale}
-              onSelect={(articleSlug) => navigate(`/blog/${articleSlug}`)}
               loading={loading}
               loadingLabel={t("status.loading")}
               emptyLabel={t("blog.noPosts")}

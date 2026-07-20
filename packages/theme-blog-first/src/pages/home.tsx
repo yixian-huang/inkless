@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
   ArticleList,
@@ -22,10 +22,9 @@ const HOME_RECENT_COUNT = 6;
  * only re-exports / registers it.
  */
 export default function BlogFirstHomePage() {
-  const navigate = useNavigate();
   const { t } = useTranslation("common");
   const { config } = useGlobalConfig();
-  const { buildTitle, defaultDescription, defaultOgImage } = useSEODefaults();
+  const { defaultTitle, defaultDescription, defaultOgImage } = useSEODefaults();
   const { localeMode, defaultLocale, currentLocale } = useLocaleMode();
   const isReading = useIsReadingLayout();
 
@@ -74,14 +73,15 @@ export default function BlogFirstHomePage() {
     loadRecent();
   }, [loadRecent]);
 
-  const pageTitle = buildTitle(siteName || t("blog.homeTitle"));
+  // Prefer site SEO defaultTitle ("黄逸仙 · yx.ink") over templating the bare site name.
+  const pageTitle = defaultTitle || siteName || t("blog.homeTitle");
 
   return (
     <>
       <SeoHead
         title={pageTitle}
         description={intro}
-        ogTitle={siteName}
+        ogTitle={siteName || pageTitle}
         ogDescription={intro}
         ogImage={siteConfig.brand.ogImage || defaultOgImage}
         ogType="website"
@@ -141,7 +141,6 @@ export default function BlogFirstHomePage() {
             localeMode={localeMode}
             defaultLocale={defaultLocale}
             currentLocale={currentLocale}
-            onSelect={(slug) => navigate(`/blog/${slug}`)}
             loading={loading}
             loadingLabel={t("status.loading")}
             emptyLabel={t("blog.noPosts")}

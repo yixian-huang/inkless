@@ -192,10 +192,19 @@
 /* Public article page title (outside ProseMirror) */
 .article-typography .article-page-title {
   font-family: var(--article-font-title, var(--font-heading));
+  font-feature-settings: "kern" 1, "liga" 1;
+  text-wrap: balance;
 }
 
 .article-typography .article-page-ui {
   font-family: var(--article-font-ui, var(--font-sans));
+}
+
+/* Reading: first content image after header breathes a little less tight */
+.article-reading.article-typography .tiptap.ProseMirror > img:first-child,
+.article-reading.article-typography .tiptap.ProseMirror > p:first-child > img:only-child {
+  margin-top: 0.25rem;
+  margin-bottom: 1.25rem;
 }
 
 /* Public reading — align with header/comments (no editor padding) */

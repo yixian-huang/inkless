@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { defaultTokens, type ThemeTokens } from "./tokens";
+import { mergeThemeTokens } from "./mergeThemeTokens";
 import { ThemeContext } from "./ThemeContext";
 import { useThemeManager } from "@/plugins/hooks";
 import { useBootstrap } from "@/contexts/BootstrapContext";
+import { resolveSerifHeadingStack } from "./typography/resolve";
 
 function applyTokens(tokens: ThemeTokens) {
   const root = document.documentElement;
@@ -17,7 +19,9 @@ function applyTokens(tokens: ThemeTokens) {
   root.style.setProperty("--color-on-surface-muted", tokens.colors.onSurfaceMuted);
   root.style.setProperty("--color-border", tokens.colors.border);
   root.style.setProperty("--font-sans", tokens.fonts.sans);
-  root.style.setProperty("--font-heading", tokens.fonts.heading);
+  // CSS `font-heading` should track the editorial stack used by titles, not a
+  // polluted publish that copied sans into fonts.heading.
+  root.style.setProperty("--font-heading", resolveSerifHeadingStack(tokens));
   if (tokens.fonts.mono) {
     root.style.setProperty("--font-mono", tokens.fonts.mono);
   }
@@ -27,25 +31,6 @@ function applyTokens(tokens: ThemeTokens) {
   root.style.setProperty("--layout-content-padding", tokens.layout.contentPadding);
   root.style.setProperty("--layout-section-spacing", tokens.layout.sectionSpacing);
   root.style.setProperty("--layout-content-gap", tokens.layout.contentGap);
-}
-
-function mergeWithDefaults(tokens: ThemeTokens): ThemeTokens {
-  return {
-    colors: { ...defaultTokens.colors, ...tokens.colors },
-    fonts: {
-      ...defaultTokens.fonts,
-      ...tokens.fonts,
-      mono: tokens.fonts.mono ?? defaultTokens.fonts.mono,
-    },
-    fontSources: tokens.fontSources ?? defaultTokens.fontSources,
-    typography: {
-      article: {
-        ...defaultTokens.typography?.article,
-        ...tokens.typography?.article,
-      },
-    },
-    layout: { ...defaultTokens.layout, ...tokens.layout },
-  };
 }
 
 interface ThemeProviderProps {
@@ -72,7 +57,8 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
     }
   }, [activeThemeId, baseTokens]);
 
-  // Apply theme tokens from bootstrap data
+  // Apply theme tokens from bootstrap data — merge onto active theme defaults
+  // (not the global host fallback) so theme fontSources / typography survive.
   useEffect(() => {
     if (bootstrapLoading) return;
 
@@ -80,7 +66,7 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
     if (themeTokens) {
       // The bootstrap response returns raw token data; check if it has a valid structure
       if (themeTokens.colors && themeTokens.fonts && themeTokens.layout) {
-        const merged = mergeWithDefaults(themeTokens);
+        const merged = mergeThemeTokens(baseTokens, themeTokens);
         setTokens(merged);
         applyTokens(merged);
       } else {

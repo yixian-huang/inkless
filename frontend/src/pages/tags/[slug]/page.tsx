@@ -88,7 +88,6 @@ export default function TagDetailPage() {
               localeMode={localeMode}
               defaultLocale={defaultLocale}
               currentLocale={currentLocale}
-              onSelect={(articleSlug) => navigate(`/blog/${articleSlug}`)}
               loading={loading}
               loadingLabel={t("status.loading")}
               emptyLabel={t("blog.noPosts")}

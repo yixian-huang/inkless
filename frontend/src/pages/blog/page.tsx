@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { getPublicArticles } from "@/api/articles";
 import SeoHead from "@/components/SeoHead";
@@ -13,7 +13,6 @@ import { useLocaleMode } from "@/hooks/useLocaleMode";
 const PAGE_SIZE = 12;
 
 export default function BlogPage() {
-  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { t } = useTranslation("common");
   const { buildTitle, defaultDescription } = useSEODefaults();
@@ -108,7 +107,6 @@ export default function BlogPage() {
           localeMode={localeMode}
           defaultLocale={defaultLocale}
           currentLocale={currentLocale}
-          onSelect={(slug) => navigate(`/blog/${slug}`)}
           loading={loading}
           loadingLabel={t("status.loading")}
           emptyLabel={t("blog.noPosts")}

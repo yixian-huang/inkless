@@ -53,4 +53,12 @@ describe("useSEODefaults", () => {
     const { result } = renderHook(() => useSEODefaults());
     expect(result.current.buildTitle("")).toBe("My Site");
   });
+
+  it("buildTitle does not double-append site when page equals site name", async () => {
+    vi.resetModules();
+    mock({ titleTemplate: "{page} · {site}" });
+    const { useSEODefaults } = await import("./useSEODefaults");
+    const { result } = renderHook(() => useSEODefaults());
+    expect(result.current.buildTitle("My Site")).toBe("My Site");
+  });
 });
