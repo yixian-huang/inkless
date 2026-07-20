@@ -33,7 +33,8 @@ type ArticleRepository interface {
 	List(ctx context.Context, offset, limit int, status string, categoryID *uint, tagID *uint) ([]*model.Article, int64, error)
 
 	// ListPublished returns a paginated list of published articles with optional filters.
-	// Body fields are omitted for list performance; use FindBySlug for full content.
+	// Includes body fields so public list can derive short excerpts; full HTML
+	// content for reading still comes from FindBySlug.
 	ListPublished(ctx context.Context, offset, limit int, categorySlug string, tagSlug string) ([]*model.Article, int64, error)
 
 	// Count returns the number of articles, optionally filtered by status (empty = all).

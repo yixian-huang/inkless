@@ -6,6 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"github.com/yixian-huang/inkless/backend/internal/contentexcerpt"
 	"github.com/yixian-huang/inkless/backend/internal/model"
 	"github.com/yixian-huang/inkless/backend/internal/repository"
 )
@@ -248,6 +249,7 @@ func (h *Handler) PublicGetBySlug(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": gin.H{"message": "查询文章失败"}})
 		return
 	}
+	contentexcerpt.ApplyListExcerpts(articles)
 
 	c.JSON(http.StatusOK, gin.H{
 		"category": category,

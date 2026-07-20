@@ -157,12 +157,16 @@ func (r *GormArticleRepository) List(ctx context.Context, offset, limit int, sta
 	return items, total, nil
 }
 
-// articleListSelectColumns omits large text bodies from list queries.
+// articleListSelectColumns omits large text bodies from admin list queries.
 // Column names are snake_case as stored by GORM.
 const articleListSelectColumns = "id, slug, status, zh_title, en_title, cover_image, " +
 	"zh_seo_title, en_seo_title, zh_meta_description, en_meta_description, og_image, " +
 	"category_id, author, auto_summary, allow_comments, pinned, visibility, " +
 	"scheduled_at, published_at, created_at, updated_at"
+
+// articlePublicListSelectColumns includes bodies so PublicList can build short
+// plain-text excerpts without a second query per row.
+const articlePublicListSelectColumns = articleListSelectColumns + ", zh_body, en_body"
 
 // publishedScope returns a GORM scope that applies the published article filters
 func publishedScope(categorySlug, tagSlug string) func(db *gorm.DB) *gorm.DB {
@@ -185,7 +189,8 @@ func publishedScope(categorySlug, tagSlug string) func(db *gorm.DB) *gorm.DB {
 	}
 }
 
-// ListPublished returns a paginated list of published articles
+// ListPublished returns a paginated list of published articles.
+// Includes zh_body/en_body for public list excerpts (handlers should truncate).
 func (r *GormArticleRepository) ListPublished(ctx context.Context, offset, limit int, categorySlug string, tagSlug string) ([]*model.Article, int64, error) {
 	var items []*model.Article
 	var total int64
@@ -197,7 +202,7 @@ func (r *GormArticleRepository) ListPublished(ctx context.Context, offset, limit
 	}
 
 	if err := r.db.WithContext(ctx).
-		Select(articleListSelectColumns).
+		Select(articlePublicListSelectColumns).
 		Preload("Category").
 		Preload("Categories").
 		Preload("Tags").

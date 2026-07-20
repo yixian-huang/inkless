@@ -110,15 +110,21 @@ export default function ArticleList({
                   </h3>
                 </>
               )}
-              <p
-                className={
-                  isReading
-                    ? "mt-3 text-on-surface-muted leading-relaxed line-clamp-2"
-                    : "mt-2 text-on-surface-muted line-clamp-2"
-                }
-              >
-                {articleExcerpt(body)}
-              </p>
+              {(() => {
+                const excerpt = articleExcerpt(body);
+                if (!excerpt) return null;
+                return (
+                  <p
+                    className={
+                      isReading
+                        ? "mt-3 text-on-surface-muted leading-relaxed line-clamp-2"
+                        : "mt-2 text-on-surface-muted line-clamp-2"
+                    }
+                  >
+                    {excerpt}
+                  </p>
+                );
+              })()}
             </Link>
           </li>
         );

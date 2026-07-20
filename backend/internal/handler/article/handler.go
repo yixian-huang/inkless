@@ -12,6 +12,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/yixian-huang/inkless/backend/internal/cache"
+	"github.com/yixian-huang/inkless/backend/internal/contentexcerpt"
 	"github.com/yixian-huang/inkless/backend/internal/eventbus"
 	"github.com/yixian-huang/inkless/backend/internal/middleware"
 	"github.com/yixian-huang/inkless/backend/internal/model"
@@ -117,6 +118,10 @@ func (h *Handler) PublicList(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": gin.H{"message": "查询文章失败"}})
 		return
 	}
+
+	// Replace full HTML bodies with plain-text excerpts for list cards
+	// (home / archive). Detail view still loads full body via PublicGetBySlug.
+	contentexcerpt.ApplyListExcerpts(items)
 
 	result := gin.H{
 		"items":    items,
