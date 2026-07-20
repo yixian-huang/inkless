@@ -14,7 +14,7 @@
     "test:ui": "vitest --ui"
   },
   "dependencies": {
-    "@inkless/theme-blog-first": "github:yixian-huang/inkless-theme-blog-first#main",
+    "@inkless/theme-blog-first": "github:yixian-huang/inkless-theme-blog-first#9bffe9d",
     "@codemirror/lang-html": "^6.4.11",
     "@codemirror/state": "^6.6.0",
     "@codemirror/theme-one-dark": "^6.1.3",

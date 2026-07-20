@@ -10,7 +10,7 @@
     "preview": "pnpm -C frontend preview",
     "lint": "pnpm -C frontend lint",
     "type-check": "pnpm -C frontend type-check",
-    "build:theme-blog-first": "pnpm --dir frontend/node_modules/@inkless/theme-blog-first build",
+    "build:theme-blog-first": "cd frontend/node_modules/@inkless/theme-blog-first && npm install --ignore-scripts --no-fund --no-audit && npm run build",
     "theme:umd:smoke": "pnpm run build:theme-blog-first && node scripts/theme-umd-smoke.mjs",
     "test": "pnpm -C frontend test:run",
     "test:run": "pnpm -C frontend test:run",
