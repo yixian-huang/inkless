@@ -49,6 +49,89 @@ func (s *UnifiedPageService) HandlesAudit() bool {
 	return s != nil && s.auditWriter != nil
 }
 
+// Ensure UnifiedPageService satisfies ContentPublisher.
+var _ ContentPublisher = (*UnifiedPageService)(nil)
+
+func (s *UnifiedPageService) ContentType() model.ScheduledContentType {
+	return model.ScheduledContentPage
+}
+
+// PrepareSchedule locks the current draftVersion as the job concurrency token.
+func (s *UnifiedPageService) PrepareSchedule(
+	ctx context.Context,
+	contentID uint,
+	expectedVersion *int,
+	_ *time.Time,
+	_ model.JSONMap,
+) (*int, *time.Time, error) {
+	if s == nil {
+		return nil, nil, errors.New("page publication service is not configured")
+	}
+	page, err := s.pageRepo.FindByID(ctx, contentID)
+	if err != nil {
+		return nil, nil, err
+	}
+	resolved := page.DraftVersion
+	if expectedVersion != nil {
+		resolved = *expectedVersion
+	}
+	if resolved != page.DraftVersion {
+		return nil, nil, ErrPageVersionConflict
+	}
+	return &resolved, nil, nil
+}
+
+// ExecuteScheduled publishes a page for a claimed schedule job.
+func (s *UnifiedPageService) ExecuteScheduled(
+	ctx context.Context,
+	contentID uint,
+	_ time.Time,
+	actorID uint,
+	expectedVersion *int,
+	_ *time.Time,
+	_ model.JSONMap,
+) error {
+	if s == nil {
+		return errors.New("page publication service is not configured")
+	}
+	page, err := s.pageRepo.FindByID(ctx, contentID)
+	if err != nil {
+		return err
+	}
+	// Idempotent: already live with no pending schedule marker.
+	if page.Status == "published" && page.PublishedAt != nil && page.ScheduledAt == nil {
+		return nil
+	}
+	if expectedVersion == nil {
+		return errors.New("scheduled page job has no expected version")
+	}
+	return s.PublishScheduled(ctx, contentID, *expectedVersion, actorID)
+}
+
+// MarkScheduled sets page schedule metadata used by admin UI / status filters.
+func (s *UnifiedPageService) MarkScheduled(ctx context.Context, contentID uint, scheduledAt time.Time) error {
+	_, err := s.Schedule(ctx, contentID, scheduledAt)
+	return err
+}
+
+// ClearSchedule clears page schedule metadata after job cancel.
+func (s *UnifiedPageService) ClearSchedule(ctx context.Context, contentID uint) error {
+	_, err := s.CancelSchedule(ctx, contentID)
+	return err
+}
+
+// Describe returns the live page title/slug (pages do not snapshot title in payload).
+func (s *UnifiedPageService) Describe(ctx context.Context, contentID uint, _ model.JSONMap) (title, slug string) {
+	if s == nil || s.pageRepo == nil {
+		return "", ""
+	}
+	page, err := s.pageRepo.FindByID(ctx, contentID)
+	if err != nil {
+		return "", ""
+	}
+	return page.ZhTitle, page.Slug
+}
+
 // Publish copies DraftConfig → PublishedConfig, creates a version record.
 func (s *UnifiedPageService) Publish(ctx context.Context, pageID uint, expectedDraftVersion int, userID uint) (err error) {
 	return s.publish(ctx, pageID, expectedDraftVersion, userID, false)

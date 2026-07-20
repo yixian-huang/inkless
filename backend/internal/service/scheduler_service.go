@@ -19,27 +19,39 @@ const (
 )
 
 type SchedulerService struct {
-	jobRepo    repository.ScheduledPublishJobRepository
-	articleSvc *ArticlePublicationService
-	pageSvc    *UnifiedPageService
-	logger     *slog.Logger
-	done       chan struct{}
-	startOnce  sync.Once
-	stopOnce   sync.Once
-	wg         sync.WaitGroup
+	jobRepo repository.ScheduledPublishJobRepository
+	kernel  *PublicationKernel
+	logger  *slog.Logger
+	done    chan struct{}
+	startOnce sync.Once
+	stopOnce  sync.Once
+	wg        sync.WaitGroup
 }
 
+// NewSchedulerService wires the durable schedule queue onto the publication
+// kernel. Pass any ContentPublisher implementations (article, page, …).
 func NewSchedulerService(
 	jobRepo repository.ScheduledPublishJobRepository,
-	articleSvc *ArticlePublicationService,
-	pageSvc *UnifiedPageService,
+	publishers ...ContentPublisher,
 ) *SchedulerService {
 	return &SchedulerService{
-		jobRepo:    jobRepo,
-		articleSvc: articleSvc,
-		pageSvc:    pageSvc,
-		logger:     slog.Default(),
-		done:       make(chan struct{}),
+		jobRepo: jobRepo,
+		kernel:  NewPublicationKernel(publishers...),
+		logger:  slog.Default(),
+		done:    make(chan struct{}),
+	}
+}
+
+// NewSchedulerServiceWithKernel is useful in tests that inject a custom kernel.
+func NewSchedulerServiceWithKernel(
+	jobRepo repository.ScheduledPublishJobRepository,
+	kernel *PublicationKernel,
+) *SchedulerService {
+	return &SchedulerService{
+		jobRepo: jobRepo,
+		kernel:  kernel,
+		logger:  slog.Default(),
+		done:    make(chan struct{}),
 	}
 }
 
@@ -71,6 +83,11 @@ func (s *SchedulerService) Schedule(
 	if err := s.jobRepo.Schedule(ctx, job); err != nil {
 		return nil, err
 	}
+	// Note: do not call MarkScheduled here. Resource-row writes (status /
+	// scheduled_at) bump UpdatedAt and would invalidate article concurrency
+	// tokens captured in PrepareSchedule. The durable job is the source of
+	// truth; handlers may call ContentPublisher.MarkScheduled explicitly when
+	// they need resource-level UX status without an intervening lock.
 	return job, nil
 }
 
@@ -91,6 +108,7 @@ func (s *SchedulerService) Reschedule(
 	var expectedUpdatedAt *time.Time
 	switch current.ContentType {
 	case model.ScheduledContentArticle:
+		// Preserve original version lock when only the time is changed.
 		if publishPayload == nil {
 			resolvedPayload = current.PublishPayload
 			expectedUpdatedAt = current.ExpectedUpdatedAt
@@ -127,11 +145,7 @@ func (s *SchedulerService) Reschedule(
 }
 
 func (s *SchedulerService) Cancel(ctx context.Context, jobID uint, actorID uint, cancelledAt time.Time) (*model.ScheduledPublishJob, error) {
-	job, err := s.jobRepo.Cancel(ctx, jobID, actorID, cancelledAt)
-	if err != nil {
-		return nil, err
-	}
-	return job, nil
+	return s.jobRepo.Cancel(ctx, jobID, actorID, cancelledAt)
 }
 
 func (s *SchedulerService) Retry(
@@ -184,30 +198,7 @@ func (s *SchedulerService) DescribeResource(
 	if job == nil {
 		return "", ""
 	}
-	switch job.ContentType {
-	case model.ScheduledContentArticle:
-		if payload, err := decodeScheduledArticlePayload(job.PublishPayload); err == nil && payload != nil {
-			if payload.ZhTitle != nil {
-				title = *payload.ZhTitle
-			}
-			if payload.Slug != nil {
-				slug = *payload.Slug
-			}
-		}
-		if title != "" || slug != "" || s.articleSvc == nil {
-			return title, slug
-		}
-		if article, err := s.articleSvc.articleRepo.FindByID(ctx, job.ContentID); err == nil {
-			return article.ZhTitle, article.Slug
-		}
-	case model.ScheduledContentPage:
-		if s.pageSvc != nil {
-			if page, err := s.pageSvc.pageRepo.FindByID(ctx, job.ContentID); err == nil {
-				return page.ZhTitle, page.Slug
-			}
-		}
-	}
-	return title, slug
+	return s.kernel.Describe(ctx, job.ContentType, job.ContentID, job.PublishPayload)
 }
 
 // PublishOverdue preserves the old public method name while using the durable queue.
@@ -237,30 +228,16 @@ func (s *SchedulerService) runJob(ctx context.Context, job *model.ScheduledPubli
 		Actor:   "scheduler",
 		ActorID: job.CreatedBy,
 	})
-	var err error
-	switch job.ContentType {
-	case model.ScheduledContentArticle:
-		if s.articleSvc == nil {
-			err = errors.New("article publication service is not configured")
-		} else {
-			_, err = s.articleSvc.Publish(
-				ctx,
-				job.ContentID,
-				now,
-				job.CreatedBy,
-				job.ExpectedUpdatedAt,
-				job.PublishPayload,
-			)
-		}
-	case model.ScheduledContentPage:
-		if s.pageSvc == nil {
-			err = errors.New("page publication service is not configured")
-		} else {
-			err = s.publishPage(ctx, job)
-		}
-	default:
-		err = fmt.Errorf("unsupported content type %q", job.ContentType)
-	}
+	err := s.kernel.ExecuteScheduled(
+		ctx,
+		job.ContentType,
+		job.ContentID,
+		now,
+		job.CreatedBy,
+		job.ExpectedVersion,
+		job.ExpectedUpdatedAt,
+		job.PublishPayload,
+	)
 	if err != nil {
 		retryAt := now.Add(time.Duration(job.Attempts) * time.Minute)
 		if markErr := s.jobRepo.MarkFailed(ctx, job, err.Error(), retryAt, now); markErr != nil {
@@ -274,20 +251,6 @@ func (s *SchedulerService) runJob(ctx context.Context, job *model.ScheduledPubli
 	return nil
 }
 
-func (s *SchedulerService) publishPage(ctx context.Context, job *model.ScheduledPublishJob) error {
-	page, err := s.pageSvc.pageRepo.FindByID(ctx, job.ContentID)
-	if err != nil {
-		return err
-	}
-	if page.Status == "published" && page.PublishedAt != nil && page.ScheduledAt == nil {
-		return nil
-	}
-	if job.ExpectedVersion == nil {
-		return errors.New("scheduled page job has no expected version")
-	}
-	return s.pageSvc.PublishScheduled(ctx, job.ContentID, *job.ExpectedVersion, job.CreatedBy)
-}
-
 func (s *SchedulerService) prepareSchedule(
 	ctx context.Context,
 	contentType model.ScheduledContentType,
@@ -296,42 +259,14 @@ func (s *SchedulerService) prepareSchedule(
 	expectedUpdatedAt *time.Time,
 	publishPayload model.JSONMap,
 ) (*int, *time.Time, error) {
-	switch contentType {
-	case model.ScheduledContentArticle:
-		if s.articleSvc == nil {
-			return nil, nil, errors.New("article publication service is not configured")
-		}
-		article, err := s.articleSvc.articleRepo.FindByID(ctx, contentID)
-		if err != nil {
-			return nil, nil, err
-		}
-		if err := s.articleSvc.ValidatePublishPayload(ctx, publishPayload); err != nil {
-			return nil, nil, err
-		}
-		if expectedUpdatedAt != nil && !article.UpdatedAt.Equal(*expectedUpdatedAt) {
-			return nil, nil, ErrArticleVersionConflict
-		}
-		resolvedUpdatedAt := article.UpdatedAt
-		return nil, &resolvedUpdatedAt, nil
-	case model.ScheduledContentPage:
-		if s.pageSvc == nil {
-			return nil, nil, errors.New("page publication service is not configured")
-		}
-		page, err := s.pageSvc.pageRepo.FindByID(ctx, contentID)
-		if err != nil {
-			return nil, nil, err
-		}
-		resolved := page.DraftVersion
-		if expectedVersion != nil {
-			resolved = *expectedVersion
-		}
-		if resolved != page.DraftVersion {
-			return nil, nil, ErrPageVersionConflict
-		}
-		return &resolved, nil, nil
-	default:
-		return nil, nil, fmt.Errorf("unsupported content type %q", contentType)
-	}
+	return s.kernel.PrepareSchedule(
+		ctx,
+		contentType,
+		contentID,
+		expectedVersion,
+		expectedUpdatedAt,
+		publishPayload,
+	)
 }
 
 func (s *SchedulerService) Start() {

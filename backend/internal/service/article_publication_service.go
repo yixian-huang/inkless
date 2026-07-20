@@ -50,6 +50,86 @@ func (s *ArticlePublicationService) WithAuditWriter(writer audit.Writer) *Articl
 	return s
 }
 
+// Ensure ArticlePublicationService satisfies ContentPublisher.
+var _ ContentPublisher = (*ArticlePublicationService)(nil)
+
+func (s *ArticlePublicationService) ContentType() model.ScheduledContentType {
+	return model.ScheduledContentArticle
+}
+
+// PrepareSchedule validates payload and captures UpdatedAt as the concurrency token.
+func (s *ArticlePublicationService) PrepareSchedule(
+	ctx context.Context,
+	contentID uint,
+	_ *int,
+	expectedUpdatedAt *time.Time,
+	payload model.JSONMap,
+) (*int, *time.Time, error) {
+	if s == nil {
+		return nil, nil, errors.New("article publication service is not configured")
+	}
+	article, err := s.articleRepo.FindByID(ctx, contentID)
+	if err != nil {
+		return nil, nil, err
+	}
+	if err := s.ValidatePublishPayload(ctx, payload); err != nil {
+		return nil, nil, err
+	}
+	if expectedUpdatedAt != nil && !article.UpdatedAt.Equal(*expectedUpdatedAt) {
+		return nil, nil, ErrArticleVersionConflict
+	}
+	resolvedUpdatedAt := article.UpdatedAt
+	return nil, &resolvedUpdatedAt, nil
+}
+
+// ExecuteScheduled publishes an article for a claimed schedule job.
+func (s *ArticlePublicationService) ExecuteScheduled(
+	ctx context.Context,
+	contentID uint,
+	publishedAt time.Time,
+	actorID uint,
+	_ *int,
+	expectedUpdatedAt *time.Time,
+	payload model.JSONMap,
+) error {
+	if s == nil {
+		return errors.New("article publication service is not configured")
+	}
+	_, err := s.Publish(ctx, contentID, publishedAt, actorID, expectedUpdatedAt, payload)
+	return err
+}
+
+// MarkScheduled sets article schedule metadata used by admin UI / status filters.
+func (s *ArticlePublicationService) MarkScheduled(ctx context.Context, contentID uint, scheduledAt time.Time) error {
+	_, err := s.Schedule(ctx, contentID, scheduledAt)
+	return err
+}
+
+// ClearSchedule clears article schedule metadata after job cancel.
+func (s *ArticlePublicationService) ClearSchedule(ctx context.Context, contentID uint) error {
+	_, err := s.CancelSchedule(ctx, contentID)
+	return err
+}
+
+// Describe prefers the scheduled payload snapshot, then falls back to the live row.
+func (s *ArticlePublicationService) Describe(ctx context.Context, contentID uint, payload model.JSONMap) (title, slug string) {
+	if payloadDecoded, err := decodeScheduledArticlePayload(payload); err == nil && payloadDecoded != nil {
+		if payloadDecoded.ZhTitle != nil {
+			title = *payloadDecoded.ZhTitle
+		}
+		if payloadDecoded.Slug != nil {
+			slug = *payloadDecoded.Slug
+		}
+	}
+	if title != "" || slug != "" || s == nil || s.articleRepo == nil {
+		return title, slug
+	}
+	if article, err := s.articleRepo.FindByID(ctx, contentID); err == nil {
+		return article.ZhTitle, article.Slug
+	}
+	return title, slug
+}
+
 type scheduledArticlePayload struct {
 	Slug              *string        `json:"slug"`
 	ZhTitle           *string        `json:"zhTitle"`

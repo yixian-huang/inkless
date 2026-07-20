@@ -229,7 +229,11 @@ func TestSchedulerPublishesArticleSnapshotWithoutChangingLiveContentEarly(t *tes
 	require.NoError(t, err)
 	require.Equal(t, model.ArticleStatusPublished, beforeDue.Status)
 	require.Equal(t, "Old title", beforeDue.ZhTitle)
+	// Job repo projects scheduled_at onto the content row (without going
+	// through ContentPublisher.MarkScheduled, which would Save() and bump
+	// UpdatedAt). Live title/body stay on the old snapshot until fire time.
 	require.NotNil(t, beforeDue.ScheduledAt)
+	require.Equal(t, "Old body", beforeDue.ZhBody)
 
 	count, err := h.scheduler.RunDue(ctx, now)
 	require.NoError(t, err)
