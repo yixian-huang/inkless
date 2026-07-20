@@ -63,6 +63,7 @@ describe("admin route access metadata", () => {
 
   it("keeps supported capabilities visible in navigation", () => {
     expect(isAdminRouteVisibleInNavigation("/admin/storage")).toBe(true);
+    expect(isAdminRouteVisibleInNavigation("/admin/api-keys")).toBe(true);
     expect(isAdminRouteVisibleInNavigation("/admin/wizard")).toBe(true);
     expect(isAdminRouteVisibleInNavigation("/admin/ai-settings")).toBe(true);
     expect(isAdminRouteVisibleInNavigation("/admin/migration")).toBe(true);
@@ -77,9 +78,11 @@ describe("admin route access metadata", () => {
       "audit_logs:read",
       "system:manage",
       "pages:create",
+      "media:create",
     ]);
     expect(
       hasAdminRoutePermission(getAdminRoutePermission("/admin/settings"), (p) => p === "backups:read"),
     ).toBe(true);
+    expect(getAdminRoutePermission("/admin/api-keys")).toBe("media:create");
   });
 });

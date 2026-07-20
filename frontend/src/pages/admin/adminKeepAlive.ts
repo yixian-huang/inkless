@@ -38,6 +38,7 @@ export const ADMIN_KEEP_ALIVE_PATHS = new Set<string>([
   "/admin/email-settings",
   "/admin/ai-settings",
   "/admin/storage",
+  "/admin/api-keys",
   "/admin/translation",
   "/admin/system-status",
 ]);

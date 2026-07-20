@@ -33,6 +33,8 @@ export const adminRouteAccess: AdminRouteAccess[] = [
   { path: "/admin/ai-settings", permission: "settings:manage", status: "production" },
   { path: "/admin/storage", permission: "settings:manage", status: "production" },
   { path: "/admin/translation", permission: "settings:manage", status: "production" },
+  // Personal API keys for PicGo / CLI (owner-managed; backend needs session JWT)
+  { path: "/admin/api-keys", permission: "media:create", status: "production" },
   { path: "/admin/wizard", permission: "pages:create", status: "production" },
   { path: "/admin/migration", permission: "system:manage", status: "production" },
   { path: "/admin/system-status", permission: "system:manage", status: "production" },
@@ -44,6 +46,7 @@ export const adminRouteAccess: AdminRouteAccess[] = [
       "audit_logs:read",
       "system:manage",
       "pages:create",
+      "media:create",
     ],
     status: "production",
   },

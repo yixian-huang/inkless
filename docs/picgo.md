@@ -8,8 +8,9 @@
 
 ## 1. 创建 API Key
 
-1. 用管理员/有 `media:create` 权限的账号登录后台。  
-2. 调用（或未来设置页 UI）：
+1. 用有 `media:create` 权限的账号登录后台。  
+2. 打开 **设置 → API Key**（`/admin/api-keys`）→ **新建 Key**，复制明文（仅一次）。  
+3. 也可用 API（session JWT，不可用 `ink_` 自管 Key）：
 
 ```bash
 # 先 JWT 登录拿 access token（字段名以 /auth/login 实际响应为准）

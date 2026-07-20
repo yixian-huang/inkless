@@ -9,6 +9,7 @@ import {
   FileText,
   HardDrive,
   Image,
+  KeyRound,
   LayoutDashboard,
   Languages,
   Mail,
@@ -254,6 +255,15 @@ export const adminNavGroups: AdminNavGroup[] = [
         group: "settings",
         icon: HardDrive,
         description: "本地与对象存储",
+        settingsSection: "integrations",
+      },
+      {
+        id: "api-keys",
+        path: "/admin/api-keys",
+        label: "API Key",
+        group: "settings",
+        icon: KeyRound,
+        description: "PicGo 等客户端上传密钥",
         settingsSection: "integrations",
       },
       {

@@ -45,6 +45,7 @@ export const adminRouteLoaders: Record<string, AdminRouteLoader> = {
   "/admin/comments": () => import("../../modules/comment/admin/page"),
   "/admin/roles": () => import("./roles/page"),
   "/admin/storage": () => import("./storage/page"),
+  "/admin/api-keys": () => import("./api-keys/page"),
   "/admin/email-settings": () => import("./email-settings/page"),
   "/admin/site-config": () => import("./site-config/page"),
   "/admin/features": () => import("./features/page"),

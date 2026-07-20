@@ -14,4 +14,9 @@ describe("admin route configuration", () => {
 
     expect(matches?.at(-1)?.route.path).toBe("site-config");
   });
+
+  it("registers the API keys settings page", () => {
+    const matches = matchRoutes(staticRoutes, "/admin/api-keys");
+    expect(matches?.at(-1)?.route.path).toBe("api-keys");
+  });
 });

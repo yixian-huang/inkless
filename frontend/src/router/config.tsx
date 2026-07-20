@@ -35,6 +35,7 @@ const AdminQAPage = lazy(adminRouteLoaders["/admin/qa"]);
 const AdminWizardPage = lazy(adminRouteLoaders["/admin/wizard"]);
 const AdminRolesPage = lazy(adminRouteLoaders["/admin/roles"]);
 const AdminStoragePage = lazy(adminRouteLoaders["/admin/storage"]);
+const AdminAPIKeysPage = lazy(adminRouteLoaders["/admin/api-keys"]);
 const AdminEmailSettingsPage = lazy(adminRouteLoaders["/admin/email-settings"]);
 const AdminSiteConfigPage = lazy(adminRouteLoaders["/admin/site-config"]);
 const AdminFeaturesPage = lazy(adminRouteLoaders["/admin/features"]);
@@ -205,6 +206,10 @@ export const staticRoutes: RouteObject[] = [
       {
         path: "storage",
         element: <AdminStoragePage />,
+      },
+      {
+        path: "api-keys",
+        element: <AdminAPIKeysPage />,
       },
       {
         path: "email-settings",

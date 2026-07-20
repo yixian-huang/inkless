@@ -73,6 +73,13 @@ describe("adminNav registry", () => {
     expect(items.every((i) => i.id !== "settings-hub")).toBe(true);
     expect(items.some((i) => i.path === "/admin/ai-settings")).toBe(true);
     expect(items.some((i) => i.path === "/admin/audit-logs")).toBe(false);
+    expect(items.some((i) => i.path === "/admin/api-keys")).toBe(false);
+  });
+
+  it("exposes API keys for media:create", () => {
+    const items = getSettingsHubItems((p) => p === "media:create");
+    expect(items.some((i) => i.path === "/admin/api-keys")).toBe(true);
+    expect(items.some((i) => i.path === "/admin/ai-settings")).toBe(false);
   });
 
   it("adminRouteAccess still lists known production capabilities", () => {
