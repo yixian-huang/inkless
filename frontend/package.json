@@ -20,7 +20,7 @@
     "@codemirror/theme-one-dark": "^6.1.3",
     "@codemirror/view": "^6.40.0",
     "@inkless/theme-blog-first": "github:yixian-huang/inkless-theme-blog-first#9bffe9d",
-    "@inkless/theme-product-first": "github:yixian-huang/inkless-theme-product-first#836d5cf",
+    "@inkless/theme-product-first": "github:yixian-huang/inkless-theme-product-first#336e93d",
     "@stripe/react-stripe-js": "4.0.2",
     "@supabase/supabase-js": "2.57.4",
     "@tiptap/core": "^3.20.0",

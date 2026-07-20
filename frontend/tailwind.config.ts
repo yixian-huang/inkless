@@ -3,6 +3,9 @@ export default {
     content: [
       "./index.html",
       "./src/**/*.{js,ts,jsx,tsx}",
+      // Built-in themes ship utility classes outside ./src — must be scanned or layout collapses
+      "./node_modules/@inkless/theme-product-first/src/**/*.{js,ts,jsx,tsx}",
+      "./node_modules/@inkless/theme-blog-first/src/**/*.{js,ts,jsx,tsx}",
     ],
     theme: {
       extend: {
