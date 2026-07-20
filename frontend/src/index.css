@@ -362,69 +362,92 @@
   background: #f3f4f6;
   color: #374151;
 }
+.block-handle-menu {
+  min-width: 132px;
+  padding: 4px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.02)),
+    rgba(15, 23, 42, 0.94);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow:
+    0 12px 28px rgba(15, 23, 42, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  z-index: 50;
+}
 .block-handle-menu-item {
   display: block;
   width: 100%;
-  padding: 6px 12px;
+  padding: 7px 12px;
   border: none;
   background: none;
   text-align: left;
   font-size: 13px;
-  color: #374151;
+  color: #e2e8f0;
   cursor: pointer;
-  border-radius: 4px;
-  transition: background 0.1s;
+  border-radius: 8px;
+  transition: background 120ms ease, color 120ms ease;
 }
 .block-handle-menu-item:hover {
-  background: #f3f4f6;
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
 }
 .block-handle-menu-danger {
-  color: #dc2626;
+  color: #fca5a5;
 }
 .block-handle-menu-danger:hover {
-  background: #fef2f2;
+  background: rgba(239, 68, 68, 0.2);
+  color: #fecaca;
 }
 
-/* ─── Block Toolbar (hover select/delete for complex blocks) ─── */
+/* ─── Block Toolbar (dark glass, matches bubble menu) ─── */
 .block-toolbar {
   position: absolute;
   top: 4px;
   right: 4px;
+  z-index: 20;
   display: flex;
   gap: 2px;
-  z-index: 20;
-  background: white;
-  border: 1px solid #e5e7eb;
-  border-radius: 6px;
-  padding: 2px;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+  padding: 3px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.02)),
+    rgba(15, 23, 42, 0.9);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow:
+    0 8px 20px rgba(15, 23, 42, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
   opacity: 0;
-  transition: opacity 0.15s;
+  transition: opacity 150ms ease;
 }
 .block-toolbar-active > .block-toolbar {
   opacity: 1;
 }
 .block-toolbar-btn {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 24px;
-  height: 24px;
-  border: none;
-  background: transparent;
-  border-radius: 4px;
-  cursor: pointer;
-  color: #6b7280;
+  width: 26px;
+  height: 26px;
   padding: 0;
-  transition: color 0.15s, background 0.15s;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: #cbd5e1;
+  cursor: pointer;
+  transition: color 140ms ease, background 140ms ease;
 }
 .block-toolbar-btn:hover {
-  background: #f3f4f6;
-  color: #374151;
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
 }
 .block-toolbar-btn-danger:hover {
-  background: #fef2f2;
-  color: #dc2626;
+  background: rgba(239, 68, 68, 0.22);
+  color: #fecaca;
 }
 .block-node-selected {
   outline: 2px solid #3b82f6;
@@ -437,122 +460,241 @@
   padding-left: 3rem;
 }
 
-/* ─── Bubble Menu ─── */
+/* ─── Bubble Menu (dark glass floating surface) ─── */
 .bubble-menu-wrapper {
   z-index: 40;
 }
 .bubble-menu {
   display: flex;
   align-items: center;
-  background: #1f2937;
-  border-radius: 8px;
-  padding: 4px;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.24);
-  animation: bubble-menu-fade-in 0.15s ease-out;
+  gap: 2px;
+  padding: 5px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.02)),
+    rgba(15, 23, 42, 0.92);
+  backdrop-filter: blur(16px) saturate(1.2);
+  -webkit-backdrop-filter: blur(16px) saturate(1.2);
+  box-shadow:
+    0 0 0 1px rgba(15, 23, 42, 0.35),
+    0 10px 28px rgba(15, 23, 42, 0.45),
+    0 2px 6px rgba(15, 23, 42, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  animation: bubble-menu-fade-in 160ms cubic-bezier(0.16, 1, 0.3, 1);
+  color: #e2e8f0;
 }
 @keyframes bubble-menu-fade-in {
-  from { opacity: 0; transform: translateY(4px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bubble-menu {
+    animation: none;
+  }
 }
 .bubble-menu-btn {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 28px;
-  height: 28px;
+  min-width: 30px;
+  height: 30px;
+  padding: 0 6px;
   border: none;
+  border-radius: 9px;
   background: transparent;
-  border-radius: 4px;
-  cursor: pointer;
-  color: #d1d5db;
-  padding: 0 4px;
+  color: #cbd5e1;
   font-size: 13px;
-  transition: color 0.15s, background 0.15s;
+  line-height: 1;
+  cursor: pointer;
+  transition:
+    color 140ms ease,
+    background 140ms ease,
+    box-shadow 140ms ease,
+    transform 140ms ease;
 }
 .bubble-menu-btn:hover {
-  background: rgba(255,255,255,0.1);
+  background: rgba(255, 255, 255, 0.1);
   color: #ffffff;
 }
-.bubble-menu-btn-active {
-  background: rgba(59,130,246,0.3);
-  color: #93c5fd;
+.bubble-menu-btn:active {
+  transform: scale(0.96);
+  background: rgba(255, 255, 255, 0.14);
 }
-.bubble-menu-btn-danger:hover {
-  background: rgba(239,68,68,0.2);
+.bubble-menu-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.55);
+}
+.bubble-menu-btn-active {
+  background: rgba(59, 130, 246, 0.28);
+  color: #bfdbfe;
+  box-shadow: inset 0 0 0 1px rgba(147, 197, 253, 0.28);
+}
+.bubble-menu-btn-active:hover {
+  background: rgba(59, 130, 246, 0.38);
+  color: #dbeafe;
+}
+.bubble-menu-btn-danger {
   color: #fca5a5;
 }
-
-/* ─── Link Edit Popover ─── */
-.link-edit-popover {
-  padding: 4px;
+.bubble-menu-btn-danger:hover {
+  background: rgba(239, 68, 68, 0.22);
+  color: #fecaca;
 }
-.link-edit-input {
-  width: 200px;
-  padding: 4px 8px;
-  font-size: 13px;
-  background: #374151;
-  border: 1px solid #4b5563;
-  border-radius: 4px;
-  color: #f3f4f6;
-  outline: none;
-  transition: border-color 0.15s;
+.bubble-menu-divider {
+  width: 1px;
+  height: 16px;
+  margin: 0 3px;
+  background: linear-gradient(
+    180deg,
+    transparent,
+    rgba(148, 163, 184, 0.45),
+    transparent
+  );
+  flex-shrink: 0;
 }
-.link-edit-input:focus {
-  border-color: #3b82f6;
-}
-.link-edit-input::placeholder {
-  color: #6b7280;
-}
-.link-edit-btn {
-  display: flex;
+.bubble-menu-highlight-swatch {
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
-  border: none;
+  min-width: 1rem;
+  height: 1rem;
+  padding: 0 3px;
   border-radius: 4px;
+  background: rgba(254, 240, 138, 0.92);
+  color: #0f172a;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+/* ─── Link Edit Popover (inside dark bubble) ─── */
+.link-edit-popover {
+  padding: 2px 4px 4px;
+  min-width: 248px;
+}
+.link-edit-input {
+  width: 196px;
+  padding: 7px 10px;
+  font-size: 13px;
+  line-height: 1.2;
+  background: rgba(15, 23, 42, 0.65);
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  border-radius: 9px;
+  color: #f8fafc;
+  outline: none;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.2);
+  transition: border-color 140ms ease, box-shadow 140ms ease, background 140ms ease;
+}
+.link-edit-input:hover {
+  border-color: rgba(148, 163, 184, 0.42);
+}
+.link-edit-input:focus {
+  border-color: rgba(96, 165, 250, 0.7);
+  background: rgba(15, 23, 42, 0.85);
+  box-shadow:
+    inset 0 1px 2px rgba(0, 0, 0, 0.2),
+    0 0 0 3px rgba(59, 130, 246, 0.22);
+}
+.link-edit-input::placeholder {
+  color: #64748b;
+}
+.link-edit-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: none;
+  border-radius: 9px;
   cursor: pointer;
-  transition: background 0.15s;
+  transition: background 140ms ease, color 140ms ease, transform 140ms ease;
+}
+.link-edit-btn:active {
+  transform: scale(0.96);
 }
 .link-edit-btn-save {
-  background: #2563eb;
+  background: linear-gradient(180deg, #3b82f6, #2563eb);
   color: white;
+  box-shadow: 0 1px 2px rgba(37, 99, 235, 0.35);
 }
 .link-edit-btn-save:hover {
-  background: #1d4ed8;
+  background: linear-gradient(180deg, #60a5fa, #2563eb);
 }
 .link-edit-btn-remove {
   background: transparent;
-  color: #9ca3af;
+  color: #94a3b8;
 }
 .link-edit-btn-remove:hover {
-  background: rgba(239,68,68,0.2);
-  color: #fca5a5;
+  background: rgba(239, 68, 68, 0.2);
+  color: #fecaca;
+}
+.link-edit-check {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  font-size: 12px;
+  color: #94a3b8;
+  cursor: pointer;
+  user-select: none;
+}
+.link-edit-check input {
+  width: 14px;
+  height: 14px;
+  border-radius: 4px;
+  accent-color: #3b82f6;
+  cursor: pointer;
 }
 
-/* ─── Floating Menu ─── */
+/* ─── Floating Menu (+ on empty paragraph) ─── */
 .floating-menu-wrapper {
   z-index: 30;
 }
 .floating-menu-btn {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 24px;
-  height: 24px;
-  border: 1px solid #d1d5db;
-  background: white;
-  border-radius: 6px;
-  cursor: pointer;
-  color: #9ca3af;
+  width: 28px;
+  height: 28px;
   padding: 0;
-  transition: all 0.15s;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.03)),
+    rgba(15, 23, 42, 0.88);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  color: #94a3b8;
+  cursor: pointer;
+  box-shadow:
+    0 6px 16px rgba(15, 23, 42, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  transition:
+    color 140ms ease,
+    border-color 140ms ease,
+    background 140ms ease,
+    box-shadow 140ms ease,
+    transform 140ms ease;
 }
 .floating-menu-btn:hover {
-  border-color: #3b82f6;
-  color: #3b82f6;
-  background: #eff6ff;
+  color: #bfdbfe;
+  border-color: rgba(96, 165, 250, 0.45);
+  background:
+    linear-gradient(180deg, rgba(59, 130, 246, 0.28), rgba(37, 99, 235, 0.18)),
+    rgba(15, 23, 42, 0.92);
+  box-shadow:
+    0 8px 20px rgba(37, 99, 235, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+.floating-menu-btn:active {
+  transform: scale(0.96);
 }
 
 /* ─── Block Handle Drag & Drop ─── */

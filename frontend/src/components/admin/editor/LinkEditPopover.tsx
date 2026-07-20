@@ -58,27 +58,57 @@ export default function LinkEditPopover({ editor, onClose }: LinkEditPopoverProp
           onChange={(e) => setUrl(e.target.value)}
           placeholder="https://..."
           className="link-edit-input"
+          aria-label="链接地址"
         />
-        <button type="button" onClick={handleSave} className="link-edit-btn link-edit-btn-save" title="保存">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+        <button
+          type="button"
+          onClick={handleSave}
+          className="link-edit-btn link-edit-btn-save"
+          title="保存"
+        >
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden
+          >
             <polyline points="20 6 9 17 4 12" />
           </svg>
         </button>
-        {existingHref && (
-          <button type="button" onClick={handleRemove} className="link-edit-btn link-edit-btn-remove" title="删除链接">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        {existingHref ? (
+          <button
+            type="button"
+            onClick={handleRemove}
+            className="link-edit-btn link-edit-btn-remove"
+            title="删除链接"
+          >
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden
+            >
               <line x1="18" y1="6" x2="6" y2="18" />
               <line x1="6" y1="6" x2="18" y2="18" />
             </svg>
           </button>
-        )}
+        ) : null}
       </div>
-      <label className="flex items-center gap-1.5 mt-1.5 text-xs text-gray-300 cursor-pointer select-none">
+      <label className="link-edit-check">
         <input
           type="checkbox"
           checked={openInNewTab}
           onChange={(e) => setOpenInNewTab(e.target.checked)}
-          className="rounded border-gray-500 bg-gray-700 text-blue-400 w-3.5 h-3.5"
         />
         新窗口打开
       </label>

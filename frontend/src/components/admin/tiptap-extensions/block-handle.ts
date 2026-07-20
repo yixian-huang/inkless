@@ -229,14 +229,7 @@ export const BlockHandle = Extension.create({
           "position: absolute",
           "top: 100%",
           "left: 0",
-          "margin-top: 4px",
-          "min-width: 120px",
-          "background: white",
-          "border: 1px solid #e5e7eb",
-          "border-radius: 8px",
-          "box-shadow: 0 4px 12px rgba(0,0,0,0.1)",
-          "padding: 4px",
-          "z-index: 50",
+          "margin-top: 6px",
         ].join(";");
         handleContainer.appendChild(menuEl);
       }

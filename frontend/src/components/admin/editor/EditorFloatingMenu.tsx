@@ -22,8 +22,7 @@ export default function EditorFloatingMenu({ editor }: EditorFloatingMenuProps) 
         const { $anchor, empty } = selection;
         if (!empty) return false;
         const isEmptyParagraph =
-          $anchor.parent.type.name === "paragraph" &&
-          $anchor.parent.content.size === 0;
+          $anchor.parent.type.name === "paragraph" && $anchor.parent.content.size === 0;
         if (e.isActive("codeBlock")) return false;
         return isEmptyParagraph;
       },
@@ -54,8 +53,18 @@ export default function EditorFloatingMenu({ editor }: EditorFloatingMenuProps) 
           onClick={handleClick}
           className="floating-menu-btn"
           title="插入内容块"
+          aria-label="插入内容块"
         >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+          <svg
+            width="15"
+            height="15"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.25"
+            strokeLinecap="round"
+            aria-hidden
+          >
             <line x1="12" y1="5" x2="12" y2="19" />
             <line x1="5" y1="12" x2="19" y2="12" />
           </svg>

@@ -36,40 +36,82 @@ export default function TableBubbleMenu({ editor }: TableBubbleMenuProps) {
   return (
     <div ref={menuRef} className="bubble-menu-wrapper" style={{ visibility: "hidden" }}>
       {visible && (
-        <div className="bubble-menu">
-          <div className="flex items-center gap-0.5 flex-wrap">
-            <TableBtn onClick={() => editor.chain().focus().addColumnBefore().run()} title="添加列 (左)">
-              <span className="text-xs">+列←</span>
+        <div className="bubble-menu" role="toolbar" aria-label="表格操作">
+          <div className="flex max-w-[min(92vw,28rem)] flex-wrap items-center gap-0.5">
+            <TableBtn
+              onClick={() => editor.chain().focus().addColumnBefore().run()}
+              title="添加列 (左)"
+            >
+              <span className="text-[11px] font-medium">+列←</span>
             </TableBtn>
-            <TableBtn onClick={() => editor.chain().focus().addColumnAfter().run()} title="添加列 (右)">
-              <span className="text-xs">+列→</span>
+            <TableBtn
+              onClick={() => editor.chain().focus().addColumnAfter().run()}
+              title="添加列 (右)"
+            >
+              <span className="text-[11px] font-medium">+列→</span>
             </TableBtn>
-            <TableBtn onClick={() => editor.chain().focus().deleteColumn().run()} title="删除列" danger>
-              <span className="text-xs">删列</span>
-            </TableBtn>
-            <TableDivider />
-            <TableBtn onClick={() => editor.chain().focus().addRowBefore().run()} title="添加行 (上)">
-              <span className="text-xs">+行↑</span>
-            </TableBtn>
-            <TableBtn onClick={() => editor.chain().focus().addRowAfter().run()} title="添加行 (下)">
-              <span className="text-xs">+行↓</span>
-            </TableBtn>
-            <TableBtn onClick={() => editor.chain().focus().deleteRow().run()} title="删除行" danger>
-              <span className="text-xs">删行</span>
-            </TableBtn>
-            <TableDivider />
-            <TableBtn onClick={() => editor.chain().focus().mergeCells().run()} title="合并单元格">
-              <span className="text-xs">合并</span>
-            </TableBtn>
-            <TableBtn onClick={() => editor.chain().focus().splitCell().run()} title="拆分单元格">
-              <span className="text-xs">拆分</span>
-            </TableBtn>
-            <TableBtn onClick={() => editor.chain().focus().toggleHeaderRow().run()} title="切换表头">
-              <span className="text-xs">表头</span>
+            <TableBtn
+              onClick={() => editor.chain().focus().deleteColumn().run()}
+              title="删除列"
+              danger
+            >
+              <span className="text-[11px] font-medium">删列</span>
             </TableBtn>
             <TableDivider />
-            <TableBtn onClick={() => editor.chain().focus().deleteTable().run()} title="删除表格" danger>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+            <TableBtn
+              onClick={() => editor.chain().focus().addRowBefore().run()}
+              title="添加行 (上)"
+            >
+              <span className="text-[11px] font-medium">+行↑</span>
+            </TableBtn>
+            <TableBtn
+              onClick={() => editor.chain().focus().addRowAfter().run()}
+              title="添加行 (下)"
+            >
+              <span className="text-[11px] font-medium">+行↓</span>
+            </TableBtn>
+            <TableBtn
+              onClick={() => editor.chain().focus().deleteRow().run()}
+              title="删除行"
+              danger
+            >
+              <span className="text-[11px] font-medium">删行</span>
+            </TableBtn>
+            <TableDivider />
+            <TableBtn
+              onClick={() => editor.chain().focus().mergeCells().run()}
+              title="合并单元格"
+            >
+              <span className="text-[11px] font-medium">合并</span>
+            </TableBtn>
+            <TableBtn
+              onClick={() => editor.chain().focus().splitCell().run()}
+              title="拆分单元格"
+            >
+              <span className="text-[11px] font-medium">拆分</span>
+            </TableBtn>
+            <TableBtn
+              onClick={() => editor.chain().focus().toggleHeaderRow().run()}
+              title="切换表头"
+            >
+              <span className="text-[11px] font-medium">表头</span>
+            </TableBtn>
+            <TableDivider />
+            <TableBtn
+              onClick={() => editor.chain().focus().deleteTable().run()}
+              title="删除表格"
+              danger
+            >
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                aria-hidden
+              >
                 <polyline points="3 6 5 6 21 6" />
                 <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
               </svg>
@@ -81,8 +123,16 @@ export default function TableBubbleMenu({ editor }: TableBubbleMenuProps) {
   );
 }
 
-function TableBtn({ onClick, title, children, danger }: {
-  onClick: () => void; title: string; children: React.ReactNode; danger?: boolean;
+function TableBtn({
+  onClick,
+  title,
+  children,
+  danger,
+}: {
+  onClick: () => void;
+  title: string;
+  children: React.ReactNode;
+  danger?: boolean;
 }) {
   return (
     <button
@@ -97,5 +147,5 @@ function TableBtn({ onClick, title, children, danger }: {
 }
 
 function TableDivider() {
-  return <div className="w-px h-4 bg-gray-600 mx-0.5" />;
+  return <div className="bubble-menu-divider" aria-hidden />;
 }
