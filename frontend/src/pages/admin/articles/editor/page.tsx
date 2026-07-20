@@ -466,7 +466,15 @@ export default function ArticleEditorPage() {
         onMarkdownApiReady={editors.setMarkdownApi}
       />
 
-      {/* EN TipTap is created only when English is enabled or split is on */}
+      {/* TipTap instances: ZH always; EN only when bilingual is active */}
+      <LangEditorMount
+        enabled={editors.needZhEditor}
+        html={form.zhBody}
+        editable={editors.zhEditable}
+        onDirty={dirty.touch}
+        onEditor={editors.onZhEditorReady}
+        onFlushBody={editors.onZhFlushBody}
+      />
       <LangEditorMount
         enabled={editors.needEnEditor}
         html={form.enBody}

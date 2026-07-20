@@ -1,9 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useEditor, type Editor } from "@tiptap/react";
-import {
-  getEditorExtensions,
-  useModalState,
-} from "@/components/admin/RichTextEditor";
+import type { Editor } from "@tiptap/react";
+import { useModalState } from "@/components/admin/RichTextEditor";
 import type { MarkdownSelectionApi } from "@/components/admin/editor/MarkdownToolbar";
 import { markdownToHtml, htmlToMarkdown } from "@/lib/markdown";
 import { MODE_SWITCH_MESSAGE } from "../saveStatusUtils";
@@ -15,9 +12,8 @@ export type EditorMode = "richtext" | "markdown";
 export type ViewLayout = "focus" | "split";
 
 /**
- * ZH TipTap always on; EN TipTap is mounted on demand via LangEditorMount
- * when English is enabled or split layout is active. resolveBodies falls back
- * to React body state when EN is unmounted.
+ * TipTap instances are provided by LangEditorMount (ZH always, EN on demand).
+ * resolveBodies falls back to React body state when an instance is unmounted.
  */
 export function useArticleEditors(opts: {
   zhBody: string;
@@ -39,21 +35,16 @@ export function useArticleEditors(opts: {
   const [enabledLangs, setEnabledLangs] = useState<string[]>(["zh"]);
   const [activeLangIdx, setActiveLangIdx] = useState(0);
 
-  // EN editor instance comes from LangEditorMount (lazy)
+  // Both languages inject TipTap via LangEditorMount
+  const [zhEditor, setZhEditor] = useState<Editor | null>(null);
   const [enEditor, setEnEditor] = useState<Editor | null>(null);
-
-  const zhExtensions = useMemo(() => getEditorExtensions(), []);
-  const zhEditor = useEditor({
-    extensions: zhExtensions,
-    content: zhBody,
-    shouldRerenderOnTransaction: false,
-    editorProps: { attributes: { class: "tiptap" } },
-    onUpdate: () => touch(),
-  });
 
   const { modals: zhModals, state: zhModalState } = useModalState();
   const { modals: enModals, state: enModalState } = useModalState();
 
+  /** ZH is primary and always mounted. */
+  const needZhEditor = true;
+  /** EN only when bilingual is active. */
   const needEnEditor =
     enabledLangs.includes("en") || viewLayout === "split";
 
@@ -69,28 +60,13 @@ export function useArticleEditors(opts: {
   const activeEntry = langEditors[activeLang as "zh" | "en"];
 
   useEffect(() => {
-    zhEditor?.setEditable(viewLayout === "split" || activeLang === "zh");
-  }, [zhEditor, activeLang, viewLayout]);
-
-  useEffect(() => {
-    if (zhEditor && zhBody && zhBody !== zhEditor.getHTML()) {
-      zhEditor.commands.setContent(zhBody, { emitUpdate: false });
-    }
-  }, [zhBody, zhEditor]);
-
-  useEffect(() => {
     if (viewLayout === "split" && !enabledLangs.includes("en")) {
       setEnabledLangs((prev) => (prev.includes("en") ? prev : [...prev, "en"]));
     }
   }, [viewLayout, enabledLangs]);
 
-  const getEnHtml = useCallback(() => {
-    return enEditor?.getHTML() || enBody || "";
-  }, [enEditor, enBody]);
-
-  const getZhHtml = useCallback(() => {
-    return zhEditor?.getHTML() || zhBody || "";
-  }, [zhEditor, zhBody]);
+  const getEnHtml = useCallback(() => enEditor?.getHTML() || enBody || "", [enEditor, enBody]);
+  const getZhHtml = useCallback(() => zhEditor?.getHTML() || zhBody || "", [zhEditor, zhBody]);
 
   const resolveBodies = useCallback(() => {
     if (editorMode === "markdown") {
@@ -116,8 +92,8 @@ export function useArticleEditors(opts: {
   const applyBodiesToEditors = useCallback((nextZh: string, nextEn: string) => {
     setZhBody(nextZh);
     setEnBody(nextEn);
+    // Mounted instances pick up via html prop / setContent; unmounted seed on remount
     zhEditor?.commands.setContent(nextZh || "", { emitUpdate: false });
-    // EN may be unmounted — LangEditorMount seeds from enBody on next mount
     enEditor?.commands.setContent(nextEn || "", { emitUpdate: false });
     if (editorMode === "markdown") {
       setMarkdownContent({
@@ -227,9 +203,17 @@ export function useArticleEditors(opts: {
     else setEnabledLangs(["zh"]);
   }, []);
 
+  const onZhEditorReady = useCallback((ed: Editor | null) => {
+    setZhEditor(ed);
+  }, []);
+
   const onEnEditorReady = useCallback((ed: Editor | null) => {
     setEnEditor(ed);
   }, []);
+
+  const onZhFlushBody = useCallback((html: string) => {
+    setZhBody(html);
+  }, [setZhBody]);
 
   const onEnFlushBody = useCallback((html: string) => {
     setEnBody(html);
@@ -253,10 +237,13 @@ export function useArticleEditors(opts: {
     langEditors,
     zhEditor,
     enEditor,
-    /** Mount EN TipTap only when English is in play */
+    needZhEditor,
     needEnEditor,
+    onZhEditorReady,
     onEnEditorReady,
+    onZhFlushBody,
     onEnFlushBody,
+    zhEditable: viewLayout === "split" || activeLang === "zh",
     enEditable: viewLayout === "split" || activeLang === "en",
     resolveBodies,
     applyBodiesToEditors,

@@ -14,7 +14,7 @@ type InnerProps = {
 
 /**
  * Creates a TipTap instance (no DOM). Parent renders EditorContent elsewhere.
- * Mount only when the language is needed — avoids paying for unused EN editor.
+ * Used for both ZH and EN — gate with `enabled` for on-demand mount.
  */
 function LangEditorMountInner({
   html,
