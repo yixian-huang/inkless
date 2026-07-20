@@ -47,3 +47,13 @@ func (r *GormPageViewRepository) GetSummary(ctx context.Context, now time.Time) 
 
 	return stats, err
 }
+
+// CountByPageKey returns total views for a page key (all time).
+func (r *GormPageViewRepository) CountByPageKey(ctx context.Context, pageKey string) (int64, error) {
+	var count int64
+	err := r.db.WithContext(ctx).
+		Model(&model.PageView{}).
+		Where("page_key = ?", pageKey).
+		Count(&count).Error
+	return count, err
+}

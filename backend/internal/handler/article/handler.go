@@ -2,7 +2,9 @@ package article
 
 import (
 	"context"
+	"crypto/sha256"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"strconv"
 	"time"
@@ -21,6 +23,7 @@ type Handler struct {
 	articleRepo   repository.ArticleRepository
 	categoryRepo  repository.CategoryRepository
 	tagRepo       repository.TagRepository
+	pvRepo        repository.PageViewRepository
 	searchService *service.SearchService
 	articleSvc    *service.ArticlePublicationService
 	eventBus      eventbus.EventBus
@@ -45,6 +48,12 @@ func NewHandler(
 		eventBus:      eventBus,
 		cache:         cache,
 	}
+}
+
+// WithPageViews enables visit tracking and viewCount on public article detail.
+func (h *Handler) WithPageViews(pvRepo repository.PageViewRepository) *Handler {
+	h.pvRepo = pvRepo
+	return h
 }
 
 // --- Public endpoints ---
@@ -101,6 +110,17 @@ func (h *Handler) PublicList(c *gin.Context) {
 	c.JSON(http.StatusOK, result)
 }
 
+// publicArticleDTO embeds article fields and adds viewCount for public readers.
+type publicArticleDTO struct {
+	model.Article
+	ViewCount int64 `json:"viewCount"`
+}
+
+// articlePageKey builds the page_views key for an article.
+func articlePageKey(articleID uint) string {
+	return fmt.Sprintf("article:%d", articleID)
+}
+
 // PublicGetBySlug returns a single published article by slug.
 // @Summary      Get article by slug
 // @Description  Returns a single published article with full content
@@ -113,35 +133,82 @@ func (h *Handler) PublicList(c *gin.Context) {
 func (h *Handler) PublicGetBySlug(c *gin.Context) {
 	slug := c.Param("slug")
 
+	var article *model.Article
 	cacheKey := "article:" + slug
 	if cached, ok := h.cache.Get(cacheKey); ok {
-		c.Header("X-Cache", "HIT")
-		c.Header("Cache-Control", "public, max-age=60, stale-while-revalidate=30")
-		c.JSON(http.StatusOK, cached)
-		return
+		switch v := cached.(type) {
+		case *model.Article:
+			article = v
+			c.Header("X-Cache", "HIT")
+		case model.Article:
+			a := v
+			article = &a
+			c.Header("X-Cache", "HIT")
+		}
 	}
 
-	article, err := h.articleRepo.FindBySlug(c.Request.Context(), slug)
-	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": gin.H{"message": "文章不存在"}})
-		return
+	if article == nil {
+		found, err := h.articleRepo.FindBySlug(c.Request.Context(), slug)
+		if err != nil {
+			c.JSON(http.StatusNotFound, gin.H{"error": gin.H{"message": "文章不存在"}})
+			return
+		}
+
+		if found.Status != model.ArticleStatusPublished {
+			c.JSON(http.StatusNotFound, gin.H{"error": gin.H{"message": "文章不存在"}})
+			return
+		}
+
+		// Only return publicly visible articles
+		if found.Visibility != "" && found.Visibility != "public" {
+			c.JSON(http.StatusNotFound, gin.H{"error": gin.H{"message": "文章不存在"}})
+			return
+		}
+
+		article = found
+		h.cache.Set(cacheKey, article)
+		c.Header("X-Cache", "MISS")
 	}
 
-	if article.Status != model.ArticleStatusPublished {
-		c.JSON(http.StatusNotFound, gin.H{"error": gin.H{"message": "文章不存在"}})
-		return
+	pageKey := articlePageKey(article.ID)
+	// Record this visit then count (viewCount is never part of the article cache).
+	h.recordArticleView(c.Request.Context(), pageKey, c)
+
+	var viewCount int64
+	if h.pvRepo != nil {
+		if n, err := h.pvRepo.CountByPageKey(c.Request.Context(), pageKey); err == nil {
+			viewCount = n
+		}
 	}
 
-	// Only return publicly visible articles
-	if article.Visibility != "" && article.Visibility != "public" {
-		c.JSON(http.StatusNotFound, gin.H{"error": gin.H{"message": "文章不存在"}})
-		return
-	}
-
-	h.cache.Set(cacheKey, article)
-	c.Header("X-Cache", "MISS")
 	c.Header("Cache-Control", "public, max-age=60, stale-while-revalidate=30")
-	c.JSON(http.StatusOK, article)
+	c.JSON(http.StatusOK, publicArticleDTO{
+		Article:   *article,
+		ViewCount: viewCount,
+	})
+}
+
+func (h *Handler) recordArticleView(ctx context.Context, pageKey string, c *gin.Context) {
+	if h.pvRepo == nil {
+		return
+	}
+	clientIP := c.ClientIP()
+	referer := c.GetHeader("Referer")
+	locale := c.DefaultQuery("locale", "zh")
+	hash := sha256.Sum256([]byte(clientIP))
+	visitorID := fmt.Sprintf("%x", hash[:])[:16]
+
+	// Best-effort: do not fail the article response if tracking fails.
+	writeCtx, cancel := context.WithTimeout(ctx, 2*time.Second)
+	defer cancel()
+	if err := h.pvRepo.Create(writeCtx, &model.PageView{
+		PageKey:   pageKey,
+		Locale:    locale,
+		VisitorID: visitorID,
+		Referer:   referer,
+	}); err != nil {
+		slog.Error("failed to record article page view", "pageKey", pageKey, "error", err)
+	}
 }
 
 // --- Admin endpoints ---

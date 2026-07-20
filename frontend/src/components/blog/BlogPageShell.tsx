@@ -17,7 +17,8 @@ export default function BlogPageShell({ children, className = "" }: BlogPageShel
   return (
     <div
       className={[
-        "mx-auto px-4 md:px-content flex-1 w-full",
+        // overflow-visible so floating article TOC can sit in the right gutter
+        "mx-auto px-4 md:px-content flex-1 w-full overflow-visible",
         isReading || isBlogRoute ? "py-section font-sans" : "py-section-sm",
         className,
       ]

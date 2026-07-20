@@ -94,6 +94,7 @@ export const common = {
     backToArchive: '返回博客',
     socialLinks: '社交链接',
     readingMeta: '约 {{words}} 字 · {{minutes}} 分钟阅读',
+    viewCount: '{{count}} 次阅读',
   },
   pagination: {
     prev: '上一页',

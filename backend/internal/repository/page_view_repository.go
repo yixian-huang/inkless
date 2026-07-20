@@ -23,4 +23,7 @@ type PageViewRepository interface {
 
 	// GetSummary returns aggregated view stats grouped by page key
 	GetSummary(ctx context.Context, now time.Time) ([]PageViewStats, error)
+
+	// CountByPageKey returns total views for a page key (all time)
+	CountByPageKey(ctx context.Context, pageKey string) (int64, error)
 }

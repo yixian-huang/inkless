@@ -459,7 +459,8 @@ func main() {
 	categoryHandlerInst := categoryHandler.NewHandler(categoryRepo, articleRepo)
 	tagHandlerInst := tagHandler.NewHandler(tagRepo, articleRepo)
 	menuHandlerInst := menuHandler.NewHandler(menuRepo)
-	articleHandlerInst := articleHandler.NewHandler(articleRepo, categoryRepo, tagRepo, searchService, bus, publicCache)
+	articleHandlerInst := articleHandler.NewHandler(articleRepo, categoryRepo, tagRepo, searchService, bus, publicCache).
+		WithPageViews(pageViewRepo)
 	auditlogHandlerInst := auditlogHandler.NewHandler(auditEventRepo)
 	sitemapHandlerInst := sitemapHandler.NewHandler(contentDocRepo, articleRepo, cfg.BaseURL)
 	feedHandlerInst := feedHandler.NewHandler(articleRepo, siteConfigRepo, cfg.BaseURL, "Blog", "Latest posts")

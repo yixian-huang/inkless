@@ -94,6 +94,7 @@ export const common = {
     backToArchive: 'Back to blog',
     socialLinks: 'Social links',
     readingMeta: '{{words}} words · {{minutes}} min read',
+    viewCount: '{{count}} views',
   },
   pagination: {
     prev: 'Previous',

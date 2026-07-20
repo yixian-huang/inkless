@@ -59,6 +59,10 @@ func (m *MockPageViewRepository) Create(ctx context.Context, pv *model.PageView)
 	return nil
 }
 
+func (m *MockPageViewRepository) CountByPageKey(ctx context.Context, pageKey string) (int64, error) {
+	return 0, nil
+}
+
 func (m *MockPageViewRepository) GetSummary(ctx context.Context, now time.Time) ([]PageViewStats, error) {
 	return nil, nil
 }

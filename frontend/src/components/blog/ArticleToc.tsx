@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import type { TocHeading, TocLayout } from "@/utils/articleToc";
 
@@ -46,11 +47,12 @@ export function ArticleTocInline({
 
   if (layout === "none" || headings.length === 0) return null;
 
+  // On xl+ with full layout the floating sidebar is shown; keep inline for smaller screens.
   const hideOnDesktop = layout === "full";
 
   return (
     <details
-      className={`article-page-ui font-sans mb-8 ${hideOnDesktop ? "lg:hidden" : ""}`}
+      className={`article-page-ui font-sans mb-8 ${hideOnDesktop ? "xl:hidden" : ""}`}
       open={layout === "inline"}
     >
       <summary className="cursor-pointer list-none text-xs uppercase tracking-[0.15em] text-on-surface-muted hover:text-primary transition-colors [&::-webkit-details-marker]:hidden">
@@ -66,6 +68,10 @@ export function ArticleTocInline({
   );
 }
 
+/**
+ * Floating TOC in the right page gutter — does NOT shrink the article column.
+ * Only visible when the viewport has spare horizontal space (xl+).
+ */
 export function ArticleTocSidebar({
   headings,
   layout,
@@ -82,31 +88,40 @@ export function ArticleTocSidebar({
   if (layout !== "full" || headings.length === 0) return null;
 
   return (
-    <aside className="hidden lg:block article-page-ui font-sans" aria-label={t("blog.tocTitle")}>
-      <div className="sticky top-8 max-h-[calc(100vh-4rem)] overflow-y-auto">
-        <p className="text-xs uppercase tracking-[0.15em] text-on-surface-muted mb-3">{t("blog.tocTitle")}</p>
+    <aside
+      className="hidden xl:block absolute top-0 left-full pl-8 w-40 2xl:w-44 article-page-ui font-sans pointer-events-auto"
+      aria-label={t("blog.tocTitle")}
+    >
+      <div className="sticky top-24 max-h-[calc(100vh-6rem)] overflow-y-auto pr-1">
+        <p className="text-xs uppercase tracking-[0.15em] text-on-surface-muted mb-3">
+          {t("blog.tocTitle")}
+        </p>
         <TocList headings={headings} activeId={activeId} onSelect={onSelect} />
       </div>
     </aside>
   );
 }
 
+/**
+ * Body always takes the full reading-column width.
+ * Sidebar is absolutely positioned in the right margin outside the content box.
+ */
 export function ArticleTocLayout({
   layout,
   sidebar,
   children,
 }: {
   layout: TocLayout;
-  sidebar: React.ReactNode;
-  children: React.ReactNode;
+  sidebar: ReactNode;
+  children: ReactNode;
 }) {
   if (layout !== "full") {
     return <>{children}</>;
   }
 
   return (
-    <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_11rem] lg:gap-x-12 xl:grid-cols-[minmax(0,1fr)_12rem]">
-      <div className="min-w-0">{children}</div>
+    <div className="relative">
+      <div className="min-w-0 w-full">{children}</div>
       {sidebar}
     </div>
   );

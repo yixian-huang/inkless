@@ -31,6 +31,8 @@ export interface Article {
   scheduledAt?: string | null;
   createdAt: string;
   updatedAt: string;
+  /** Total page views (public detail only). */
+  viewCount?: number;
 }
 
 export interface Category {

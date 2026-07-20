@@ -71,6 +71,14 @@ export default function ArticlePostHeader({
             <ArticleReadingMeta html={bodyHtml} />
           </>
         )}
+        {typeof article.viewCount === "number" && article.viewCount >= 0 && (
+          <>
+            <span className="text-on-surface-muted/40" aria-hidden="true">
+              ·
+            </span>
+            <span>{t("blog.viewCount", { count: article.viewCount })}</span>
+          </>
+        )}
       </div>
     </header>
   );
