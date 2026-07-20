@@ -43,10 +43,6 @@ export default function BlogHomePage() {
     defaultLocale,
     currentLocale,
   });
-  // English / alternate name under the primary display name when distinct
-  const enName = siteConfig.identity.name?.en?.trim() || "";
-  const heroSubtitle =
-    enName && enName !== authorName && !authorName.includes(enName) ? enName : undefined;
   const intro = bio || tagline || defaultDescription;
 
   const [articles, setArticles] = useState<Awaited<ReturnType<typeof getPublicArticles>>["items"]>([]);
@@ -85,22 +81,23 @@ export default function BlogHomePage() {
         ogType="website"
         canonicalUrl="/"
       />
-      <BlogPageShell className={isReading ? "pt-2 md:pt-4" : undefined}>
+      <BlogPageShell className={isReading ? "pt-1 md:pt-2" : undefined}>
         <AuthorIntro
           avatar={siteConfig.author?.avatar}
           name={authorName}
-          subtitle={heroSubtitle}
           tagline={tagline}
           bio={bio}
           intro={intro}
-          showSocials
+          showSocials={false}
+          showBio={false}
+          showSubtitle={false}
         />
 
-        <section className={isReading ? "pt-2" : undefined}>
+        <section className={isReading ? "pt-1" : undefined}>
           <div
             className={
               isReading
-                ? "flex items-baseline justify-between gap-4 mb-8"
+                ? "flex items-baseline justify-between gap-4 mb-6"
                 : "flex items-center justify-between mb-6"
             }
           >
