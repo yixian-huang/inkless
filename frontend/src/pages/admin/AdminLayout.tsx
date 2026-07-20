@@ -1,14 +1,24 @@
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { Outlet, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { AdminRouteFallback } from "@/components/admin/ui";
 import { useAuth } from "@/contexts/AuthContext";
 import { useBranding } from "@/hooks/useBranding";
 import { useSetupStatus } from "@/hooks/useSetupStatus";
 import { BROWSER_STORAGE_KEYS } from "@/lib/browserStorage";
+import {
+  prefetchAdminCorePack,
+  prefetchAdminSecondaryRoutes,
+} from "@/pages/admin/adminRoutePrefetch";
 import { isAdminEditorPath } from "@/pages/admin/nav/adminNav";
 import { getAdminRoutePermission, hasAdminRoutePermission } from "@/router/adminAccess";
 import AdminSidebar from "./components/AdminSidebar";
 import AdminTopbar from "./components/AdminTopbar";
+
+// Pull the high-frequency admin pack into the AdminLayout chunk graph so the
+// first authenticated shell load already warms dashboard/articles/pages/media/settings.
+void import("./adminCorePages").then(() => {
+  prefetchAdminCorePack();
+});
 
 export default function AdminLayout() {
   const location = useLocation();
@@ -21,6 +31,12 @@ export default function AdminLayout() {
     () => localStorage.getItem(BROWSER_STORAGE_KEYS.adminSidebarCollapsed) === "true",
   );
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    prefetchAdminCorePack();
+    prefetchAdminSecondaryRoutes();
+  }, [isAuthenticated]);
 
   const handleToggle = () => {
     setCollapsed((prev) => {

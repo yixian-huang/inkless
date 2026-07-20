@@ -1,58 +1,63 @@
-import { lazy } from 'react';
-import { RouteObject } from 'react-router-dom';
-import { FeatureGate } from '@/components/feature/FeatureGate';
-import { withSiteLayout } from '@/plugins/withSiteLayout';
+import { lazy } from "react";
+import { RouteObject } from "react-router-dom";
+import { FeatureGate } from "@/components/feature/FeatureGate";
+import { withSiteLayout } from "@/plugins/withSiteLayout";
+import { commentModuleConfig } from "@/modules/comment";
+import { adminRouteLoaders } from "@/pages/admin/adminRoutePrefetch";
 
-// Admin routes
-const AdminLayout = lazy(() => import('../pages/admin/AdminLayout'));
-const AdminLoginPage = lazy(() => import('../pages/admin/login/page'));
-// AdminContentPage and AdminContentEditorPage removed — replaced by unified page editor
-const AdminMediaPage = lazy(() => import('../pages/admin/media/page'));
-const AdminAnalyticsPage = lazy(() => import('../pages/admin/analytics/page'));
-const AdminArticlesPage = lazy(() => import('../pages/admin/articles/page'));
-const AdminArticleEditorPage = lazy(() => import('../pages/admin/articles/editor/page'));
-const AdminCategoriesPage = lazy(() => import('../pages/admin/articles/categories/page'));
-const AdminTagsPage = lazy(() => import('../pages/admin/articles/tags/page'));
-const AdminAuditLogsPage = lazy(() => import('../pages/admin/audit-logs/page'));
-const AdminBackupsPage = lazy(() => import('../pages/admin/backups/page'));
-const AdminPagesPage = lazy(() => import('../pages/admin/pages/page'));
-const AdminPageEditorPage = lazy(() => import('../pages/admin/pages/editor/page'));
-const AdminThemePage = lazy(() => import('../pages/admin/theme/page'));
-const AdminDashboardPage = lazy(() => import('../pages/admin/dashboard/page'));
-const AdminFormSubmissionsPage = lazy(() => import('../pages/admin/form-submissions/page'));
-const AdminMenusPage = lazy(() => import('../pages/admin/menus/page'));
-const AdminScheduledPublicationsPage = lazy(() => import('../pages/admin/scheduled-publications/page'));
-const AdminUsersPage = lazy(() => import('../pages/admin/users/page'));
-const AdminAISettingsPage = lazy(() => import('../pages/admin/ai-settings/page'));
-const AdminTranslationPage = lazy(() => import('../pages/admin/translation/page'));
-const AdminQAPage = lazy(() => import('../modules/qa/admin/page'));
-const AdminWizardPage = lazy(() => import('../pages/admin/wizard/page'));
-const AdminRolesPage = lazy(() => import('../pages/admin/roles/page'));
-const AdminStoragePage = lazy(() => import('../pages/admin/storage/page'));
-const AdminEmailSettingsPage = lazy(() => import('../pages/admin/email-settings/page'));
-const AdminSiteConfigPage = lazy(() => import('../pages/admin/site-config/page'));
-const AdminFeaturesPage = lazy(() => import('../pages/admin/features/page'));
-const AdminMigrationPage = lazy(() => import('../pages/admin/migration/page'));
-const AdminSystemStatusPage = lazy(() => import('../pages/admin/system-status/page'));
-const AdminSettingsPage = lazy(() => import('../pages/admin/settings/page'));
-import { commentModuleConfig } from '@/modules/comment';
+// Admin shell stays lazy so public pages do not download the admin bundle.
+const AdminLayout = lazy(() => import("../pages/admin/AdminLayout"));
 
-const AdminCommentsPage = lazy(() => import('../modules/comment/admin/page'));
-const SetupPage = lazy(() => import('../pages/setup/page'));
-const NotFound = lazy(() => import('../pages/NotFound'));
+// Core + secondary admin pages share the same loaders as sidebar prefetch
+// so hover-prefetched modules resolve instantly on navigation.
+const AdminLoginPage = lazy(adminRouteLoaders["/admin/login"]);
+const AdminMediaPage = lazy(adminRouteLoaders["/admin/media"]);
+const AdminAnalyticsPage = lazy(adminRouteLoaders["/admin/analytics"]);
+const AdminArticlesPage = lazy(adminRouteLoaders["/admin/articles"]);
+const AdminArticleEditorPage = lazy(adminRouteLoaders["/admin/articles/edit"]);
+const AdminCategoriesPage = lazy(adminRouteLoaders["/admin/articles/categories"]);
+const AdminTagsPage = lazy(adminRouteLoaders["/admin/articles/tags"]);
+const AdminAuditLogsPage = lazy(adminRouteLoaders["/admin/audit-logs"]);
+const AdminBackupsPage = lazy(adminRouteLoaders["/admin/backups"]);
+const AdminPagesPage = lazy(adminRouteLoaders["/admin/pages"]);
+const AdminPageEditorPage = lazy(adminRouteLoaders["/admin/pages/edit"]);
+const AdminThemePage = lazy(adminRouteLoaders["/admin/theme"]);
+const AdminDashboardPage = lazy(adminRouteLoaders["/admin"]);
+const AdminFormSubmissionsPage = lazy(adminRouteLoaders["/admin/form-submissions"]);
+const AdminMenusPage = lazy(adminRouteLoaders["/admin/menus"]);
+const AdminScheduledPublicationsPage = lazy(
+  adminRouteLoaders["/admin/scheduled-publications"],
+);
+const AdminUsersPage = lazy(adminRouteLoaders["/admin/users"]);
+const AdminAISettingsPage = lazy(adminRouteLoaders["/admin/ai-settings"]);
+const AdminTranslationPage = lazy(adminRouteLoaders["/admin/translation"]);
+const AdminQAPage = lazy(adminRouteLoaders["/admin/qa"]);
+const AdminWizardPage = lazy(adminRouteLoaders["/admin/wizard"]);
+const AdminRolesPage = lazy(adminRouteLoaders["/admin/roles"]);
+const AdminStoragePage = lazy(adminRouteLoaders["/admin/storage"]);
+const AdminEmailSettingsPage = lazy(adminRouteLoaders["/admin/email-settings"]);
+const AdminSiteConfigPage = lazy(adminRouteLoaders["/admin/site-config"]);
+const AdminFeaturesPage = lazy(adminRouteLoaders["/admin/features"]);
+const AdminMigrationPage = lazy(adminRouteLoaders["/admin/migration"]);
+const AdminSystemStatusPage = lazy(adminRouteLoaders["/admin/system-status"]);
+const AdminSettingsPage = lazy(adminRouteLoaders["/admin/settings"]);
+const AdminCommentsPage = lazy(adminRouteLoaders["/admin/comments"]);
+
+const SetupPage = lazy(() => import("../pages/setup/page"));
+const NotFound = lazy(() => import("../pages/NotFound"));
 
 // Public blog routes
-const BlogPage = lazy(() => import('../pages/blog/page'));
-const BlogDetailPage = lazy(() => import('../pages/blog/[slug]/page'));
+const BlogPage = lazy(() => import("../pages/blog/page"));
+const BlogDetailPage = lazy(() => import("../pages/blog/[slug]/page"));
 
 // Public category & tag routes
-const CategoriesPage = lazy(() => import('../pages/categories/page'));
-const CategoryDetailPage = lazy(() => import('../pages/categories/[slug]/page'));
-const TagsPage = lazy(() => import('../pages/tags/page'));
-const TagDetailPage = lazy(() => import('../pages/tags/[slug]/page'));
+const CategoriesPage = lazy(() => import("../pages/categories/page"));
+const CategoryDetailPage = lazy(() => import("../pages/categories/[slug]/page"));
+const TagsPage = lazy(() => import("../pages/tags/page"));
+const TagDetailPage = lazy(() => import("../pages/tags/[slug]/page"));
 
 // Dynamic page (section-based rendering)
-const DynamicPage = lazy(() => import('../theme/DynamicPage'));
+const DynamicPage = lazy(() => import("../theme/DynamicPage"));
 
 /**
  * Static routes — blog, admin, dynamic CMS pages, 404.
@@ -61,11 +66,11 @@ const DynamicPage = lazy(() => import('../theme/DynamicPage'));
  */
 export const staticRoutes: RouteObject[] = [
   {
-    path: '/setup',
+    path: "/setup",
     element: <SetupPage />,
   },
   {
-    path: '/blog',
+    path: "/blog",
     element: withSiteLayout(
       <FeatureGate feature="blog">
         <BlogPage />
@@ -73,7 +78,7 @@ export const staticRoutes: RouteObject[] = [
     ),
   },
   {
-    path: '/blog/:slug',
+    path: "/blog/:slug",
     element: withSiteLayout(
       <FeatureGate feature="blog">
         <BlogDetailPage />
@@ -81,113 +86,112 @@ export const staticRoutes: RouteObject[] = [
     ),
   },
   {
-    path: '/categories',
+    path: "/categories",
     element: withSiteLayout(<CategoriesPage />),
   },
   {
-    path: '/categories/:slug',
+    path: "/categories/:slug",
     element: withSiteLayout(<CategoryDetailPage />),
   },
   {
-    path: '/tags',
+    path: "/tags",
     element: withSiteLayout(<TagsPage />),
   },
   {
-    path: '/tags/:slug',
+    path: "/tags/:slug",
     element: withSiteLayout(<TagDetailPage />),
   },
   {
-    path: '/admin',
+    path: "/admin",
     element: <AdminLayout />,
     children: [
       { index: true, element: <AdminDashboardPage /> },
       {
-        path: 'login',
+        path: "login",
         element: <AdminLoginPage />,
       },
-      // Old content editor routes removed — replaced by unified page editor at /admin/pages
       {
-        path: 'media',
+        path: "media",
         element: <AdminMediaPage />,
       },
       {
-        path: 'analytics',
+        path: "analytics",
         element: <AdminAnalyticsPage />,
       },
       {
-        path: 'articles',
+        path: "articles",
         element: <AdminArticlesPage />,
       },
       {
-        path: 'articles/new',
+        path: "articles/new",
         element: <AdminArticleEditorPage />,
       },
       {
-        path: 'articles/edit/:id',
+        path: "articles/edit/:id",
         element: <AdminArticleEditorPage />,
       },
       {
-        path: 'articles/categories',
+        path: "articles/categories",
         element: <AdminCategoriesPage />,
       },
       {
-        path: 'articles/tags',
+        path: "articles/tags",
         element: <AdminTagsPage />,
       },
       {
-        path: 'audit-logs',
+        path: "audit-logs",
         element: <AdminAuditLogsPage />,
       },
       {
-        path: 'backups',
+        path: "backups",
         element: <AdminBackupsPage />,
       },
       {
-        path: 'pages',
+        path: "pages",
         element: <AdminPagesPage />,
       },
       {
-        path: 'pages/new',
+        path: "pages/new",
         element: <AdminPageEditorPage />,
       },
       {
-        path: 'pages/edit/:id',
+        path: "pages/edit/:id",
         element: <AdminPageEditorPage />,
       },
       {
-        path: 'theme',
+        path: "theme",
         element: <AdminThemePage />,
       },
       {
-        path: 'form-submissions',
+        path: "form-submissions",
         element: <AdminFormSubmissionsPage />,
       },
       {
-        path: 'menus',
+        path: "menus",
         element: <AdminMenusPage />,
       },
       {
-        path: 'scheduled-publications',
+        path: "scheduled-publications",
         element: <AdminScheduledPublicationsPage />,
       },
       {
-        path: 'users',
+        path: "users",
         element: <AdminUsersPage />,
       },
       {
-        path: 'ai-settings',
+        path: "ai-settings",
         element: <AdminAISettingsPage />,
       },
       {
-        path: 'translation',
+        path: "translation",
         element: <AdminTranslationPage />,
       },
       {
-        path: 'qa',
+        path: "qa",
         element: <AdminQAPage />,
       },
       {
-        path: 'wizard',
+        path: "wizard",
         element: <AdminWizardPage />,
       },
       {
@@ -195,49 +199,49 @@ export const staticRoutes: RouteObject[] = [
         element: <AdminCommentsPage />,
       },
       {
-        path: 'roles',
+        path: "roles",
         element: <AdminRolesPage />,
       },
       {
-        path: 'storage',
+        path: "storage",
         element: <AdminStoragePage />,
       },
       {
-        path: 'email-settings',
+        path: "email-settings",
         element: <AdminEmailSettingsPage />,
       },
       {
-        path: 'site-config',
+        path: "site-config",
         element: <AdminSiteConfigPage />,
       },
       {
-        path: 'features',
+        path: "features",
         element: <AdminFeaturesPage />,
       },
       {
-        path: 'migration',
+        path: "migration",
         element: <AdminMigrationPage />,
       },
       {
-        path: 'system-status',
+        path: "system-status",
         element: <AdminSystemStatusPage />,
       },
       {
-        path: 'settings',
+        path: "settings",
         element: <AdminSettingsPage />,
       },
     ],
   },
   {
-    path: '/search',
-    lazy: () => import('@/pages/search/page').then(m => ({ Component: m.default })),
+    path: "/search",
+    lazy: () => import("@/pages/search/page").then((m) => ({ Component: m.default })),
   },
   {
-    path: '/p/*',
+    path: "/p/*",
     element: withSiteLayout(<DynamicPage />),
   },
   {
-    path: '*',
+    path: "*",
     element: <NotFound />,
   },
 ];

@@ -4,6 +4,7 @@ import { ChevronDown, PanelLeftClose, PanelLeftOpen, Search, X } from "lucide-re
 import { ProductLogo } from "@/components/product/ProductLogo";
 import { useAuth } from "@/contexts/AuthContext";
 import { BROWSER_STORAGE_KEYS } from "@/lib/browserStorage";
+import { prefetchAdminRoute } from "@/pages/admin/adminRoutePrefetch";
 import {
   filterNavGroups,
   isGroupActive,
@@ -12,6 +13,10 @@ import {
   type AdminNavGroupId,
   type AdminNavItem,
 } from "@/pages/admin/nav/adminNav";
+
+function handlePrefetchPath(path: string) {
+  prefetchAdminRoute(path);
+}
 
 interface AdminSidebarProps {
   collapsed: boolean;
@@ -61,6 +66,9 @@ function NavLinkItem({
       <Link
         to={item.path}
         onClick={onNavigate}
+        onMouseEnter={() => handlePrefetchPath(item.path)}
+        onFocus={() => handlePrefetchPath(item.path)}
+        onTouchStart={() => handlePrefetchPath(item.path)}
         title={collapsed ? item.label : undefined}
         className={`group flex items-center rounded-lg transition-colors duration-150 ${
           collapsed ? "justify-center px-2 py-2.5" : "px-3 py-2"
@@ -85,6 +93,9 @@ function NavLinkItem({
                 key={child.path}
                 to={child.path}
                 onClick={onNavigate}
+                onMouseEnter={() => handlePrefetchPath(child.path)}
+                onFocus={() => handlePrefetchPath(child.path)}
+                onTouchStart={() => handlePrefetchPath(child.path)}
                 className={`block rounded-md px-2 py-1.5 text-xs transition-colors ${
                   childActive
                     ? "text-blue-300 font-medium"
