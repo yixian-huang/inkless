@@ -38,6 +38,9 @@ importers:
       '@inkless/theme-blog-first':
         specifier: github:yixian-huang/inkless-theme-blog-first#9bffe9d
         version: https://codeload.github.com/yixian-huang/inkless-theme-blog-first/tar.gz/9bffe9d(react-dom@19.2.4(react@19.2.4))(react-i18next@15.7.4(i18next@25.8.4(typescript@5.8.3))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.8.3))(react-router-dom@7.13.0(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(react@19.2.4)
+      '@inkless/theme-product-first':
+        specifier: github:yixian-huang/inkless-theme-product-first#e57cf67
+        version: https://codeload.github.com/yixian-huang/inkless-theme-product-first/tar.gz/e57cf67(react-dom@19.2.4(react@19.2.4))(react-i18next@15.7.4(i18next@25.8.4(typescript@5.8.3))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.8.3))(react-router-dom@7.13.0(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(react@19.2.4)
       '@stripe/react-stripe-js':
         specifier: 4.0.2
         version: 4.0.2(@stripe/stripe-js@7.9.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
@@ -1074,6 +1077,15 @@ packages:
   '@inkless/theme-blog-first@https://codeload.github.com/yixian-huang/inkless-theme-blog-first/tar.gz/9bffe9d':
     resolution: {tarball: https://codeload.github.com/yixian-huang/inkless-theme-blog-first/tar.gz/9bffe9d}
     version: 1.0.0
+    peerDependencies:
+      react: ^19.0.0
+      react-dom: ^19.0.0
+      react-i18next: ^15.0.0
+      react-router-dom: ^7.0.0
+
+  '@inkless/theme-product-first@https://codeload.github.com/yixian-huang/inkless-theme-product-first/tar.gz/e57cf67':
+    resolution: {tarball: https://codeload.github.com/yixian-huang/inkless-theme-product-first/tar.gz/e57cf67}
+    version: 0.1.0
     peerDependencies:
       react: ^19.0.0
       react-dom: ^19.0.0
@@ -4957,6 +4969,13 @@ snapshots:
       import-meta-resolve: 4.2.0
 
   '@inkless/theme-blog-first@https://codeload.github.com/yixian-huang/inkless-theme-blog-first/tar.gz/9bffe9d(react-dom@19.2.4(react@19.2.4))(react-i18next@15.7.4(i18next@25.8.4(typescript@5.8.3))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.8.3))(react-router-dom@7.13.0(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(react@19.2.4)':
+    dependencies:
+      react: 19.2.4
+      react-dom: 19.2.4(react@19.2.4)
+      react-i18next: 15.7.4(i18next@25.8.4(typescript@5.8.3))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.8.3)
+      react-router-dom: 7.13.0(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+
+  '@inkless/theme-product-first@https://codeload.github.com/yixian-huang/inkless-theme-product-first/tar.gz/e57cf67(react-dom@19.2.4(react@19.2.4))(react-i18next@15.7.4(i18next@25.8.4(typescript@5.8.3))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.8.3))(react-router-dom@7.13.0(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(react@19.2.4)':
     dependencies:
       react: 19.2.4
       react-dom: 19.2.4(react@19.2.4)

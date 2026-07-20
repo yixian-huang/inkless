@@ -268,6 +268,20 @@ func (s *Seeder) SeedInstalledThemes(ctx context.Context) error {
 		return err
 	}
 
+	if err := s.ensureInstalledTheme(ctx, &model.InstalledTheme{
+		ThemeID:     builtinthemes.ProductFirst,
+		Name:        "Product First",
+		NameZh:      "产品优先",
+		Description: "软件产品介绍站：主视觉、能力、安装引导、可选更新日志",
+		Author:      brand.ProductName,
+		Version:     "0.1.0",
+		Source:      "built-in",
+		IsActive:    false,
+		Preview:     "linear-gradient(135deg, #111827 0%, #14b8a6 100%)",
+	}); err != nil {
+		return err
+	}
+
 	return s.seedMinimalStarterTheme(ctx)
 }
 

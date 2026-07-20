@@ -3,6 +3,7 @@ package builtinthemes
 const (
 	CorporateClassic = "corporate-classic"
 	BlogFirst        = "blog-first"
+	ProductFirst     = "product-first"
 	MinimalStarter   = "minimal-starter"
 )
 

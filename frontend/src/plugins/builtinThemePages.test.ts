@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { blogFirstTheme } from "./themes/blog-first";
+import { productFirstTheme } from "./themes/product-first";
 import { corporateClassicTheme } from "./themes/corporate-classic";
 import { minimalStarterTheme } from "./themes/minimal-starter";
 import { BUILTIN_THEME_IDS } from "./builtinThemes";
@@ -38,6 +39,14 @@ describe("builtin theme pages SSOT", () => {
     const frontend = themePageMetas(BUILTIN_THEME_IDS.BLOG_FIRST, blogFirstTheme.pages);
     expect(frontend.map((p) => p.contentKey)).toEqual(
       backend.map((p) => p.contentKey),
+    );
+  });
+
+  it("product-first frontend pages match embedded backend manifest", () => {
+    const backend = (manifest as Record<string, PageMeta[]>)[BUILTIN_THEME_IDS.PRODUCT_FIRST];
+    const frontend = themePageMetas(BUILTIN_THEME_IDS.PRODUCT_FIRST, productFirstTheme.pages);
+    expect(frontend.map((p) => p.contentKey).sort()).toEqual(
+      backend.map((p) => p.contentKey).sort(),
     );
   });
 

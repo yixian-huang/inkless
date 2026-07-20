@@ -4,6 +4,7 @@ import type { ThemeLayoutChrome } from "./types";
 export const BUILTIN_THEME_IDS = {
   CORPORATE_CLASSIC: "corporate-classic",
   BLOG_FIRST: "blog-first",
+  PRODUCT_FIRST: "product-first",
   MINIMAL_STARTER: "minimal-starter",
 } as const;
 

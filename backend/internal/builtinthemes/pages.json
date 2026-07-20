@@ -65,6 +65,40 @@
       "sortOrder": 0,
       "title": { "zh": "首页", "en": "Home" },
       "navConfig": { "showInHeader": true, "showInFooter": false }
+    },
+    {
+      "slug": "author",
+      "contentKey": "author",
+      "renderMode": "hardcoded",
+      "sortOrder": 10,
+      "title": { "zh": "关于", "en": "About" },
+      "navConfig": { "showInHeader": true, "showInFooter": false }
+    }
+  ],
+  "product-first": [
+    {
+      "slug": "home",
+      "contentKey": "home",
+      "renderMode": "hardcoded",
+      "sortOrder": 0,
+      "title": { "zh": "首页", "en": "Home" },
+      "navConfig": { "showInHeader": true, "showInFooter": true }
+    },
+    {
+      "slug": "features",
+      "contentKey": "features",
+      "renderMode": "hardcoded",
+      "sortOrder": 1,
+      "title": { "zh": "能力", "en": "Features" },
+      "navConfig": { "showInHeader": true, "showInFooter": true }
+    },
+    {
+      "slug": "contact",
+      "contentKey": "contact",
+      "renderMode": "hardcoded",
+      "sortOrder": 10,
+      "title": { "zh": "联系", "en": "Contact" },
+      "navConfig": { "showInHeader": true, "showInFooter": true }
     }
   ],
   "minimal-starter": [
