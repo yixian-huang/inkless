@@ -40,3 +40,9 @@ npc server exec command gomami -- 'docker logs --tail 100 inkless-theme-demo'
 - Blank-site seed does **not** insert `installed_themes` rows; first activate requires themes to exist (seeded once for this demo).
 - Editorial seed sections apply only when unified page sections are empty.
 - Do not point this data dir at personal or product DBs.
+
+## Branch note (2026-07-22 close-out)
+
+Feature work lives on `feat/editorial-firm-theme` (theme package, extract pin, demo docs, Dockerfile packages/ fix). Merge to `main` when ready via PR (was opened as editorial-firm stack). Demo site does **not** require main merge to stay up — image built from that branch SHA on gomami.
+
+KB snapshot: omni page `ops/inkless/self-hosted-sites-and-themes-2026-07`.
