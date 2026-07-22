@@ -2,6 +2,11 @@ import type { ThemePlugin } from "@inkless/theme-host";
 import EditorialHeader from "./chrome/EditorialHeader";
 import EditorialFooter from "./chrome/EditorialFooter";
 import { editorialFirmTokens, noirGalleryTokens } from "./tokens";
+import {
+  editorialFirmSections,
+  editorialFirmSectionMetas,
+} from "./sections";
+
 
 /** Theme id — keep in sync with host `BUILTIN_THEME_IDS.EDITORIAL_FIRM` and DB. */
 export const EDITORIAL_FIRM_THEME_ID = "editorial-firm";
@@ -41,7 +46,7 @@ export const EDITORIAL_DEFAULT_LAYOUT = {
  * Build the editorial-firm theme plugin.
  *
  * Pages are CMS section-driven (`renderMode: "dynamic"`).
- * Custom sections land in later tasks.
+ * Section library: eight `ef-*` builder blocks.
  */
 export function createEditorialFirmTheme(): ThemePlugin {
   return {
@@ -89,8 +94,9 @@ export function createEditorialFirmTheme(): ThemePlugin {
       },
     })),
     defaultLayout: EDITORIAL_DEFAULT_LAYOUT,
-    sections: {},
-    sectionMetas: [],
+    // Local SectionProps is structurally compatible; cast for ThemePlugin host type.
+    sections: editorialFirmSections as ThemePlugin["sections"],
+    sectionMetas: editorialFirmSectionMetas,
     layoutChrome: {
       Header: EditorialHeader,
       Footer: EditorialFooter,
@@ -98,8 +104,21 @@ export function createEditorialFirmTheme(): ThemePlugin {
   };
 }
 
-/** Theme shell with layout chrome; host registration wires loaders/sections later. */
+/** Theme shell with layout chrome and ef-* section registry. */
 export const editorialFirmTheme: ThemePlugin = createEditorialFirmTheme();
 
 export { EditorialHeader, EditorialFooter };
 export { editorialFirmTokens, noirGalleryTokens } from "./tokens";
+export {
+  editorialFirmSections,
+  editorialFirmSectionMetas,
+  editorialFirmSectionSchemas,
+  EfHeroEditorial,
+  EfPullQuote,
+  EfFeatureSplit,
+  EfServiceIndex,
+  EfMosaic,
+  EfCtaBand,
+  EfContactSplit,
+  EfRichText,
+} from "./sections";
