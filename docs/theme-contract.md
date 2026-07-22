@@ -139,6 +139,10 @@ window.InklessThemeHost = host; // same as host
 | `/categories/*`, `/tags/*` | Host |
 | Dynamic CMS pages | Host + sections |
 
+### 5.2 Built-in themes (examples)
+
+- **editorial-firm** — built-in magazine / firm theme; four dynamic CMS pages via `ef-*` sections (`packages/theme-editorial-firm`). Coexists with `corporate-classic`; not the system fallback.
+
 ## 6. Tokens
 
 Themes must use host CSS variables (applied by `ThemeProvider`), not hardcoded brand hex in components (except optional decorative monogram backgrounds that can fall back to `var(--color-on-surface)`).

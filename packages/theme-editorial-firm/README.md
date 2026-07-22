@@ -5,6 +5,7 @@ Inkless **editorial-firm** theme — magazine / atelier firm site layout, tokens
 - **Theme id**: `editorial-firm` (stable; do not rename without a data migration)
 - **Contract**: v1 (`@inkless/theme-host`)
 - **Pages** are CMS section-driven (`renderMode: "dynamic"`)
+- **Does not replace `corporate-classic`**: separate built-in theme id, package, and seeds. Existing classic sites and `DEFAULT_FALLBACK_THEME_ID` stay on `corporate-classic`.
 
 ## Host consumption
 
@@ -67,6 +68,11 @@ On theme **activate**, the backend:
 
 1. Seeds theme page rows (`SeedThemePages`)
 2. For `editorial-firm` only: applies unified-page section seeds when a page is missing **or** published sections are empty (never overwrites existing sections)
+
+**Customize seed content**
+
+- **Operators / authors**: edit section props in Admin (page builder) after activate — preferred for live sites.
+- **Package defaults**: edit `src/seed/pageConfigs.ts`, keep the backend embed in sync (`EditorialFirmSeedsJSON`), then re-activate only on sites with empty sections (seeds never overwrite non-empty published configs).
 
 Operators who switch from another theme with non-empty shared slugs must clear sections or recreate pages to pick up editorial copy.
 
