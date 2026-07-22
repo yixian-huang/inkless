@@ -27,7 +27,7 @@
 
 **Status (2026-07-22):** External repo **live** —  
 [`yixian-huang/inkless-theme-editorial-firm`](https://github.com/yixian-huang/inkless-theme-editorial-firm)  
-Host pin example: `github:yixian-huang/inkless-theme-editorial-firm#b4b28bfb413683a266310a61cfd6fa514b00c324`  
+Host pin example: `github:yixian-huang/inkless-theme-editorial-firm#e92a3be923ebeeb58927559b23fc98b81b5d9388`  
 Monorepo `packages/theme-editorial-firm` **removed**; further visual work lands in the theme repo.
 
 **Historical default stance (pre-cut):** monorepo `workspace:*` until UMD ready, then this runbook.
