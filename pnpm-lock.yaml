@@ -45,8 +45,8 @@ importers:
         specifier: workspace:*
         version: link:../packages/theme-corporate-classic
       '@inkless/theme-editorial-firm':
-        specifier: workspace:*
-        version: link:../packages/theme-editorial-firm
+        specifier: github:yixian-huang/inkless-theme-editorial-firm#b4b28bfb413683a266310a61cfd6fa514b00c324
+        version: https://codeload.github.com/yixian-huang/inkless-theme-editorial-firm/tar.gz/b4b28bfb413683a266310a61cfd6fa514b00c324(react-dom@19.2.4(react@19.2.4))(react-i18next@15.7.4(i18next@25.8.4(typescript@5.8.3))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.8.3))(react-router-dom@7.13.0(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(react@19.2.4)
       '@inkless/theme-product-first':
         specifier: github:yixian-huang/inkless-theme-product-first#ea8502df0b10f6666b46b7ecdaf1c6ad71a1306d
         version: https://codeload.github.com/yixian-huang/inkless-theme-product-first/tar.gz/ea8502df0b10f6666b46b7ecdaf1c6ad71a1306d(react-dom@19.2.4(react@19.2.4))(react-i18next@15.7.4(i18next@25.8.4(typescript@5.8.3))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.8.3))(react-router-dom@7.13.0(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(react@19.2.4)
@@ -272,39 +272,6 @@ importers:
         version: 4.0.18(@types/node@25.2.1)(happy-dom@20.6.1)(jiti@2.6.1)(jsdom@28.0.0)
 
   packages/theme-corporate-classic:
-    devDependencies:
-      '@types/react':
-        specifier: ^19.1.8
-        version: 19.2.13
-      '@types/react-dom':
-        specifier: ^19.1.6
-        version: 19.2.3(@types/react@19.2.13)
-      '@vitejs/plugin-react-swc':
-        specifier: ^3.10.2
-        version: 3.11.0(vite@7.3.1(@types/node@25.2.1)(jiti@2.6.1))
-      react:
-        specifier: ^19.1.0
-        version: 19.2.4
-      react-dom:
-        specifier: ^19.1.0
-        version: 19.2.4(react@19.2.4)
-      react-i18next:
-        specifier: ^15.6.0
-        version: 15.7.4(i18next@25.8.4(typescript@5.8.3))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.8.3)
-      react-router-dom:
-        specifier: ^7.6.3
-        version: 7.13.0(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
-      typescript:
-        specifier: ~5.8.3
-        version: 5.8.3
-      vite:
-        specifier: ^7.0.3
-        version: 7.3.1(@types/node@25.2.1)(jiti@2.6.1)
-      vitest:
-        specifier: ^4.0.18
-        version: 4.0.18(@types/node@25.2.1)(happy-dom@20.6.1)(jiti@2.6.1)(jsdom@28.0.0)
-
-  packages/theme-editorial-firm:
     devDependencies:
       '@types/react':
         specifier: ^19.1.8
@@ -1155,6 +1122,15 @@ packages:
   '@inkless/theme-blog-first@https://codeload.github.com/yixian-huang/inkless-theme-blog-first/tar.gz/9bffe9d':
     resolution: {tarball: https://codeload.github.com/yixian-huang/inkless-theme-blog-first/tar.gz/9bffe9d}
     version: 1.0.0
+    peerDependencies:
+      react: ^19.0.0
+      react-dom: ^19.0.0
+      react-i18next: ^15.0.0
+      react-router-dom: ^7.0.0
+
+  '@inkless/theme-editorial-firm@https://codeload.github.com/yixian-huang/inkless-theme-editorial-firm/tar.gz/b4b28bfb413683a266310a61cfd6fa514b00c324':
+    resolution: {tarball: https://codeload.github.com/yixian-huang/inkless-theme-editorial-firm/tar.gz/b4b28bfb413683a266310a61cfd6fa514b00c324}
+    version: 0.1.0
     peerDependencies:
       react: ^19.0.0
       react-dom: ^19.0.0
@@ -5050,6 +5026,13 @@ snapshots:
       import-meta-resolve: 4.2.0
 
   '@inkless/theme-blog-first@https://codeload.github.com/yixian-huang/inkless-theme-blog-first/tar.gz/9bffe9d(react-dom@19.2.4(react@19.2.4))(react-i18next@15.7.4(i18next@25.8.4(typescript@5.8.3))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.8.3))(react-router-dom@7.13.0(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(react@19.2.4)':
+    dependencies:
+      react: 19.2.4
+      react-dom: 19.2.4(react@19.2.4)
+      react-i18next: 15.7.4(i18next@25.8.4(typescript@5.8.3))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.8.3)
+      react-router-dom: 7.13.0(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+
+  '@inkless/theme-editorial-firm@https://codeload.github.com/yixian-huang/inkless-theme-editorial-firm/tar.gz/b4b28bfb413683a266310a61cfd6fa514b00c324(react-dom@19.2.4(react@19.2.4))(react-i18next@15.7.4(i18next@25.8.4(typescript@5.8.3))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.8.3))(react-router-dom@7.13.0(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(react@19.2.4)':
     dependencies:
       react: 19.2.4
       react-dom: 19.2.4(react@19.2.4)

@@ -7,8 +7,6 @@ export default {
       "./node_modules/@inkless/theme-product-first/src/**/*.{js,ts,jsx,tsx}",
       "./node_modules/@inkless/theme-blog-first/src/**/*.{js,ts,jsx,tsx}",
       "./node_modules/@inkless/theme-editorial-firm/src/**/*.{js,ts,jsx,tsx}",
-      // Workspace source (pnpm workspace:* may not land under node_modules the same way)
-      "../packages/theme-editorial-firm/src/**/*.{js,ts,jsx,tsx}",
     ],
     theme: {
       extend: {

@@ -25,7 +25,12 @@
 - You are mid-flight changing host facade exports consumed by the theme.
 - You want to keep same-PR iteration on host + theme for another sprint.
 
-**Default stance:** monorepo `workspace:*` until post-merge soak (~1–2 weeks), then this runbook.
+**Status (2026-07-22):** External repo **live** —  
+[`yixian-huang/inkless-theme-editorial-firm`](https://github.com/yixian-huang/inkless-theme-editorial-firm)  
+Host pin example: `github:yixian-huang/inkless-theme-editorial-firm#b4b28bfb413683a266310a61cfd6fa514b00c324`  
+Monorepo `packages/theme-editorial-firm` **removed**; further visual work lands in the theme repo.
+
+**Historical default stance (pre-cut):** monorepo `workspace:*` until UMD ready, then this runbook.
 
 ---
 

@@ -1,9 +1,9 @@
 /**
  * Built-in registration entry for editorial-firm.
- * Implementation lives in monorepo package `@inkless/theme-editorial-firm`.
+ * Implementation: github.com/yixian-huang/inkless-theme-editorial-firm
+ * (pnpm pin in frontend/package.json).
  *
- * Pages are CMS section-driven (`renderMode: "dynamic"`); custom sections
- * land in later tasks — no host page loaders required.
+ * Pages are CMS section-driven (`renderMode: "dynamic"`).
  */
 import { createEditorialFirmTheme } from "@inkless/theme-editorial-firm";
 

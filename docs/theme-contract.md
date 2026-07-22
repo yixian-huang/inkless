@@ -192,11 +192,13 @@ CI: Quality Gate runs UMD build + smoke after Playwright Chromium install.
 
 ### 8.1 Extraction roadmap (editorial-firm)
 
-1. Monorepo package `packages/theme-editorial-firm` + host register / seeds — **in progress** (see feature branch / PR).
-2. Soak on activate + section editing (post-merge).
-3. UMD build + host smoke + `theme-host-shim` (mirror blog-first).
-4. **Separate GitHub repo** (planned): `inkless-theme-editorial-firm`  
-   - Full cut procedure: [`docs/runbook-extract-theme-editorial-firm.md`](runbook-extract-theme-editorial-firm.md)
+1. Monorepo package + host register / seeds — done.
+2. UMD build + host smoke + `theme-host-shim` — done.
+3. **Separate GitHub repo** — done: [`yixian-huang/inkless-theme-editorial-firm`](https://github.com/yixian-huang/inkless-theme-editorial-firm)  
+   - Host consumes via pnpm: `github:yixian-huang/inkless-theme-editorial-firm#<sha>`  
+   - Standalone types: `types/theme-host-shim.d.ts`  
+   - Release assets: `pnpm build` → `dist/theme.umd.js`  
+   - Cut procedure: [`docs/runbook-extract-theme-editorial-firm.md`](runbook-extract-theme-editorial-firm.md)
 
 ## 9. Non-goals
 
