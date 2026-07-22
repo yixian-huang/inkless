@@ -1,4 +1,5 @@
 import type { FieldSchema } from "@/theme/types";
+import { editorialFirmSectionSchemas } from "@inkless/theme-editorial-firm";
 
 export const sectionSchemas: Record<string, FieldSchema[]> = {
   hero: [
@@ -87,6 +88,8 @@ export const sectionSchemas: Record<string, FieldSchema[]> = {
       { label: "居中", value: "center" },
     ]},
   ],
+  // editorial-firm theme sections (ef-*) — additive only
+  ...editorialFirmSectionSchemas,
 };
 
 export const settingsSchema: FieldSchema[] = [

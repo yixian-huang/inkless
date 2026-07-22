@@ -38,7 +38,7 @@ export default function BaseSiteHeader({
   scrolled = true,
   sticky = true,
 }: BaseSiteHeaderProps) {
-  const { i18n } = useTranslation("common");
+  const { t, i18n } = useTranslation("common");
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const location = useLocation();
   const { isMono, currentLocale } = useLocaleMode();
@@ -68,7 +68,7 @@ export default function BaseSiteHeader({
         </div>
       )}
 
-      <nav className={navPaddingClassName}>
+      <nav className={navPaddingClassName} aria-label={t("nav.main", { defaultValue: "Main" })}>
         <div className={containerClassName} style={containerStyle}>
           <div className="flex justify-between items-center gap-4">
             <div className="shrink-0">{brand}</div>
@@ -82,6 +82,7 @@ export default function BaseSiteHeader({
               <MobileMenuButton
                 open={isMobileMenuOpen}
                 onToggle={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                ariaLabel={t("nav.menu", { defaultValue: "Menu" })}
                 className={variant === "corporate"
                   ? (scrolled ? "text-gray-700" : "text-white")
                   : "text-on-surface"}

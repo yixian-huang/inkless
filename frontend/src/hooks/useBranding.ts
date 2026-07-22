@@ -147,7 +147,7 @@ export function resolveBrandingView(
     logo: { light: logoUrl },
     favicon: "",
     primaryColor: SITE_CONFIG_GLOBAL_DEFAULT.brand.primaryColor,
-    author: { name: "", socials: [] },
+    author: { name: "", bio: "", socials: [] },
     footer: {
       copyright,
       extraLinks: [],

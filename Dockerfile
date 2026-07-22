@@ -15,6 +15,8 @@ WORKDIR /src
 # Copy workspace manifests first for better Docker layer caching.
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
 COPY frontend/package.json ./frontend/package.json
+# Workspace theme packages (e.g. corporate-classic) must exist for pnpm install.
+COPY packages ./packages
 
 RUN pnpm install --frozen-lockfile
 

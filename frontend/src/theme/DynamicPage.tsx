@@ -14,7 +14,7 @@ interface DynamicPageProps {
 export default function DynamicPage({ slug: slugProp }: DynamicPageProps = {}) {
   const { "*": paramSlug } = useParams();
   const slug = slugProp || paramSlug;
-  const { i18n } = useTranslation("common");
+  const { t, i18n } = useTranslation("common");
   const locale = resolveLocale(i18n.language);
 
   const [config, setConfig] = useState<PageConfig | null>(null);
@@ -70,13 +70,30 @@ export default function DynamicPage({ slug: slugProp }: DynamicPageProps = {}) {
     );
   }
 
+  const visibleSections = (config.sections ?? []).filter(
+    (s) => !s.settings?.hidden,
+  );
+
+  if (visibleSections.length === 0) {
+    return (
+      <div className="min-h-[50vh] flex items-center justify-center px-4">
+        <p className="text-center text-on-surface-muted text-sm md:text-base">
+          {t("status.pageEmpty", {
+            defaultValue:
+              locale === "zh"
+                ? "页面暂无内容"
+                : "This page has no content yet",
+          })}
+        </p>
+      </div>
+    );
+  }
+
   return (
     <>
-      {config.sections
-        .filter((s) => !s.settings?.hidden)
-        .map((section) => (
-          <SectionRenderer key={section.id} section={section} />
-        ))}
+      {visibleSections.map((section) => (
+        <SectionRenderer key={section.id} section={section} />
+      ))}
     </>
   );
 }

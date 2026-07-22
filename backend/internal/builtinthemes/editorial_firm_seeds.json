@@ -1,0 +1,348 @@
+{
+  "home": {
+    "sections": [
+      {
+        "id": "ef-home-hero",
+        "type": "ef-hero-editorial",
+        "data": {
+          "kicker": { "zh": "工作室", "en": "Studio" },
+          "title": {
+            "zh": "以编辑之眼，塑造机构叙事",
+            "en": "Institutional stories, editorial craft"
+          },
+          "deck": {
+            "zh": "为品牌与专业服务机构提供清晰、有分量的线上表达。",
+            "en": "Clear, substantial web presence for brands and professional firms."
+          },
+          "layout": "full",
+          "ctaLabel": { "zh": "了解服务", "en": "View services" },
+          "ctaHref": "/services",
+          "image": "/images/hero-bg.png"
+        }
+      },
+      {
+        "id": "ef-home-feature",
+        "type": "ef-feature-split",
+        "data": {
+          "title": {
+            "zh": "结构清晰，气质克制",
+            "en": "Clear structure, restrained presence"
+          },
+          "body": {
+            "zh": "我们把杂志版式的节奏感带入企业站点：大标题、疏朗留白与有力的图文节奏，让访客在几秒内理解你是谁、能提供什么。",
+            "en": "We bring magazine pacing to firm sites: bold type, generous space, and deliberate image–text rhythm so visitors grasp who you are within seconds."
+          },
+          "image": "/images/about-us.png",
+          "imageSide": "right",
+          "caption": {
+            "zh": "编辑式版面示意",
+            "en": "Editorial layout study"
+          }
+        }
+      },
+      {
+        "id": "ef-home-services",
+        "type": "ef-service-index",
+        "data": {
+          "title": { "zh": "服务概览", "en": "What we offer" },
+          "intro": {
+            "zh": "从定位叙事到落地站点，覆盖机构线上表达的关键环节。",
+            "en": "From narrative positioning to live sites — the essentials of institutional presence."
+          },
+          "items": [
+            {
+              "title": { "zh": "品牌叙事", "en": "Brand narrative" },
+              "summary": {
+                "zh": "梳理机构主张与信息架构，形成可编辑的内容骨架。",
+                "en": "Clarify the firm’s thesis and information architecture into an editable content skeleton."
+              },
+              "href": "/services"
+            },
+            {
+              "title": { "zh": "站点设计与实现", "en": "Site design & build" },
+              "summary": {
+                "zh": "杂志气质的页面系统，双语可维护，便于运营迭代。",
+                "en": "Magazine-grade page systems, bilingual and maintainable for ongoing ops."
+              },
+              "href": "/services"
+            },
+            {
+              "title": { "zh": "内容运营支持", "en": "Editorial ops" },
+              "summary": {
+                "zh": "栏目规划、文案审校与发布节奏，让站点持续有分量。",
+                "en": "Section planning, copy review, and publish cadence so the site stays substantial."
+              },
+              "href": "/services"
+            }
+          ]
+        }
+      },
+      {
+        "id": "ef-home-quote",
+        "type": "ef-pull-quote",
+        "data": {
+          "quote": {
+            "zh": "好的机构站点不必喧哗——它用秩序与分寸说话。",
+            "en": "A strong firm site need not shout — it speaks through order and measure."
+          },
+          "attribution": {
+            "zh": "编辑机构 · 设计原则",
+            "en": "Editorial Firm · design principle"
+          }
+        }
+      },
+      {
+        "id": "ef-home-cta",
+        "type": "ef-cta-band",
+        "data": {
+          "title": {
+            "zh": "准备好讲述你们的故事？",
+            "en": "Ready to tell your firm’s story?"
+          },
+          "body": {
+            "zh": "告诉我们业务与受众，我们会给出清晰的表达方向。",
+            "en": "Share your practice and audience — we will outline a clear expression plan."
+          },
+          "ctaLabel": { "zh": "联系我们", "en": "Get in touch" },
+          "ctaHref": "/contact"
+        }
+      }
+    ]
+  },
+  "about": {
+    "sections": [
+      {
+        "id": "ef-about-hero",
+        "type": "ef-hero-editorial",
+        "data": {
+          "kicker": { "zh": "关于", "en": "About" },
+          "title": {
+            "zh": "以编辑方法，服务专业机构",
+            "en": "An editorial practice for professional firms"
+          },
+          "deck": {
+            "zh": "我们是一支关注版式、叙事与系统的小团队，帮助机构建立可长期维护的线上形象。",
+            "en": "A small team focused on layout, narrative, and systems — helping firms build a durable online identity."
+          },
+          "layout": "split",
+          "ctaLabel": { "zh": "查看服务", "en": "See services" },
+          "ctaHref": "/services",
+          "image": "/images/about-us-hero-bg.png"
+        }
+      },
+      {
+        "id": "ef-about-feature-1",
+        "type": "ef-feature-split",
+        "data": {
+          "title": {
+            "zh": "先问对问题，再动手做页面",
+            "en": "Ask the right questions before drawing pages"
+          },
+          "body": {
+            "zh": "我们从受众、主张与证据链入手：你希望被谁看见？用什么证明专业？哪些内容必须常青、哪些可以迭代？答案决定结构，而不是反过来。",
+            "en": "We start with audience, thesis, and proof: who must find you, what demonstrates expertise, what should stay evergreen. Structure follows those answers — not the reverse."
+          },
+          "image": "/images/about-us.png",
+          "imageSide": "left",
+          "caption": {
+            "zh": "工作坊与信息架构",
+            "en": "Workshop and information architecture"
+          }
+        }
+      },
+      {
+        "id": "ef-about-feature-2",
+        "type": "ef-feature-split",
+        "data": {
+          "title": {
+            "zh": "设计系统，而不是一次性海报",
+            "en": "Systems, not one-off posters"
+          },
+          "body": {
+            "zh": "每个版块都可在后台编辑：标题、导语、图文与服务目录。你获得的是可生长的站点，而不是冻结的演示稿。",
+            "en": "Every band is editable in the CMS — titles, decks, splits, and service lists. You get a living site, not a frozen deck."
+          },
+          "image": "/images/hero-bg.png",
+          "imageSide": "right",
+          "caption": {
+            "zh": "可配置的编辑区块",
+            "en": "Configurable editorial sections"
+          }
+        }
+      },
+      {
+        "id": "ef-about-mosaic",
+        "type": "ef-mosaic",
+        "data": {
+          "title": {
+            "zh": "现场与物料一瞥",
+            "en": "A glance at craft and materials"
+          },
+          "tiles": [
+            {
+              "image": "/images/advantage-1.png",
+              "label": { "zh": "版式研究", "en": "Layout study" },
+              "href": ""
+            },
+            {
+              "image": "/images/advantage-2.png",
+              "label": { "zh": "图文节奏", "en": "Image rhythm" },
+              "href": ""
+            },
+            {
+              "image": "/images/advantage-3.png",
+              "label": { "zh": "细节与质感", "en": "Detail & texture" },
+              "href": ""
+            }
+          ]
+        }
+      },
+      {
+        "id": "ef-about-cta",
+        "type": "ef-cta-band",
+        "data": {
+          "title": {
+            "zh": "想了解合作方式？",
+            "en": "Curious how we work together?"
+          },
+          "body": {
+            "zh": "从简短沟通开始，确认范围与节奏。",
+            "en": "Start with a short conversation to align scope and pace."
+          },
+          "ctaLabel": { "zh": "预约沟通", "en": "Book a conversation" },
+          "ctaHref": "/contact"
+        }
+      }
+    ]
+  },
+  "services": {
+    "sections": [
+      {
+        "id": "ef-services-hero",
+        "type": "ef-hero-editorial",
+        "data": {
+          "kicker": { "zh": "服务", "en": "Services" },
+          "title": {
+            "zh": "从叙事到站点的完整链路",
+            "en": "From narrative to a live site"
+          },
+          "deck": {
+            "zh": "可组合的服务模块；按机构阶段选取，不必一次上齐。",
+            "en": "Composable modules — pick what fits your stage; you need not take everything at once."
+          },
+          "layout": "full",
+          "ctaLabel": { "zh": "讨论需求", "en": "Discuss your needs" },
+          "ctaHref": "/contact",
+          "image": ""
+        }
+      },
+      {
+        "id": "ef-services-index",
+        "type": "ef-service-index",
+        "data": {
+          "title": { "zh": "服务目录", "en": "Service index" },
+          "intro": {
+            "zh": "编号列表呈现要点；每项可独立采购或打包推进。",
+            "en": "A numbered index of essentials — engage items alone or as a package."
+          },
+          "items": [
+            {
+              "title": { "zh": "定位与叙事框架", "en": "Positioning & narrative frame" },
+              "summary": {
+                "zh": "机构主张、受众地图、证据清单与页面信息架构。",
+                "en": "Firm thesis, audience map, proof list, and page IA."
+              },
+              "href": "/contact"
+            },
+            {
+              "title": { "zh": "编辑式站点设计", "en": "Editorial site design" },
+              "summary": {
+                "zh": "主视觉、图文分栏、服务目录与转化条带的版式系统。",
+                "en": "Hero, feature splits, service index, and CTA bands as a coherent system."
+              },
+              "href": "/contact"
+            },
+            {
+              "title": { "zh": "双语内容生产", "en": "Bilingual content production" },
+              "summary": {
+                "zh": "中英对照文案、术语表与可维护的字段结构。",
+                "en": "zh/en copy, glossary, and maintainable field structure."
+              },
+              "href": "/contact"
+            },
+            {
+              "title": { "zh": "上线与运营支持", "en": "Launch & editorial ops" },
+              "summary": {
+                "zh": "发布清单、栏目节奏与后续改版的轻量支持。",
+                "en": "Launch checklist, section cadence, and light post-launch support."
+              },
+              "href": "/contact"
+            }
+          ]
+        }
+      },
+      {
+        "id": "ef-services-feature",
+        "type": "ef-feature-split",
+        "data": {
+          "title": {
+            "zh": "深一点：为什么是编辑式，而不是模板堆砌",
+            "en": "Why editorial — not template stacking"
+          },
+          "body": {
+            "zh": "模板解决速度，编辑解决可信度。我们用克制的字号层级、明确的目录与可阅读的正文栏，让专业服务机构看起来像它本身——稳重、清晰、有观点。",
+            "en": "Templates buy speed; editorial buys trust. Restrained type scales, clear indices, and readable columns make a professional firm look like itself — steady, clear, and opinionated."
+          },
+          "image": "/images/service-1.png",
+          "imageSide": "left",
+          "caption": {
+            "zh": "服务页深度说明",
+            "en": "Services deep-dive"
+          }
+        }
+      },
+      {
+        "id": "ef-services-cta",
+        "type": "ef-cta-band",
+        "data": {
+          "title": {
+            "zh": "从一项服务开始也可以",
+            "en": "Start with a single engagement"
+          },
+          "body": {
+            "zh": "告诉我们当前最紧迫的表达问题，我们会建议最小可行路径。",
+            "en": "Tell us the most urgent expression problem — we will suggest a minimal viable path."
+          },
+          "ctaLabel": { "zh": "联系我们", "en": "Contact us" },
+          "ctaHref": "/contact"
+        }
+      }
+    ]
+  },
+  "contact": {
+    "sections": [
+      {
+        "id": "ef-contact-split",
+        "type": "ef-contact-split",
+        "data": {
+          "title": { "zh": "联系我们", "en": "Contact" },
+          "intro": {
+            "zh": "留下基本信息与大致需求，我们会在工作日内回复。也可直接邮件或电话沟通。",
+            "en": "Share a few details and we will reply within business days. Email or phone works too."
+          },
+          "phone": { "zh": "+86 10 0000 0000", "en": "+86 10 0000 0000" },
+          "email": { "zh": "hello@example.com", "en": "hello@example.com" },
+          "address": {
+            "zh": "示例地址：请在后台替换为实际办公地址",
+            "en": "Sample address — replace in the admin with your real location"
+          },
+          "showForm": true,
+          "nameLabel": { "zh": "姓名", "en": "Name" },
+          "emailLabel": { "zh": "邮箱", "en": "Email" },
+          "messageLabel": { "zh": "留言", "en": "Message" },
+          "submitLabel": { "zh": "发送", "en": "Send" }
+        }
+      }
+    ]
+  }
+}

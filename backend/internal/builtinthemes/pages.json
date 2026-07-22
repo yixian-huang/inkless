@@ -110,5 +110,39 @@
       "title": { "zh": "首页", "en": "Home" },
       "navConfig": { "showInHeader": true, "showInFooter": false }
     }
+  ],
+  "editorial-firm": [
+    {
+      "slug": "home",
+      "contentKey": "home",
+      "renderMode": "dynamic",
+      "sortOrder": 0,
+      "title": { "zh": "首页", "en": "Home" },
+      "navConfig": { "showInHeader": true, "showInFooter": true }
+    },
+    {
+      "slug": "about",
+      "contentKey": "about",
+      "renderMode": "dynamic",
+      "sortOrder": 1,
+      "title": { "zh": "关于", "en": "About" },
+      "navConfig": { "showInHeader": true, "showInFooter": true }
+    },
+    {
+      "slug": "services",
+      "contentKey": "services",
+      "renderMode": "dynamic",
+      "sortOrder": 2,
+      "title": { "zh": "服务", "en": "Services" },
+      "navConfig": { "showInHeader": true, "showInFooter": true }
+    },
+    {
+      "slug": "contact",
+      "contentKey": "contact",
+      "renderMode": "dynamic",
+      "sortOrder": 3,
+      "title": { "zh": "联系", "en": "Contact" },
+      "navConfig": { "showInHeader": true, "showInFooter": true }
+    }
   ]
 }

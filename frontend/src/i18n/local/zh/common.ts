@@ -12,6 +12,7 @@ export const common = {
     contact: '联系',
     search: '搜索',
     menu: '菜单',
+    main: '主导航',
     languageSwitch: 'English',
   },
   actions: {
@@ -27,6 +28,7 @@ export const common = {
   status: {
     loading: '加载中…',
     empty: '暂无内容',
+    pageEmpty: '页面暂无内容',
     error: '出错了',
   },
   form: {

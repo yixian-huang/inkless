@@ -1,10 +1,12 @@
 package installed_theme
 
 import (
+	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 
+	"github.com/yixian-huang/inkless/backend/internal/builtinthemes"
 	"github.com/yixian-huang/inkless/backend/internal/handlerutil"
 
 	"github.com/yixian-huang/inkless/backend/pkg/apierror"
@@ -19,6 +21,7 @@ import (
 type Handler struct {
 	themeRepo        repository.InstalledThemeRepository
 	themePageService *service.ThemePageService
+	unifiedPageRepo  repository.UnifiedPageRepository
 	cache            *cache.Cache
 }
 
@@ -27,8 +30,14 @@ func NewHandler(
 	themeRepo repository.InstalledThemeRepository,
 	themePageService *service.ThemePageService,
 	c *cache.Cache,
+	unifiedPageRepo repository.UnifiedPageRepository,
 ) *Handler {
-	return &Handler{themeRepo: themeRepo, themePageService: themePageService, cache: c}
+	return &Handler{
+		themeRepo:        themeRepo,
+		themePageService: themePageService,
+		unifiedPageRepo:  unifiedPageRepo,
+		cache:            c,
+	}
 }
 
 func (h *Handler) invalidateBootstrapCache() {
@@ -376,6 +385,14 @@ func (h *Handler) AdminActivate(c *gin.Context) {
 				"warning": "主题已激活，但页面同步失败: " + err.Error(),
 			})
 			return
+		}
+	}
+
+	// editorial-firm: fill empty unified page section configs (never overwrite existing)
+	if target.ThemeID == builtinthemes.EditorialFirm && h.unifiedPageRepo != nil {
+		if err := service.ApplyEditorialFirmPageSeeds(c.Request.Context(), h.unifiedPageRepo); err != nil {
+			// Warning only — activation must still succeed
+			log.Printf("Warning: editorial-firm unified page seeds failed: %v", err)
 		}
 	}
 

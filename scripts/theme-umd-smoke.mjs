@@ -1,11 +1,16 @@
 #!/usr/bin/env node
 /**
- * Smoke-load packages/theme-blog-first/dist/theme.umd.js in a browser-like
- * page with host/peer globals stubbed. Asserts register + contractVersion.
+ * Smoke-load a theme UMD bundle in a browser-like page with host/peer globals
+ * stubbed. Asserts register + contractVersion + pages.
  *
- * Usage (from repo root, after build):
- *   node scripts/theme-umd-smoke.mjs
+ * Usage (from repo root, after theme build):
+ *   node scripts/theme-umd-smoke.mjs [theme-id]
+ *   node scripts/theme-umd-smoke.mjs blog-first
+ *   node scripts/theme-umd-smoke.mjs editorial-firm
  *   pnpm theme:umd:smoke
+ *   pnpm theme:umd:smoke:editorial-firm
+ *
+ * Default theme-id: blog-first (CI quality gate).
  */
 import { chromium } from "playwright";
 import { existsSync, readFileSync } from "node:fs";
@@ -13,39 +18,40 @@ import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+const themeId = (process.argv[2] || process.env.THEME_ID || "blog-first").trim();
+const pkgName = `@inkless/theme-${themeId}`;
+const pkgDir = `theme-${themeId}`;
+
 const umdCandidates = [
-  resolve(root, "frontend/node_modules/@inkless/theme-blog-first/dist/theme.umd.js"),
-  resolve(root, "node_modules/@inkless/theme-blog-first/dist/theme.umd.js"),
-  resolve(root, "packages/theme-blog-first/dist/theme.umd.js"),
+  resolve(root, `frontend/node_modules/${pkgName}/dist/theme.umd.js`),
+  resolve(root, `node_modules/${pkgName}/dist/theme.umd.js`),
+  resolve(root, `packages/${pkgDir}/dist/theme.umd.js`),
 ];
 const manifestCandidates = [
-  resolve(root, "frontend/node_modules/@inkless/theme-blog-first/inkless.theme.json"),
-  resolve(root, "node_modules/@inkless/theme-blog-first/inkless.theme.json"),
-  resolve(root, "packages/theme-blog-first/inkless.theme.json"),
+  resolve(root, `frontend/node_modules/${pkgName}/inkless.theme.json`),
+  resolve(root, `node_modules/${pkgName}/inkless.theme.json`),
+  resolve(root, `packages/${pkgDir}/inkless.theme.json`),
 ];
 const umdPath = umdCandidates.find((p) => existsSync(p));
 const manifestPath = manifestCandidates.find((p) => existsSync(p));
-if (!umdPath) {
-  // fall through to old error after assignment below
-}
-
 
 function fail(msg) {
-  console.error(`theme-umd-smoke: ${msg}`);
+  console.error(`theme-umd-smoke[${themeId}]: ${msg}`);
   process.exit(1);
 }
 
 if (!umdPath || !existsSync(umdPath)) {
   fail(
-    `missing UMD bundle — run: pnpm --filter @inkless/theme-blog-first build (looked in node_modules and packages/)`,
+    `missing UMD bundle — run build for ${pkgName} (looked in node_modules and packages/${pkgDir}/dist)`,
   );
 }
 if (!manifestPath || !existsSync(manifestPath)) {
-  fail("missing inkless.theme.json for theme-blog-first");
+  fail(`missing inkless.theme.json for ${pkgName}`);
 }
 
 const manifest = JSON.parse(readFileSync(manifestPath, "utf8"));
 const expectedContract = String(manifest.contractVersion ?? "");
+const expectedId = String(manifest.id ?? themeId);
 if (!expectedContract) {
   fail("inkless.theme.json missing contractVersion");
 }
@@ -110,7 +116,17 @@ await page.evaluate(() => {
     BaseSiteHeader: passthrough,
     BrandMark: passthrough,
     HeaderUtilities: passthrough,
+    ProductPoweredBy: passthrough,
     useHeaderSettings: () => ({ brandMode: "text", showRssLink: true, showSocials: false }),
+    useHeaderScroll: () => false,
+    useThemePages: () => ({
+      pages: [],
+      unifiedPages: [],
+      headerNavItems: [],
+      footerNavItems: [],
+      menuNavItems: [],
+      isLoading: false,
+    }),
     useBranding: () => ({
       siteName: "Smoke",
       tagline: "",
@@ -190,8 +206,8 @@ if (!result.ok) {
   fail(result.error || "unknown failure");
 }
 
-if (result.id !== "blog-first") {
-  fail(`expected theme id blog-first, got ${result.id}`);
+if (result.id !== expectedId) {
+  fail(`expected theme id ${expectedId}, got ${result.id}`);
 }
 if (String(result.contractVersion) !== expectedContract) {
   fail(

@@ -1206,6 +1206,56 @@ const docTemplate = `{
                 }
             }
         },
+        "/admin/dashboard/summary": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns today visits, pages/articles/media counts for the dashboard",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Dashboard (Admin)"
+                ],
+                "summary": "Admin dashboard summary",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "articlesCount": {
+                                    "type": "integer"
+                                },
+                                "mediaCount": {
+                                    "type": "integer"
+                                },
+                                "pagesCount": {
+                                    "type": "integer"
+                                },
+                                "todayVisits": {
+                                    "type": "integer"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "error": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/admin/email-settings": {
             "get": {
                 "security": [
@@ -5029,6 +5079,10 @@ const docTemplate = `{
                 "autoSummary": {
                     "type": "boolean"
                 },
+                "baseUpdatedAt": {
+                    "description": "BaseUpdatedAt is the client's last-known updatedAt for optimistic concurrency.\nWhen set (and Force is false), the update is rejected with 409 on mismatch.",
+                    "type": "string"
+                },
                 "categoryId": {
                     "type": "integer"
                 },
@@ -5052,6 +5106,10 @@ const docTemplate = `{
                 },
                 "enTitle": {
                     "type": "string"
+                },
+                "force": {
+                    "description": "Force skips optimistic lock and overwrites the latest row.",
+                    "type": "boolean"
                 },
                 "metadata": {
                     "$ref": "#/definitions/github_com_yixian-huang_inkless_backend_internal_model.JSONMap"

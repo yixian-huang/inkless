@@ -54,7 +54,7 @@ function legacyToPartial(raw: Record<string, unknown>): Partial<SiteConfigGlobal
   // Best-effort ICP extraction from Chinese copyright tails like "…京ICP备xxxx号"
   let icp: string | undefined;
   const zhCopy = copyright?.zh ?? "";
-  const icpMatch = zhCopy.match(/(京ICP备[\dA-Za-z\-]*号?(?:-\d+)?)/);
+  const icpMatch = zhCopy.match(/(京ICP备[\dA-Za-z-]*号?(?:-\d+)?)/);
   if (icpMatch) icp = icpMatch[1];
 
   return {
@@ -133,7 +133,7 @@ export function normalizeSiteConfig(raw: unknown): SiteConfigGlobal {
 
   let icp = footer.icp;
   if (!icp && copyright?.zh) {
-    const m = copyright.zh.match(/(京ICP备[\dA-Za-z\-]*号?(?:-\d+)?)/);
+    const m = copyright.zh.match(/(京ICP备[\dA-Za-z-]*号?(?:-\d+)?)/);
     if (m) icp = m[1];
   }
 

@@ -5,6 +5,7 @@ import { corporateClassicTheme } from "./themes/corporate-classic";
 import { blogFirstTheme } from "./themes/blog-first";
 import { productFirstTheme } from "./themes/product-first";
 import { minimalStarterTheme } from "./themes/minimal-starter";
+import { editorialFirmTheme } from "./themes/editorial-firm";
 import { useBootstrap } from "@/contexts/BootstrapContext";
 import { DEFAULT_FALLBACK_THEME_ID } from "@/plugins/builtinThemes";
 import "@/plugins/externals";
@@ -17,6 +18,7 @@ themeManager.registerBuiltIn(corporateClassicTheme);
 themeManager.registerBuiltIn(blogFirstTheme);
 themeManager.registerBuiltIn(productFirstTheme);
 themeManager.registerBuiltIn(minimalStarterTheme);
+themeManager.registerBuiltIn(editorialFirmTheme);
 
 interface ThemeManagerProviderProps {
   children: ReactNode;

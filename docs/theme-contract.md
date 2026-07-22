@@ -139,6 +139,10 @@ window.InklessThemeHost = host; // same as host
 | `/categories/*`, `/tags/*` | Host |
 | Dynamic CMS pages | Host + sections |
 
+### 5.2 Built-in themes (examples)
+
+- **editorial-firm** — built-in magazine / firm theme; four dynamic CMS pages via `ef-*` sections (`packages/theme-editorial-firm`). Coexists with `corporate-classic`; not the system fallback.
+
 ## 6. Tokens
 
 Themes must use host CSS variables (applied by `ThemeProvider`), not hardcoded brand hex in components (except optional decorative monogram backgrounds that can fall back to `var(--color-on-surface)`).
@@ -185,6 +189,16 @@ CI: Quality Gate runs UMD build + smoke after Playwright Chromium install.
    - Inkless monorepo consumes via pnpm: `github:yixian-huang/inkless-theme-blog-first#main`  
    - Standalone types: `types/theme-host-shim.d.ts`  
    - Release assets: `pnpm build` → `dist/theme.umd.js`
+
+### 8.1 Extraction roadmap (editorial-firm)
+
+1. Monorepo package + host register / seeds — done.
+2. UMD build + host smoke + `theme-host-shim` — done.
+3. **Separate GitHub repo** — done: [`yixian-huang/inkless-theme-editorial-firm`](https://github.com/yixian-huang/inkless-theme-editorial-firm)  
+   - Host consumes via pnpm: `github:yixian-huang/inkless-theme-editorial-firm#<sha>`  
+   - Standalone types: `types/theme-host-shim.d.ts`  
+   - Release assets: `pnpm build` → `dist/theme.umd.js`  
+   - Cut procedure: [`docs/runbook-extract-theme-editorial-firm.md`](runbook-extract-theme-editorial-firm.md)
 
 ## 9. Non-goals
 

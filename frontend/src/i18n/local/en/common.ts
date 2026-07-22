@@ -12,6 +12,7 @@ export const common = {
     contact: 'Contact',
     search: 'Search',
     menu: 'Menu',
+    main: 'Main',
     languageSwitch: '中文',
   },
   actions: {
@@ -27,6 +28,7 @@ export const common = {
   status: {
     loading: 'Loading…',
     empty: 'Nothing here yet',
+    pageEmpty: 'This page has no content yet',
     error: 'Something went wrong',
   },
   form: {

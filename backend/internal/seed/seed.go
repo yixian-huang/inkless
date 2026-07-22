@@ -282,6 +282,20 @@ func (s *Seeder) SeedInstalledThemes(ctx context.Context) error {
 		return err
 	}
 
+	if err := s.ensureInstalledTheme(ctx, &model.InstalledTheme{
+		ThemeID:     builtinthemes.EditorialFirm,
+		Name:        "Editorial Firm",
+		NameZh:      "编辑机构",
+		Description: "杂志气质机构官网：首页、关于、服务、联系",
+		Author:      brand.ProductName,
+		Version:     "0.1.0",
+		Source:      "built-in",
+		IsActive:    false,
+		Preview:     "linear-gradient(135deg, #111111 0%, #C45C26 100%)",
+	}); err != nil {
+		return err
+	}
+
 	return s.seedMinimalStarterTheme(ctx)
 }
 
