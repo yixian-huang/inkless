@@ -326,11 +326,35 @@ func parseJSONStringArray(text string) ([]string, error) {
 
 // Embed returns a vector embedding for the given text using the OpenAI embeddings API.
 func (o *OpenAIProvider) Embed(ctx context.Context, text string) ([]float64, error) {
+	vecs, err := o.EmbedBatch(ctx, []string{text})
+	if err != nil {
+		return nil, err
+	}
+	if len(vecs) == 0 {
+		return nil, fmt.Errorf("openai: empty embedding response")
+	}
+	return vecs[0], nil
+}
+
+// EmbedBatch embeds multiple texts in one embeddings API call (OpenAI-compatible).
+// Results are ordered to match the input texts.
+func (o *OpenAIProvider) EmbedBatch(ctx context.Context, texts []string) ([][]float64, error) {
+	if len(texts) == 0 {
+		return nil, nil
+	}
+	// Single-element can stay a string; multi uses array input.
+	var input interface{} = texts
+	if len(texts) == 1 {
+		input = texts[0]
+	}
 	reqBody := map[string]interface{}{
 		"model": "text-embedding-3-small",
-		"input": text,
+		"input": input,
 	}
-	body, _ := json.Marshal(reqBody)
+	body, err := json.Marshal(reqBody)
+	if err != nil {
+		return nil, fmt.Errorf("openai embed: marshal: %w", err)
+	}
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, o.baseURL+"/embeddings", bytes.NewReader(body))
 	if err != nil {
@@ -353,6 +377,7 @@ func (o *OpenAIProvider) Embed(ctx context.Context, text string) ([]float64, err
 	var result struct {
 		Data []struct {
 			Embedding []float64 `json:"embedding"`
+			Index     int       `json:"index"`
 		} `json:"data"`
 	}
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
@@ -361,7 +386,33 @@ func (o *OpenAIProvider) Embed(ctx context.Context, text string) ([]float64, err
 	if len(result.Data) == 0 {
 		return nil, fmt.Errorf("openai: empty embedding response")
 	}
-	return result.Data[0].Embedding, nil
+
+	out := make([][]float64, len(texts))
+	for _, d := range result.Data {
+		idx := d.Index
+		if idx < 0 || idx >= len(out) {
+			// Some proxies omit index; fall back to sequential if counts match.
+			continue
+		}
+		out[idx] = d.Embedding
+	}
+	// If index missing / not filled, try sequential order.
+	filled := 0
+	for _, v := range out {
+		if v != nil {
+			filled++
+		}
+	}
+	if filled == 0 && len(result.Data) == len(texts) {
+		for i, d := range result.Data {
+			out[i] = d.Embedding
+		}
+		filled = len(texts)
+	}
+	if filled != len(texts) {
+		return nil, fmt.Errorf("openai: embedding count mismatch (got %d, want %d)", filled, len(texts))
+	}
+	return out, nil
 }
 
 // ChatComplete sends a prompt with context and returns the LLM's response.

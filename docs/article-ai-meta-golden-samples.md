@@ -57,8 +57,24 @@
 | `placeholder` | 未命名 / Untitled 等 |
 | `length_short` / `length_long` | Meta/SEO/标题长度 |
 | `language_mismatch` | 中英字段脚本不符 |
-| `low_relevance` | 与正文关键词重叠为 0 |
+| `low_relevance` | 与正文关键词重叠为 0（仅当 embedding 不可用时保留） |
+| `low_relevance_embedding` | 正文/字段余弦相似度偏低（warn） |
+| `low_relevance_weak` | 关键词无重叠且语义相似度中等（info） |
 | `slug_format` | slug 非 kebab-case |
+
+### Embedding 组合策略（服务端）
+
+| 关键词重叠 | 余弦 cos | 结果 |
+|------------|----------|------|
+| 0 | ≥ 0.70 | 放过（同义改写） |
+| 0 | 0.55–0.70 | `low_relevance_weak` (info) |
+| 0 | < 0.55 | `low_relevance_embedding` (warn) |
+| > 0 | < 0.45 | `low_relevance_embedding` (warn，防碰巧撞词) |
+| > 0 | ≥ 0.45 | 放过 |
+
+- 正文 embed 截断约 2000 字；字段与正文一次 `EmbedBatch`（OpenAI 兼容）。
+- Anthropic / Embed 失败：静默降级，只保留关键词 `low_relevance`。
+- 阈值常量：`ArticleMetaEmbedPassThreshold` / `Warn` / `Collide`（`article_meta_embedding.go`）。
 
 **注意：** 自动质检 **不替代** 人工「主题一致」分；`low_relevance` 是启发式，短英文专有名词可能漏检或误报。
 

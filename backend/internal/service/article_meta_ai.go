@@ -330,6 +330,8 @@ All string values must be plain text without surrounding quotes.`
 		qualityBody = enPlain
 	}
 	out.Warnings = append(preLenWarns, EvaluateArticleMetaQuality(qualityBody, sug, out.Candidates)...)
+	// Embedding relevance (OpenAI-compatible Embed); degrades to keyword-only on failure.
+	out.Warnings = EvaluateArticleMetaEmbeddingRelevance(ctx, ai, qualityBody, sug, out.Warnings)
 	out.Warnings = dedupeWarnings(out.Warnings)
 	return out, nil
 }
