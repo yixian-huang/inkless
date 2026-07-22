@@ -1,0 +1,36 @@
+# Theme demo stack for themes.inkless.run (gomami)
+# Binds only loopback 8098 so Caddy can reverse_proxy without clashing yx.ink :8088.
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: inkless-theme-demo:latest
+    container_name: inkless-theme-demo
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8098:8088"
+    environment:
+      PORT: "8088"
+      ENV: production
+      SEED_MODE: blank
+      SETUP_BOOTSTRAP: "false"
+      TZ: Asia/Shanghai
+      FRONTEND_DIR: /app/frontend/out
+      UPLOAD_DIR: /app/uploads
+      BACKUP_DIR: /app/backups
+      DB_DSN: file:/app/data/inkless.db?cache=shared&mode=rwc
+      BASE_URL: https://themes.inkless.run
+      CORS_ALLOWED_ORIGINS: https://themes.inkless.run
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
+    volumes:
+      - /opt/inkless-theme-demo/data:/app/data
+      - /opt/inkless-theme-demo/uploads:/app/uploads
+      - /opt/inkless-theme-demo/backups:/app/backups
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8088/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
