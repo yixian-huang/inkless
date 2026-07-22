@@ -1,0 +1,10 @@
+{
+  "id": "sample-graphql-en",
+  "sourceLang": "en",
+  "body": "GraphQL schema design patterns for large APIs require careful thinking about type systems, resolvers, and pagination. This article walks through federation boundaries, nullable fields, and how to keep client queries predictable. We also cover rate limiting and caching strategies that work with GraphQL without falling back to REST-only assumptions.",
+  "notes": "Expect topic: GraphQL schema design",
+  "acceptHints": {
+    "mustContainAny": ["GraphQL", "schema", "API", "resolver"],
+    "forbid": ["weather", "recipe", "crypto"]
+  }
+}

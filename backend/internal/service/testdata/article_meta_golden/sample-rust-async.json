@@ -1,0 +1,10 @@
+{
+  "id": "sample-rust-async",
+  "sourceLang": "zh",
+  "body": "Rust 异步编程正在成为高并发服务的默认选项。本文将从 Future 状态机、Tokio 运行时调度、以及 pin 与取消安全三个角度，梳理常见坑与调试方法。我们会对比同步阻塞线程模型与异步协作式调度的取舍，并给出生产环境中连接池、超时与 tracing 的实践建议。",
+  "notes": "期望主题：Rust 异步 / Tokio",
+  "acceptHints": {
+    "mustContainAny": ["Rust", "异步", "Tokio", "Future"],
+    "forbid": ["天气预报", "股票", "美食"]
+  }
+}

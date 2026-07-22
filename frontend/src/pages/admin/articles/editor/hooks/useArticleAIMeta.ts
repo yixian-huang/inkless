@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   generateArticleMeta,
   type ArticleMetaField,
@@ -9,12 +9,21 @@ import { plainTextFromHtml } from "../utils/publishChecklist";
 import {
   applyAIMetaToForm,
   defaultSelectedKeys,
-  recordAIMetaFeedback,
   resolveApplyValues,
   type AIMetaApplyKey,
   type AIMetaFeedbackKind,
   type AIMetaFormSetters,
 } from "../utils/applyAIMeta";
+import {
+  evaluateAIMetaQuality,
+  hasWarnSeverity,
+  mergeQualityIssues,
+  type QualityIssue,
+} from "../utils/aiMetaQuality";
+import {
+  installAIMetaStatsDebug,
+  recordAIMetaEvent,
+} from "../utils/aiMetaTelemetry";
 
 const MIN_BODY_RUNES = 80;
 
@@ -69,11 +78,19 @@ export function useArticleAIMeta(opts: {
   const [sourceLang, setSourceLang] = useState<"zh" | "en">("zh");
   const [selected, setSelected] = useState<Set<AIMetaApplyKey>>(new Set());
   const [panelError, setPanelError] = useState<string | null>(null);
+  const [bodyPlain, setBodyPlain] = useState("");
+
+  useEffect(() => {
+    installAIMetaStatsDebug();
+  }, []);
 
   const close = useCallback(() => {
+    if (open && response) {
+      recordAIMetaEvent({ type: "dismiss", model: response.model });
+    }
     setOpen(false);
     setPanelError(null);
-  }, []);
+  }, [open, response]);
 
   const openPreview = useCallback(async (openOpts?: OpenAIMetaOpts) => {
     const o = optsRef.current;
@@ -93,10 +110,12 @@ export function useArticleAIMeta(opts: {
 
     setMode(nextMode);
     setSourceLang(lang);
+    setBodyPlain(plain);
     setBusy(true);
     setOpen(true);
     setResponse(null);
     setTitleIndex(0);
+    recordAIMetaEvent({ type: "open", mode: nextMode, sourceLang: lang });
 
     try {
       const resp = await generateArticleMeta({
@@ -123,10 +142,19 @@ export function useArticleAIMeta(opts: {
       setResponse(resp);
       const values = resolveApplyValues(resp, 0);
       setSelected(defaultSelectedKeys(values, o.slugLocked));
+      recordAIMetaEvent({
+        type: "generate_ok",
+        model: resp.model,
+        mode: nextMode,
+        sourceLang: lang,
+        warningCodes: (resp.warnings || []).map((w) => w.code),
+        warnCount: (resp.warnings || []).filter((w) => w.severity !== "info").length,
+      });
     } catch (err) {
       const msg = axiosErrorMessage(err, "生成元数据失败");
       setPanelError(msg);
       o.setError(msg);
+      recordAIMetaEvent({ type: "generate_err", mode: nextMode, sourceLang: lang });
     } finally {
       setBusy(false);
     }
@@ -152,28 +180,60 @@ export function useArticleAIMeta(opts: {
     });
   }, []);
 
+  const values = useMemo(
+    () => (response ? resolveApplyValues(response, titleIndex) : {}),
+    [response, titleIndex],
+  );
+
+  const qualityIssues: QualityIssue[] = useMemo(() => {
+    if (!response || busy) return [];
+    const client = evaluateAIMetaQuality({
+      values,
+      bodyPlain,
+      selected,
+    });
+    return mergeQualityIssues(response.warnings, client);
+  }, [response, values, bodyPlain, selected, busy]);
+
   const apply = useCallback(() => {
     if (!response) return;
     const o = optsRef.current;
-    const values = resolveApplyValues(response, titleIndex);
-    const n = applyAIMetaToForm(selected, values, o.setters);
+    const nextValues = resolveApplyValues(response, titleIndex);
+    const n = applyAIMetaToForm(selected, nextValues, o.setters);
     if (selected.has("enTitle") || selected.has("enSeoTitle") || selected.has("enMetaDescription")) {
       o.ensureEnEnabled?.();
     }
     o.touch();
-    o.setSuccessMessage(`已应用 ${n} 项元数据（未保存）`);
-    recordAIMetaFeedback("useful", { model: response.model, applied: n });
-    close();
-  }, [response, titleIndex, selected, close]);
+    const warnN = qualityIssues.filter((i) => i.severity === "warn").length;
+    o.setSuccessMessage(
+      warnN > 0
+        ? `已应用 ${n} 项元数据（含 ${warnN} 条质检提醒，未保存）`
+        : `已应用 ${n} 项元数据（未保存）`,
+    );
+    recordAIMetaEvent({
+      type: "apply",
+      model: response.model,
+      applied: n,
+      warnCount: warnN,
+      warningCodes: qualityIssues.map((i) => i.code),
+      mode,
+      sourceLang,
+    });
+    setOpen(false);
+    setPanelError(null);
+  }, [response, titleIndex, selected, qualityIssues, mode, sourceLang]);
 
   const feedback = useCallback(
     (kind: AIMetaFeedbackKind) => {
-      recordAIMetaFeedback(kind, { model: response?.model });
+      recordAIMetaEvent({
+        type: "feedback",
+        feedback: kind,
+        model: response?.model,
+      });
     },
     [response],
   );
 
-  const values = response ? resolveApplyValues(response, titleIndex) : {};
   const titleCount = Math.max(
     response?.candidates?.zhTitles?.length || 0,
     response?.candidates?.enTitles?.length || 0,
@@ -193,6 +253,8 @@ export function useArticleAIMeta(opts: {
     selected,
     values,
     panelError,
+    qualityIssues,
+    hasQualityWarn: hasWarnSeverity(qualityIssues),
     slugLocked: opts.slugLocked,
     openPreview,
     close,

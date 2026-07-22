@@ -144,7 +144,7 @@ export function lengthHintForKey(key: AIMetaApplyKey, value: string): MetaLength
   return { length };
 }
 
-/** Soft quality flags for preview (Phase 1.5 lite). */
+/** @deprecated Prefer evaluateAIMetaQuality — kept for simple length-only callers. */
 export function qualityWarnings(
   values: Partial<Record<AIMetaApplyKey, string>>,
 ): string[] {
@@ -160,23 +160,7 @@ export function qualityWarnings(
   return warns;
 }
 
-/** Feedback payload placeholder for future telemetry. */
 export type AIMetaFeedbackKind = "useful" | "needs_edit" | "unusable";
-
-export function recordAIMetaFeedback(
-  kind: AIMetaFeedbackKind,
-  meta?: { model?: string; applied?: number },
-): void {
-  try {
-    const key = "inkless.aiMeta.feedback";
-    const prev = JSON.parse(localStorage.getItem(key) || "[]") as unknown[];
-    const entry = { kind, at: Date.now(), ...meta };
-    const next = [...(Array.isArray(prev) ? prev : []), entry].slice(-50);
-    localStorage.setItem(key, JSON.stringify(next));
-  } catch {
-    /* ignore quota / private mode */
-  }
-}
 
 export function suggestedHasAny(s: ArticleMetaSuggested | undefined): boolean {
   if (!s) return false;

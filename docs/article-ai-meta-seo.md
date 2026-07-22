@@ -1,8 +1,9 @@
 # 文章 AI 元数据补齐与 SEO 评估
 
-> 状态：Phase 1 已实现（2026-07-22）  
+> 状态：Phase 1 + 1.5 已实现（2026-07-22）  
 > 范围：文章编辑器 AI 补齐（title / slug / SEO / meta 等）→ 可评估 → 单页 SEO 优化  
-> 相关实现：`backend/internal/service/article_meta_ai.go`、`backend/internal/handler/ai/`、`frontend/src/api/ai.ts`、`frontend/src/pages/admin/articles/editor/`、`frontend/src/pages/admin/ai-settings/`
+> 相关实现：`backend/internal/service/article_meta_ai.go`、`article_meta_quality.go`、`frontend/src/api/ai.ts`、`aiMetaQuality.ts`、`aiMetaTelemetry.ts`  
+> 黄金样本：[`docs/article-ai-meta-golden-samples.md`](article-ai-meta-golden-samples.md)
 
 ---
 
@@ -305,15 +306,15 @@ Phase 2     单页 SEO 体检 / 优化（诊断 → 建议 → 逐项采纳）
 
 **交付：**
 
-- [ ] 应用前自动：长度、语言、占位检测
-- [ ] 可选：关键词重叠或 embedding 相关度告警
-- [ ] 文档化黄金样本清单与跑分方式（脚本或手工表）
-- [ ] 统计应用率 / 修改率（若已有分析管道则接入）
+- [x] 应用前自动：长度、语言、占位检测（服务端 `warnings` + 前端按勾选字段重算）
+- [x] 关键词重叠相关度告警（`low_relevance`；embedding 留待后续）
+- [x] 黄金样本清单与跑分：[`article-ai-meta-golden-samples.md`](article-ai-meta-golden-samples.md) + `testdata/article_meta_golden/`
+- [x] 本地应用率/反馈统计：`localStorage` events + 控制台 `__inklessAIMetaStats()`
 
 **验收：**
 
-- 明显跑题或超长结果在 UI 有可见警告
-- 换模型前后可用同一黄金样本对比通过率
+- 明显跑题或超长结果在 UI 有可见警告（字段高亮 +「仍要应用」）
+- 换模型前后可用同一黄金样本对比通过率（见黄金样本文档）
 
 ### Phase 2 — 单页 SEO 优化（下一阶段产品）
 
@@ -376,3 +377,4 @@ Phase 2     单页 SEO 体检 / 优化（诊断 → 建议 → 逐项采纳）
 |------|------|
 | 2026-07-22 | 初版：交互、API、评估三层、模型选型、Phase 1 / 1.5 / 2 |
 | 2026-07-22 | Phase 1 实现：`POST /admin/ai/article-meta`、编辑器「AI 元数据」预览面板、发布清单入口、localStorage 反馈钩子 |
+| 2026-07-22 | Phase 1.5：质量 warnings、关键词相关度、黄金样本文档/fixture、本地 events 统计 |

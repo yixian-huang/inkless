@@ -80,8 +80,10 @@ type ArticleMetaResponse struct {
 	Candidates ArticleMetaCandidates `json:"candidates"`
 	Suggested  ArticleMetaSuggested  `json:"suggested"`
 	Skipped    []string              `json:"skipped"`
-	Model      string                `json:"model"`
-	Usage      struct {
+	// Warnings are Phase 1.5 soft quality signals (length/language/placeholder/relevance).
+	Warnings []ArticleMetaWarning `json:"warnings"`
+	Model    string               `json:"model"`
+	Usage    struct {
 		PromptTokens int `json:"prompt_tokens"`
 		OutputTokens int `json:"output_tokens"`
 	} `json:"usage"`
@@ -243,6 +245,24 @@ All string values must be plain text without surrounding quotes.`
 		}
 	}
 
+	// Pre-truncate length signals (Phase 1.5) — capture LLM overshoot before we clip.
+	var preLenWarns []ArticleMetaWarning
+	noteLong := func(field, raw string, max int) {
+		raw = strings.TrimSpace(raw)
+		if raw == "" {
+			return
+		}
+		n := utf8.RuneCountInString(raw)
+		if n > max {
+			preLenWarns = append(preLenWarns, ArticleMetaWarning{
+				Code:     "length_long",
+				Field:    field,
+				Message:  fmt.Sprintf("%s 原始结果偏长（%d/%d，已截断）", fieldLabel(field), n, max),
+				Severity: "info",
+			})
+		}
+	}
+
 	if want["seo"] {
 		if fillEmpty && strings.TrimSpace(ex.ZhSeoTitle) != "" {
 			skip = append(skip, "zhSeoTitle")
@@ -252,6 +272,7 @@ All string values must be plain text without surrounding quotes.`
 				v = primaryZh
 			}
 			if v != "" {
+				noteLong("zhSeoTitle", v, ArticleMetaSEOTitleMax)
 				sug.ZhSeoTitle = truncateRunes(v, ArticleMetaSEOTitleMax)
 			}
 		}
@@ -263,6 +284,7 @@ All string values must be plain text without surrounding quotes.`
 				v = primaryEn
 			}
 			if v != "" {
+				noteLong("enSeoTitle", v, ArticleMetaSEOTitleMax)
 				sug.EnSeoTitle = truncateRunes(v, ArticleMetaSEOTitleMax)
 			}
 		}
@@ -272,11 +294,13 @@ All string values must be plain text without surrounding quotes.`
 		if fillEmpty && strings.TrimSpace(ex.ZhMetaDescription) != "" {
 			skip = append(skip, "zhMetaDescription")
 		} else if v := strings.TrimSpace(payload.ZhMetaDescription); v != "" {
+			noteLong("zhMetaDescription", v, ArticleMetaDescMax)
 			sug.ZhMetaDescription = truncateRunes(v, ArticleMetaDescMax)
 		}
 		if fillEmpty && strings.TrimSpace(ex.EnMetaDescription) != "" {
 			skip = append(skip, "enMetaDescription")
 		} else if v := strings.TrimSpace(payload.EnMetaDescription); v != "" {
+			noteLong("enMetaDescription", v, ArticleMetaDescMax)
 			sug.EnMetaDescription = truncateRunes(v, ArticleMetaDescMax)
 		}
 	}
@@ -296,6 +320,17 @@ All string values must be plain text without surrounding quotes.`
 
 	out.Suggested = sug
 	out.Skipped = uniqueStrings(skip)
+
+	// Phase 1.5 quality gate (soft warnings only — never block response).
+	qualityBody := sourcePlain
+	// Prefer matching language body for keyword overlap when available.
+	if sourceLang == "zh" && zhPlain != "" {
+		qualityBody = zhPlain
+	} else if sourceLang == "en" && enPlain != "" {
+		qualityBody = enPlain
+	}
+	out.Warnings = append(preLenWarns, EvaluateArticleMetaQuality(qualityBody, sug, out.Candidates)...)
+	out.Warnings = dedupeWarnings(out.Warnings)
 	return out, nil
 }
 

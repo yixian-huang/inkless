@@ -61,4 +61,5 @@ npc deploy impress hk-artifact --ref <branch-or-sha> --wait
 | Deploy targets, dual-process helpers | `OPS.md` |
 | yx.ink vs inkless.run incident rules | `docs/ops-lessons-yx-ink-vs-inkless-run.md` |
 | Article AI meta / SEO (design + eval) | `docs/article-ai-meta-seo.md` |
+| AI meta golden samples / scoring | `docs/article-ai-meta-golden-samples.md` |
 | Frontend flags | `BASE_PATH`, `IS_PREVIEW`, … in `frontend/vite.config.ts` |

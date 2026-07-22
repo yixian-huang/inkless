@@ -48,6 +48,13 @@ export interface ArticleMetaSuggested {
   tags?: string[];
 }
 
+export interface ArticleMetaWarning {
+  code: string;
+  field?: string;
+  message: string;
+  severity: "warn" | "info" | string;
+}
+
 export interface ArticleMetaResponse {
   candidates: {
     zhTitles?: string[];
@@ -55,6 +62,8 @@ export interface ArticleMetaResponse {
   };
   suggested: ArticleMetaSuggested;
   skipped: string[];
+  /** Phase 1.5 soft quality signals from the server */
+  warnings?: ArticleMetaWarning[];
   model?: string;
   usage?: {
     prompt_tokens?: number;

@@ -638,6 +638,7 @@ export default function ArticleEditorPage() {
           onCycleTitle: aiMeta.cycleTitle,
           slugLocked: aiMeta.slugLocked,
           panelError: aiMeta.panelError,
+          qualityIssues: aiMeta.qualityIssues,
           model: aiMeta.response?.model,
           onClose: aiMeta.close,
           onApply: aiMeta.apply,

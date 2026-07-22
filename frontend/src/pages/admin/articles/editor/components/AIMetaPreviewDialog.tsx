@@ -3,9 +3,12 @@ import {
   AI_META_APPLY_KEYS,
   AI_META_LABELS,
   lengthHintForKey,
-  qualityWarnings,
   type AIMetaApplyKey,
 } from "../utils/applyAIMeta";
+import {
+  issuesForField,
+  type QualityIssue,
+} from "../utils/aiMetaQuality";
 
 export function AIMetaPreviewDialog({
   open,
@@ -23,6 +26,7 @@ export function AIMetaPreviewDialog({
   onCycleTitle,
   slugLocked,
   panelError,
+  qualityIssues = [],
   model,
   onClose,
   onApply,
@@ -44,6 +48,7 @@ export function AIMetaPreviewDialog({
   onCycleTitle: (delta: 1 | -1) => void;
   slugLocked: boolean;
   panelError: string | null;
+  qualityIssues?: QualityIssue[];
   model?: string;
   onClose: () => void;
   onApply: () => void;
@@ -52,7 +57,8 @@ export function AIMetaPreviewDialog({
 }) {
   if (!open) return null;
 
-  const warns = qualityWarnings(values);
+  const warnIssues = qualityIssues.filter((i) => i.severity === "warn");
+  const infoIssues = qualityIssues.filter((i) => i.severity === "info");
   const canApply = !busy && !panelError && selected.size > 0 && Object.keys(values).length > 0;
 
   return (
@@ -68,7 +74,7 @@ export function AIMetaPreviewDialog({
             根据正文生成元数据
           </h2>
           <p className="text-xs text-slate-500 mt-0.5">
-            预览后勾选再应用；默认不覆盖已有内容。应用后仍需手动保存。
+            预览后勾选再应用；默认不覆盖已有内容。应用前会做长度 / 语言 / 相关度质检。
           </p>
         </div>
 
@@ -141,6 +147,28 @@ export function AIMetaPreviewDialog({
             </div>
           )}
 
+          {!busy && !panelError && warnIssues.length > 0 && (
+            <div
+              className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-950 space-y-1"
+              role="status"
+            >
+              <div className="font-semibold">质检提醒（可仍应用，建议先核对）</div>
+              <ul className="list-disc pl-4 space-y-0.5">
+                {warnIssues.map((w) => (
+                  <li key={`${w.code}-${w.field}-${w.message}`}>{w.message}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {!busy && !panelError && infoIssues.length > 0 && warnIssues.length === 0 && (
+            <ul className="text-xs text-slate-600 bg-slate-50 border border-slate-100 rounded-lg px-3 py-2 space-y-0.5">
+              {infoIssues.map((w) => (
+                <li key={`${w.code}-${w.field}-${w.message}`}>{w.message}</li>
+              ))}
+            </ul>
+          )}
+
           {!busy && !panelError && (
             <ul className="space-y-2">
               {AI_META_APPLY_KEYS.map((key) => {
@@ -148,13 +176,17 @@ export function AIMetaPreviewDialog({
                 const disabled = key === "slug" && slugLocked;
                 const empty = !value?.trim();
                 const hint = value ? lengthHintForKey(key, value) : null;
+                const fieldIssues = issuesForField(qualityIssues, key);
+                const fieldWarn = fieldIssues.some((i) => i.severity === "warn");
                 return (
                   <li
                     key={key}
                     className={`rounded-lg border px-3 py-2 ${
                       empty || disabled
                         ? "border-slate-100 bg-slate-50/80 opacity-70"
-                        : "border-slate-200 bg-white"
+                        : fieldWarn
+                          ? "border-amber-200 bg-amber-50/40"
+                          : "border-slate-200 bg-white"
                     }`}
                   >
                     <label className="flex items-start gap-2 cursor-pointer">
@@ -171,6 +203,9 @@ export function AIMetaPreviewDialog({
                             {AI_META_LABELS[key]}
                             {disabled && (
                               <span className="ml-1 text-amber-700 font-normal">（已发布锁定）</span>
+                            )}
+                            {fieldWarn && (
+                              <span className="ml-1 text-amber-700 font-normal">· 需核对</span>
                             )}
                           </span>
                           {hint && (
@@ -208,16 +243,13 @@ export function AIMetaPreviewDialog({
             </p>
           )}
 
-          {warns.length > 0 && !busy && (
-            <ul className="text-xs text-amber-800 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2 space-y-0.5">
-              {warns.map((w) => (
-                <li key={w}>{w}</li>
-              ))}
-            </ul>
-          )}
-
           {model && !busy && (
-            <p className="text-[10px] text-slate-400">模型：{model}</p>
+            <p className="text-[10px] text-slate-400">
+              模型：{model}
+              {qualityIssues.length > 0
+                ? ` · 质检 ${qualityIssues.length} 条`
+                : " · 质检通过"}
+            </p>
           )}
         </div>
 
@@ -240,6 +272,14 @@ export function AIMetaPreviewDialog({
                   className="px-2 py-1 text-[10px] text-slate-500 hover:text-slate-800"
                 >
                   需大改
+                </button>
+                <button
+                  type="button"
+                  title="不可用"
+                  onClick={() => onFeedback("unusable")}
+                  className="px-2 py-1 text-[10px] text-slate-500 hover:text-slate-800"
+                >
+                  不可用
                 </button>
               </>
             )}
@@ -265,9 +305,13 @@ export function AIMetaPreviewDialog({
               type="button"
               onClick={onApply}
               disabled={!canApply}
-              className="px-3 py-1.5 text-sm bg-violet-600 text-white rounded-lg hover:bg-violet-700 disabled:opacity-50"
+              className={`px-3 py-1.5 text-sm text-white rounded-lg disabled:opacity-50 ${
+                warnIssues.length > 0
+                  ? "bg-amber-600 hover:bg-amber-700"
+                  : "bg-violet-600 hover:bg-violet-700"
+              }`}
             >
-              应用勾选项
+              {warnIssues.length > 0 ? "仍要应用勾选项" : "应用勾选项"}
             </button>
           </div>
         </div>

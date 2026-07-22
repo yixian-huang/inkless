@@ -13,6 +13,7 @@ import { LazyEditorModals } from "./lazyEditorSurfaces";
 import { AIMetaPreviewDialog } from "./AIMetaPreviewDialog";
 import type { ArticleMetaMode } from "@/api/ai";
 import type { AIMetaApplyKey } from "../utils/applyAIMeta";
+import type { QualityIssue } from "../utils/aiMetaQuality";
 
 type LangEntry = {
   editor: Editor | null;
@@ -93,6 +94,7 @@ export function EditorDialogs({
     onCycleTitle: (delta: 1 | -1) => void;
     slugLocked: boolean;
     panelError: string | null;
+    qualityIssues?: QualityIssue[];
     model?: string;
     onClose: () => void;
     onApply: () => void;
@@ -173,6 +175,7 @@ export function EditorDialogs({
           onCycleTitle={aiMeta.onCycleTitle}
           slugLocked={aiMeta.slugLocked}
           panelError={aiMeta.panelError}
+          qualityIssues={aiMeta.qualityIssues}
           model={aiMeta.model}
           onClose={aiMeta.onClose}
           onApply={aiMeta.onApply}

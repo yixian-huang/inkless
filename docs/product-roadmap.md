@@ -42,7 +42,7 @@ Inkless 是一个双语（zh/en）React SPA + Go/Gin CMS。下表以当前仓库
 | AI 配置 | production | OpenAI/Anthropic 配置加密持久化、脱敏读取、连接测试、即时切换和启动恢复 |
 | AI 建站向导 | production | 使用当前 AI provider 生成计划并写入 `unified_pages` composable 草稿，可继续编辑和发布 |
 | AI 翻译 | production | 动态使用当前 AI provider；未配置返回 503；文章翻译默认预览并提供显式覆盖保护 |
-| AI 文章元数据 / SEO | beta | Phase 1：正文驱动补齐标题、slug、SEO/meta（预览后应用）；评估与 Phase 2 见 [`docs/article-ai-meta-seo.md`](article-ai-meta-seo.md) |
+| AI 文章元数据 / SEO | beta | Phase 1 补齐 + Phase 1.5 质检/黄金样本/本地统计；Phase 2 单页 SEO 体检见 [`docs/article-ai-meta-seo.md`](article-ai-meta-seo.md) |
 | 远端存储 | production | S3/OSS 配置保存前真实探测，配置热切换；普通与分片上传统一走 active StorageProvider |
 | 外部插件运行时 | beta | 公开 Go SDK/proto；zip 按实际解压字节限额并原子安装、独立进程启停、在途 RPC 有界排空、provider 注册/恢复、启动恢复、可回滚卸载和管理 API 已闭环；启用态卸载提交前始终保留 DB enabled 真相，失败或进程崩溃后可恢复文件、进程与 provider；`file-notifier` 已通过黑盒验证；默认关闭，仅系统管理员可显式启用 |
 | 管理端质量门禁 | production | lint、typecheck、前后端测试、Go race test、构建及 Playwright 页面发布、定时发布、系统状态和迁移链路 |
@@ -51,7 +51,7 @@ Inkless 是一个双语（zh/en）React SPA + Go/Gin CMS。下表以当前仓库
 
 ### 受限或未完成能力
 
-- 文章 AI 元数据 Phase 1 已接入编辑器（`POST /admin/ai/article-meta`，`articles:update`）；Phase 1.5 质检与 Phase 2 单页 SEO 体检未做。见 [`docs/article-ai-meta-seo.md`](article-ai-meta-seo.md)。通用 `suggest-titles` / `summarize` 仍为 `settings:manage`。
+- 文章 AI 元数据 Phase 1+1.5 已接入（生成、质检 warnings、本地 apply 率统计）；Phase 2 单页 SEO 体检未做。见 [`docs/article-ai-meta-seo.md`](article-ai-meta-seo.md)、[`docs/article-ai-meta-golden-samples.md`](article-ai-meta-golden-samples.md)。通用 `suggest-titles` / `summarize` 仍为 `settings:manage`。
 - migration 任务和失败文章状态目前保存在应用进程内，服务重启后不会恢复历史任务；大规模迁移前仍需补持久化任务模型与文件大小限制。
 - QA 已动态读取当前 AI provider，但向量索引仍为进程内存实现，重启会丢失，保持 experimental。
 - 远端存储切换不迁移历史对象；媒体保留 provider/key，历史 provider 必须仍可访问。
