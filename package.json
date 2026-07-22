@@ -13,6 +13,7 @@
     "build:theme-blog-first": "cd frontend/node_modules/@inkless/theme-blog-first && npm install --ignore-scripts --no-fund --no-audit && npm run build",
     "build:theme-product-first": "cd frontend/node_modules/@inkless/theme-product-first && npm install --ignore-scripts --no-fund --no-audit && npm run build",
     "build:theme-corporate-classic": "pnpm --filter @inkless/theme-corporate-classic type-check",
+    "build:theme-editorial-firm": "pnpm --filter @inkless/theme-editorial-firm type-check",
     "theme:umd:smoke": "pnpm run build:theme-blog-first && node scripts/theme-umd-smoke.mjs",
     "test": "pnpm -C frontend test:run",
     "test:run": "pnpm -C frontend test:run",

@@ -1,0 +1,20 @@
+{
+  "id": "editorial-firm",
+  "name": "Editorial Firm",
+  "nameZh": "编辑机构",
+  "version": "0.1.0",
+  "contractVersion": "1",
+  "author": "Inkless CMS",
+  "description": "Magazine-style firm site: home, about, services, contact — section-driven",
+  "descriptionZh": "杂志气质机构官网：首页、关于、服务、联系 — 区块配置驱动",
+  "tags": ["corporate", "editorial", "bilingual", "dynamic"],
+  "entry": {
+    "builtin": "src/index.ts",
+    "register": "src/register.ts"
+  },
+  "peerHost": {
+    "sharedGlobal": "__INKLESS_SHARED__",
+    "hostGlobal": "InklessThemeHost",
+    "registerGlobal": "__INKLESS_THEME_REGISTER__"
+  }
+}

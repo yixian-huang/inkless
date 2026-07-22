@@ -6,6 +6,7 @@ export const BUILTIN_THEME_IDS = {
   BLOG_FIRST: "blog-first",
   PRODUCT_FIRST: "product-first",
   MINIMAL_STARTER: "minimal-starter",
+  EDITORIAL_FIRM: "editorial-firm",
 } as const;
 
 export type BuiltinThemeId = (typeof BUILTIN_THEME_IDS)[keyof typeof BUILTIN_THEME_IDS];

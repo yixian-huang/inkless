@@ -1,0 +1,48 @@
+{
+  "name": "@inkless/theme-editorial-firm",
+  "version": "0.1.0",
+  "private": false,
+  "description": "Inkless editorial-firm theme — magazine/atelier firm site tokens, page IA, and chrome",
+  "type": "module",
+  "main": "./src/index.ts",
+  "module": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./register": "./src/register.ts",
+    "./package.json": "./package.json",
+    "./inkless.theme.json": "./inkless.theme.json"
+  },
+  "files": [
+    "src",
+    "dist",
+    "inkless.theme.json",
+    "README.md"
+  ],
+  "scripts": {
+    "type-check": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "react-i18next": "^15.0.0",
+    "react-router-dom": "^7.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.1.8",
+    "@types/react-dom": "^19.1.6",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "react-i18next": "^15.6.0",
+    "react-router-dom": "^7.6.3",
+    "typescript": "~5.8.3",
+    "vitest": "^4.0.18"
+  },
+  "inkless": {
+    "type": "theme",
+    "id": "editorial-firm",
+    "contractVersion": "1",
+    "hostPackage": "@inkless/theme-host"
+  }
+}
