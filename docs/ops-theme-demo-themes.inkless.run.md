@@ -64,3 +64,28 @@ npc vault get fbfb4b27-93cf-486d-ad84-bf329af3f115 -o json   # metadata only
 ```
 
 Default seed password was rotated; do not use `admin123`.
+
+## NoPanel deploy (package path)
+
+Environment: **`impress` / `theme-demo-compose`** (compose_stack, server **gomami**, workDir `/opt/inkless-theme-demo`).
+
+```bash
+# 1) Build short-lived source package from GitHub (control plane has repo access)
+npc env package build impress theme-demo-compose --ref main -o json
+
+# 2) On gomami, run returned deployCommand (or upload script and bash it)
+# Requires /opt/inkless-theme-demo/.env with JWT_SECRET / JWT_REFRESH_SECRET
+# Compose file: current/docker-compose.npc.yml (ports 127.0.0.1:8098:8088 only)
+
+npc env package build impress theme-demo-compose --ref main -o json \
+  | jq -r '.deployCommand' > /tmp/theme-demo-deploy.sh
+npc server file upload gomami /tmp/theme-demo-deploy.sh /tmp/theme-demo-deploy.sh
+npc server exec command gomami --async --wait --timeout 900 -- 'bash /tmp/theme-demo-deploy.sh'
+
+# Fallback if compose build context fails: keep prebuilt image
+# docker compose -f current/docker-compose.npc.yml --env-file .env -p inkless-theme-demo up -d --no-build
+```
+
+Legacy env name `theme-demo` (docker method) remains but is superseded by `theme-demo-compose`.
+
+`npc deploy impress theme-demo-compose` may fail on this host when the worker cannot complete compose build in one shot; prefer package build + deployCommand above.
