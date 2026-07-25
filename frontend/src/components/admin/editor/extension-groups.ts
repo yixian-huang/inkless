@@ -87,14 +87,16 @@ export function mediaExtensions(): Extension[] {
 }
 
 /** Advanced media: video, audio, iframe, youtube, image gallery, resizable media */
-export function mediaAdvancedExtensions(): Extension[] {
+export function mediaAdvancedExtensions(ports?: EditorPorts): Extension[] {
   return [
     Youtube.configure({ width: 640, height: 360 }) as Extension,
     Iframe as Extension,
     Video as Extension,
     Audio as Extension,
     ImageGallery as Extension,
-    ResizableMedia as Extension,
+    ResizableMedia.configure({
+      picker: ports?.picker,
+    }) as Extension,
   ];
 }
 
@@ -135,7 +137,13 @@ export function interactionExtensions(
   ports?: EditorPorts,
 ): Extension[] {
   const exts: Extension[] = [];
-  if (features.slashCommands) exts.push(SlashCommands as Extension);
+  if (features.slashCommands) {
+    exts.push(
+      SlashCommands.configure({
+        picker: ports?.picker,
+      }) as Extension,
+    );
+  }
   if (features.blockHandles) exts.push(BlockHandle as Extension);
   if (features.blockToolbar) exts.push(BlockToolbar as Extension);
   if (features.imagePaste) {
@@ -175,7 +183,7 @@ export function buildExtensions(
     ...coreExtensions(),
     ...(formatting ? formattingExtensions() : []),
     ...(media ? mediaExtensions() : []),
-    ...(mediaAdvanced ? mediaAdvancedExtensions() : []),
+    ...(mediaAdvanced ? mediaAdvancedExtensions(ports) : []),
     ...(table ? tableExtensions() : []),
     ...(layout ? layoutExtensions() : []),
     ...(enhancements ? enhancementExtensions() : []),

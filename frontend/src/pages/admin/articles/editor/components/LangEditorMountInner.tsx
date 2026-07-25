@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef } from "react";
 import { useEditor, type Editor } from "@tiptap/react";
 import { getPreset } from "@/components/admin/editor/presets";
-import { createInklessUploadPort } from "@/components/admin/editor-host/createUploadPort";
+import type { EditorPorts } from "@/components/admin/editor/ports/types";
 import { sanitizePastedHtml } from "../utils/sanitizePastedHtml";
 
 export type LangEditorMountInnerProps = {
@@ -10,6 +10,8 @@ export type LangEditorMountInnerProps = {
   onDirty: () => void;
   onEditor: (editor: Editor | null) => void;
   onFlushBody?: (html: string) => void;
+  /** Host ports (upload + picker). Must be stable for the editor lifetime. */
+  ports: EditorPorts;
 };
 
 /**
@@ -22,8 +24,8 @@ export function LangEditorMountInner({
   onDirty,
   onEditor,
   onFlushBody,
+  ports,
 }: LangEditorMountInnerProps) {
-  const ports = useMemo(() => ({ upload: createInklessUploadPort() }), []);
   const extensions = useMemo(
     () => getPreset("full").extensions(ports),
     [ports],

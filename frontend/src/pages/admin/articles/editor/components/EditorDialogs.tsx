@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import ImagePickerModal from "@/components/admin/ImagePickerModal";
 import type { Editor } from "@tiptap/react";
 import type { ModalState } from "@/components/admin/editor/types-internal";
+import type { MediaPickConsumers } from "@/components/admin/editor-host/useInklessMediaPicker";
 import { ArticleVersionHistoryPanel, type ArticleDraftSnapshot } from "../VersionHistoryPanel";
 import ArticlePreviewModal, { type ArticlePreviewData } from "../ArticlePreviewModal";
 import ArticleConflictDialog from "../ArticleConflictDialog";
@@ -18,6 +19,7 @@ import type { QualityIssue } from "../utils/aiMetaQuality";
 type LangEntry = {
   editor: Editor | null;
   state: ModalState;
+  consumers: MediaPickConsumers;
 };
 
 /**
@@ -107,7 +109,11 @@ export function EditorDialogs({
       {Object.entries(langEditors).map(([lang, entry]) =>
         entry.editor ? (
           <Suspense key={lang} fallback={null}>
-            <LazyEditorModals editor={entry.editor} state={entry.state} />
+            <LazyEditorModals
+              editor={entry.editor}
+              state={entry.state}
+              consumers={entry.consumers}
+            />
           </Suspense>
         ) : null,
       )}

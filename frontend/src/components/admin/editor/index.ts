@@ -8,7 +8,10 @@ export type {
   ToolbarItemDef,
   EditorPorts,
   MediaUploadPort,
+  MediaPickerPort,
   MediaRef,
+  GalleryPick,
+  EmbedPick,
 } from "./types";
 export type { ModalControls, ModalState } from "./types-internal";
 export { useModalState } from "./useModalState";

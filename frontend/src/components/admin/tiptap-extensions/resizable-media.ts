@@ -1,6 +1,7 @@
 import { Extension } from "@tiptap/core";
 import { Plugin, PluginKey, NodeSelection } from "@tiptap/pm/state";
 import type { EditorView } from "@tiptap/pm/view";
+import type { MediaPickerPort } from "@/components/admin/editor/ports/types";
 
 const MIN_WIDTH = 50;
 const pluginKey = new PluginKey("resizableMedia");
@@ -105,7 +106,13 @@ function attachSelectionUI(view: EditorView, pos: number, dom: HTMLElement): () 
 }
 
 /** Create a hover "替换" button for media nodes */
-function createReplaceButton(dom: HTMLElement, nodeTypeName: string, view: EditorView, nodePos: number): HTMLButtonElement {
+function createReplaceButton(
+  dom: HTMLElement,
+  nodeTypeName: string,
+  view: EditorView,
+  nodePos: number,
+  picker?: MediaPickerPort,
+): HTMLButtonElement {
   const btn = document.createElement("button");
   btn.className = "media-replace-btn";
   btn.textContent = "替换";
@@ -137,12 +144,35 @@ function createReplaceButton(dom: HTMLElement, nodeTypeName: string, view: Edito
   btn.addEventListener("mousedown", (e) => {
     e.preventDefault();
     e.stopPropagation();
-    // Select the media node so the replace handler can find it
+    // Select the media node so default modal path can also replace if needed
     const tr = view.state.tr.setSelection(NodeSelection.create(view.state.doc, nodePos));
     view.dispatch(tr);
-    document.dispatchEvent(
-      new CustomEvent("editor-replace-media", { detail: { type: nodeTypeName } })
-    );
+
+    if (!picker) return;
+
+    const applyReplace = (src: string, alt?: string) => {
+      const pos = view.state.selection.from;
+      const current = view.state.doc.nodeAt(pos);
+      if (!current || current.type.name !== nodeTypeName) return;
+      const nextAttrs =
+        nodeTypeName === "image"
+          ? { ...current.attrs, src, ...(alt !== undefined ? { alt } : {}) }
+          : { ...current.attrs, src };
+      view.dispatch(view.state.tr.setNodeMarkup(pos, undefined, nextAttrs));
+      view.focus();
+    };
+
+    if (nodeTypeName === "image") {
+      picker.openImage((ref) => {
+        if (!ref.url) return;
+        applyReplace(ref.url, ref.filename);
+      });
+    } else if (nodeTypeName === "video") {
+      picker.openVideo((ref) => {
+        if (!ref.url) return;
+        applyReplace(ref.url);
+      });
+    }
   });
 
   return btn;
@@ -156,10 +186,21 @@ function withoutDomObserver(view: EditorView, fn: () => void) {
   else fn();
 }
 
-export const ResizableMedia = Extension.create({
+export interface ResizableMediaOptions {
+  picker?: MediaPickerPort;
+}
+
+export const ResizableMedia = Extension.create<ResizableMediaOptions>({
   name: "resizableMedia",
 
+  addOptions() {
+    return {
+      picker: undefined,
+    };
+  },
+
   addProseMirrorPlugins() {
+    const picker = this.options.picker;
     let selectionCleanup: (() => void) | null = null;
     let hoverTarget: HTMLElement | null = null;
     let hoverBtn: HTMLButtonElement | null = null;
@@ -217,7 +258,13 @@ export const ResizableMedia = Extension.create({
                   container.style.position = "relative";
                 }
 
-                hoverBtn = createReplaceButton(container, node.type.name, view, pos);
+                hoverBtn = createReplaceButton(
+                  container,
+                  node.type.name,
+                  view,
+                  pos,
+                  picker,
+                );
                 container.appendChild(hoverBtn);
               });
 

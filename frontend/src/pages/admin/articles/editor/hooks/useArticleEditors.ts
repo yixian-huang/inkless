@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Editor } from "@tiptap/react";
-import { useModalState } from "@/components/admin/editor/useModalState";
+import type { EditorPorts } from "@/components/admin/editor/ports/types";
 import type { MarkdownSelectionApi } from "@/components/admin/editor/MarkdownToolbar";
+import { createInklessUploadPort } from "@/components/admin/editor-host/createUploadPort";
+import { useInklessMediaPicker } from "@/components/admin/editor-host/useInklessMediaPicker";
 import { markdownToHtml, htmlToMarkdown } from "@/lib/markdown";
 import type { ArticleDraftSnapshot } from "../VersionHistoryPanel";
 import { slugifyTitle } from "../utils/slugify";
@@ -60,8 +62,18 @@ export function useArticleEditors(opts: {
   const [zhEditor, setZhEditor] = useState<Editor | null>(null);
   const [enEditor, setEnEditor] = useState<Editor | null>(null);
 
-  const { modals: zhModals, state: zhModalState } = useModalState();
-  const { modals: enModals, state: enModalState } = useModalState();
+  const zhMedia = useInklessMediaPicker();
+  const enMedia = useInklessMediaPicker();
+  const uploadPort = useMemo(() => createInklessUploadPort(), []);
+
+  const zhPorts = useMemo<EditorPorts>(
+    () => ({ upload: uploadPort, picker: zhMedia.picker }),
+    [uploadPort, zhMedia.picker],
+  );
+  const enPorts = useMemo<EditorPorts>(
+    () => ({ upload: uploadPort, picker: enMedia.picker }),
+    [uploadPort, enMedia.picker],
+  );
 
   // Refs for save-time body resolution without recreating callbacks every keystroke
   const editorModeRef = useRef(editorMode);
@@ -89,10 +101,29 @@ export function useArticleEditors(opts: {
 
   const langEditors = useMemo(
     () => ({
-      zh: { editor: zhEditor, modals: zhModals, state: zhModalState },
-      en: { editor: enEditor, modals: enModals, state: enModalState },
+      zh: {
+        editor: zhEditor,
+        modals: zhMedia.modals,
+        state: zhMedia.state,
+        consumers: zhMedia.consumers,
+      },
+      en: {
+        editor: enEditor,
+        modals: enMedia.modals,
+        state: enMedia.state,
+        consumers: enMedia.consumers,
+      },
     }),
-    [zhEditor, enEditor, zhModals, enModals, zhModalState, enModalState],
+    [
+      zhEditor,
+      enEditor,
+      zhMedia.modals,
+      enMedia.modals,
+      zhMedia.state,
+      enMedia.state,
+      zhMedia.consumers,
+      enMedia.consumers,
+    ],
   );
 
   const activeLang = enabledLangs[activeLangIdx] || "zh";
@@ -263,6 +294,8 @@ export function useArticleEditors(opts: {
       activeLang,
       activeEntry,
       langEditors,
+      zhPorts,
+      enPorts,
       zhEditor,
       enEditor,
       needZhEditor: needRichtextSurface,
@@ -293,6 +326,8 @@ export function useArticleEditors(opts: {
       activeLang,
       activeEntry,
       langEditors,
+      zhPorts,
+      enPorts,
       zhEditor,
       enEditor,
       needRichtextSurface,

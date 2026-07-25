@@ -1,7 +1,14 @@
 import type { Extension } from "@tiptap/core";
 import type { EditorPorts } from "./ports/types";
 
-export type { EditorPorts, MediaUploadPort, MediaRef } from "./ports/types";
+export type {
+  EditorPorts,
+  MediaUploadPort,
+  MediaPickerPort,
+  MediaRef,
+  GalleryPick,
+  EmbedPick,
+} from "./ports/types";
 
 export interface EditorFeatures {
   slashCommands: boolean;
