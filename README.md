@@ -23,6 +23,23 @@ configurable branding, themes, plugins, SQLite or PostgreSQL.
 
 Status: **public alpha** (`0.1.0-alpha.x`). APIs and on-disk layout may still change; see [CHANGELOG](CHANGELOG.md).
 
+## Screenshots
+
+From the live product site ([inkless.run](https://inkless.run)) and theme demo
+([themes.inkless.run](https://themes.inkless.run)).
+
+<p align="center">
+  <img src="docs/images/readme/home-inkless-run.jpg" alt="Inkless marketing home with admin dashboard preview" width="900" />
+</p>
+
+| Marketing site | Theme demo (Editorial Firm) |
+|:---:|:---:|
+| <img src="docs/images/readme/features.jpg" alt="Product capabilities page" width="420" /> | <img src="docs/images/readme/theme-demo.jpg" alt="Editorial Firm theme demo" width="420" /> |
+
+<p align="center">
+  <img src="docs/images/readme/admin-login.jpg" alt="Admin login" width="520" />
+</p>
+
 ## Quick start (development)
 
 **Prerequisites:** Go 1.24+, Node.js 22+, pnpm 9+, Make (recommended).
@@ -77,11 +94,21 @@ Full index: [docs/README.md](docs/README.md).
 
 ## Releases
 
-Tagged releases (when published) attach frontend/backend tarballs built by
+Latest alpha: **[v0.1.0-alpha.2](https://github.com/yixian-huang/inkless/releases/tag/v0.1.0-alpha.2)**
+(see [CHANGELOG](CHANGELOG.md)).
+
+Tag pushes build artifacts via
 [`.github/workflows/release.yml`](.github/workflows/release.yml):
 
-```text
-git tag v0.1.0-alpha.2
+| Asset | Contents |
+|-------|----------|
+| `frontend-*.tar.gz` | Static SPA (`out/`) |
+| `backend-*.tar.gz` | API binary package |
+| `*.sha256` | Checksums |
+
+```bash
+# After merging release notes on main:
+git tag -a v0.1.0-alpha.2 -m "Inkless v0.1.0-alpha.2"
 git push origin v0.1.0-alpha.2
 ```
 

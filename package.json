@@ -1,7 +1,7 @@
 {
   "name": "inkless",
   "private": true,
-  "version": "0.1.0-alpha.1",
+  "version": "0.1.0-alpha.2",
   "packageManager": "pnpm@9.15.9",
   "scripts": {
     "dev": "pnpm -C frontend dev",
