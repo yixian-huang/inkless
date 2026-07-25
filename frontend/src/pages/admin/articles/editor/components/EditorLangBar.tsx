@@ -1,5 +1,5 @@
 import type { RefObject } from "react";
-import EditorModeSwitcher from "@/components/admin/editor/EditorModeSwitcher";
+import { EditorModeSwitcher } from "@inkless/editor";
 import { ALL_LANGS, type LangKey } from "../utils/constants";
 import {
   prefetchMarkdownEditor,

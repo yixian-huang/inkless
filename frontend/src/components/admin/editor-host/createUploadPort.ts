@@ -3,7 +3,7 @@
  * Only editor-host (and app pages) may import @/lib/mediaUploadTracked for this purpose.
  */
 import { uploadAndInsertImage } from "@/lib/mediaUploadTracked";
-import type { MediaUploadPort } from "@/components/admin/editor/ports/types";
+import type { MediaUploadPort } from "@inkless/editor";
 
 export function createInklessUploadPort(): MediaUploadPort {
   return {

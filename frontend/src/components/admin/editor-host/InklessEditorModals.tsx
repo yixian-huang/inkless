@@ -4,7 +4,7 @@ import ImagePickerModal from "@/components/admin/ImagePickerModal";
 import MediaPickerModal from "@/components/admin/MediaPickerModal";
 import GalleryPickerModal from "@/components/admin/GalleryPickerModal";
 import EmbedUrlModal from "@/components/admin/EmbedUrlModal";
-import type { ModalState } from "@/components/admin/editor/types-internal";
+import type { ModalState } from "@inkless/editor";
 import type { MediaPickConsumers } from "./useInklessMediaPicker";
 
 /**

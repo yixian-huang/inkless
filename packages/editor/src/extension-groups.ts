@@ -40,7 +40,7 @@ import {
   BlockToolbar,
   ImagePaste,
   Mermaid,
-} from "@/components/admin/tiptap-extensions";
+} from "./extensions";
 const lowlight = createLowlight(common);
 
 /** Core extensions required by all presets */

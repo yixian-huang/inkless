@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useRef } from "react";
 import { useEditor, type Editor } from "@tiptap/react";
-import { createEditorKit } from "@/components/admin/editor/createEditorKit";
-import type { EditorPorts } from "@/components/admin/editor/ports/types";
-import type { EditorPresetName } from "@/components/admin/editor/createEditorKit";
+import { createEditorKit } from "@inkless/editor";
+import type { EditorPorts } from "@inkless/editor";
+import type { EditorPresetName } from "@inkless/editor";
 import { sanitizePastedHtml } from "../utils/sanitizePastedHtml";
 
 export type LangEditorMountInnerProps = {

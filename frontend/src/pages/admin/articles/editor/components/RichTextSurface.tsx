@@ -1,9 +1,11 @@
 import { EditorContent, type Editor } from "@tiptap/react";
-import EditorBubbleMenu from "@/components/admin/editor/EditorBubbleMenu";
-import TableBubbleMenu from "@/components/admin/editor/TableBubbleMenu";
-import EditorFloatingMenu from "@/components/admin/editor/EditorFloatingMenu";
-import { getEditorSurface } from "@/components/admin/editor/createEditorKit";
-import type { EditorPresetName } from "@/components/admin/editor/createEditorKit";
+import {
+  EditorBubbleMenu,
+  TableBubbleMenu,
+  EditorFloatingMenu,
+  getEditorSurface,
+  type EditorPresetName,
+} from "@inkless/editor";
 import ArticleTypographyRoot from "@/components/blog/ArticleTypographyRoot";
 
 const DEFAULT_SURFACE = getEditorSurface("full");

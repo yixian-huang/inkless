@@ -159,10 +159,10 @@ const editorB = useEditor({ extensions: extB });
 
 本项目中应用了上述规则的文件：
 
-- `frontend/src/components/admin/tiptap-extensions/resizable-media.ts` — 图片/视频缩放 handle + 替换按钮
-- `frontend/src/components/admin/tiptap-extensions/block-toolbar.ts` — 块级节点选中高亮 + 工具栏
-- `frontend/src/components/admin/tiptap-extensions/block-handle.ts` — 块级节点拖拽 handle（已在 `view.dom` 外部，无需 stop/start）
-- `frontend/src/pages/admin/articles/editor/page.tsx` — 文章编辑器，双编辑器独立扩展实例
+- `packages/editor/src/extensions/resizable-media.ts` — 图片/视频缩放 handle + 替换按钮
+- `packages/editor/src/extensions/block-toolbar.ts` — 块级节点选中高亮 + 工具栏
+- `packages/editor/src/extensions/block-handle.ts` — 块级节点拖拽 handle（已在 `view.dom` 外部，无需 stop/start）
+- `frontend/src/pages/admin/articles/editor/page.tsx` — 文章编辑器，双编辑器独立扩展实例（kit 来自 `@inkless/editor`）
 
 ---
 

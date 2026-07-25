@@ -1,6 +1,6 @@
 import { lazy, Suspense } from "react";
 import type { Editor } from "@tiptap/react";
-import type { EditorPorts } from "@/components/admin/editor/ports/types";
+import type { EditorPorts } from "@inkless/editor";
 
 const LangEditorMountInner = lazy(() => import("./LangEditorMountInner"));
 

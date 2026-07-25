@@ -1,12 +1,12 @@
 import { useMemo, useRef } from "react";
-import { useModalState } from "@/components/admin/editor/useModalState";
-import type { ModalControls, ModalState } from "@/components/admin/editor/types-internal";
+import { useModalState } from "@inkless/editor";
+import type { ModalControls, ModalState } from "@inkless/editor";
 import type {
   EmbedPick,
   GalleryPick,
   MediaPickerPort,
   MediaRef,
-} from "@/components/admin/editor/ports/types";
+} from "@inkless/editor";
 
 type Pending = {
   image?: (ref: MediaRef) => void;

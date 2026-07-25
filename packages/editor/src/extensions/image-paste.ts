@@ -1,7 +1,7 @@
 import { Extension } from "@tiptap/core";
 import { Plugin, PluginKey } from "@tiptap/pm/state";
-import type { MediaUploadPort } from "@/components/admin/editor/ports/types";
-import { DEFAULT_EDITOR_IMAGE_MAX_BYTES } from "@/components/admin/editor/ports/types";
+import type { MediaUploadPort } from "../ports/types";
+import { DEFAULT_EDITOR_IMAGE_MAX_BYTES } from "../ports/types";
 
 export interface ImagePasteOptions {
   /** Host upload adapter. Without this, paste/drop images are ignored. */

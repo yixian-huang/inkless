@@ -1,31 +1,34 @@
 import { useEditor, EditorContent } from "@tiptap/react";
 import { useEffect, useRef, useMemo, memo } from "react";
 import type { Editor } from "@tiptap/react";
-import EditorToolbarComponent from "@/components/admin/editor/EditorToolbar";
-import EditorBubbleMenu from "@/components/admin/editor/EditorBubbleMenu";
-import TableBubbleMenu from "@/components/admin/editor/TableBubbleMenu";
-import EditorFloatingMenu from "@/components/admin/editor/EditorFloatingMenu";
-import type { ModalControls, ModalState } from "@/components/admin/editor/types-internal";
-import type { EditorPorts } from "@/components/admin/editor/ports/types";
 import {
   createEditorKit,
   getEditorSurface,
+  EditorToolbar as EditorToolbarComponent,
+  EditorBubbleMenu,
+  TableBubbleMenu,
+  EditorFloatingMenu,
+  ToolbarButton,
+  ToolbarDivider,
+  useModalState,
+  type ModalControls,
+  type ModalState,
+  type EditorPorts,
   type EditorPresetName,
-} from "@/components/admin/editor/createEditorKit";
+  type EditorKit,
+  type EditorSurface,
+} from "@inkless/editor";
 import { createInklessUploadPort } from "@/components/admin/editor-host/createUploadPort";
 import { useInklessMediaPicker } from "@/components/admin/editor-host/useInklessMediaPicker";
 import { InklessEditorModals } from "@/components/admin/editor-host/InklessEditorModals";
 
 // ── Re-export backward-compatible API ──
-export { ToolbarButton, ToolbarDivider } from "@/components/admin/editor/EditorToolbar";
-export type { ModalControls, ModalState };
-export { useModalState } from "@/components/admin/editor/useModalState";
+export { ToolbarButton, ToolbarDivider, useModalState };
+export type { ModalControls, ModalState, EditorKit, EditorSurface, EditorPresetName };
+export { createEditorKit, getEditorSurface };
 
 /** @deprecated Prefer InklessEditorModals from editor-host */
 export { InklessEditorModals as EditorModals };
-
-export { createEditorKit, getEditorSurface } from "@/components/admin/editor/createEditorKit";
-export type { EditorKit, EditorSurface, EditorPresetName } from "@/components/admin/editor/createEditorKit";
 
 const fullSurface = getEditorSurface("full");
 
@@ -47,7 +50,7 @@ export const EditorToolbar = memo(function EditorToolbar({
   );
 });
 
-// ── Standalone RichTextEditor ──
+// ── Standalone RichTextEditor (host-wired reference implementation) ──
 
 interface RichTextEditorProps {
   value: string;
@@ -56,8 +59,8 @@ interface RichTextEditorProps {
 }
 
 /**
- * Reference full-stack editor: createEditorKit + host ports + chrome + modals.
- * Article page may still disassemble pieces, but must share createEditorKit / getEditorSurface.
+ * Full-stack editor for the app: @inkless/editor kit + inkless media host.
+ * Article page may still disassemble pieces, but should share createEditorKit / getEditorSurface.
  */
 export default function RichTextEditor({
   value,
@@ -90,7 +93,6 @@ export default function RichTextEditor({
     editorProps: { attributes: { class: "tiptap" } },
   });
 
-  // Sync external value to editor
   useEffect(() => {
     if (editor && value !== editor.getHTML()) {
       editor.commands.setContent(value, { emitUpdate: false });

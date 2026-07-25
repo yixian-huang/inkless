@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { EditorView } from "@codemirror/view";
 import { EditorState } from "@codemirror/state";
 import { openSearchPanel } from "@codemirror/search";
-import { markdownToHtml } from "@/lib/markdown";
+import { markdownToHtml } from "./markdown";
 import MarkdownHtmlPreview from "./MermaidPreview";
 import type { MarkdownSelectionApi } from "./MarkdownToolbar";
 import {

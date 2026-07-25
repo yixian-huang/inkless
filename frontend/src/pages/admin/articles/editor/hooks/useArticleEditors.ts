@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Editor } from "@tiptap/react";
-import type { EditorPorts } from "@/components/admin/editor/ports/types";
-import type { MarkdownSelectionApi } from "@/components/admin/editor/MarkdownToolbar";
+import type { EditorPorts } from "@inkless/editor";
+import type { MarkdownSelectionApi } from "@inkless/editor";
 import { createInklessUploadPort } from "@/components/admin/editor-host/createUploadPort";
 import { useInklessMediaPicker } from "@/components/admin/editor-host/useInklessMediaPicker";
-import { markdownToHtml, htmlToMarkdown } from "@/lib/markdown";
+import { markdownToHtml, htmlToMarkdown } from "@inkless/editor";
 import type { ArticleDraftSnapshot } from "../VersionHistoryPanel";
 import { slugifyTitle } from "../utils/slugify";
 import {

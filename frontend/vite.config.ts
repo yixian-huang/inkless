@@ -84,6 +84,13 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": resolve(__dirname, "./src"),
+      // Editor kit package (workspace source).
+      "@inkless/editor": resolve(__dirname, "../packages/editor/src/index.ts"),
+      "@inkless/editor/markdown": resolve(__dirname, "../packages/editor/src/markdown.ts"),
+      "@inkless/editor/extensions": resolve(
+        __dirname,
+        "../packages/editor/src/extensions/index.ts",
+      ),
       // Theme packages import host APIs only through this facade.
       "@inkless/theme-host": resolve(__dirname, "./src/theme-host/index.ts"),
       // Prefer package source over any published dist while developing.
@@ -105,7 +112,9 @@ export default defineConfig({
     setupFiles: "./src/test/setup.ts",
     include: [
       "src/**/*.test.{ts,tsx}",
-          ],
+      // Workspace package tests co-run with the web suite
+      "../packages/editor/src/**/*.test.{ts,tsx}",
+    ],
     coverage: {
       provider: "v8",
       reporter: ["text", "json", "html"],

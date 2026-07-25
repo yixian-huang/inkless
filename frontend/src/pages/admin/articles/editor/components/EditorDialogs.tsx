@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import ImagePickerModal from "@/components/admin/ImagePickerModal";
 import type { Editor } from "@tiptap/react";
-import type { ModalState } from "@/components/admin/editor/types-internal";
+import type { ModalState } from "@inkless/editor";
 import type { MediaPickConsumers } from "@/components/admin/editor-host/useInklessMediaPicker";
 import { ArticleVersionHistoryPanel, type ArticleDraftSnapshot } from "../VersionHistoryPanel";
 import ArticlePreviewModal, { type ArticlePreviewData } from "../ArticlePreviewModal";

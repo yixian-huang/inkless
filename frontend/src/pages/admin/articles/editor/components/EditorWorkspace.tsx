@@ -1,6 +1,6 @@
 import { Suspense, useMemo } from "react";
 import type { Editor } from "@tiptap/react";
-import type { MarkdownSelectionApi } from "@/components/admin/editor/MarkdownToolbar";
+import type { MarkdownSelectionApi } from "@inkless/editor";
 import { createInklessUploadPort } from "@/components/admin/editor-host/createUploadPort";
 import EditorSidebar from "../EditorSidebar";
 import { EditorChunkFallback } from "./EditorChunkFallback";

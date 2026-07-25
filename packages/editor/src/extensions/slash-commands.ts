@@ -3,7 +3,7 @@ import { PluginKey } from "@tiptap/pm/state";
 import Suggestion from "@tiptap/suggestion";
 import type { Editor, Range } from "@tiptap/core";
 import tippy, { type Instance as TippyInstance } from "tippy.js";
-import type { MediaPickerPort } from "@/components/admin/editor/ports/types";
+import type { MediaPickerPort } from "../ports/types";
 
 export interface SlashCommandItem {
   title: string;

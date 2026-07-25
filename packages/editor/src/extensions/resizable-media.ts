@@ -1,7 +1,7 @@
 import { Extension } from "@tiptap/core";
 import { Plugin, PluginKey, NodeSelection } from "@tiptap/pm/state";
 import type { EditorView } from "@tiptap/pm/view";
-import type { MediaPickerPort } from "@/components/admin/editor/ports/types";
+import type { MediaPickerPort } from "../ports/types";
 
 const MIN_WIDTH = 50;
 const pluginKey = new PluginKey("resizableMedia");
