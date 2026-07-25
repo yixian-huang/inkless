@@ -7,7 +7,7 @@ Thank you for your interest in contributing to Inkless CMS! This guide will help
 ### Prerequisites
 
 - **Go** 1.24+
-- **Node.js** 20+
+- **Node.js** 22+
 - **pnpm** 9+
 - **Git**
 - **Make** (optional but recommended)

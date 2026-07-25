@@ -53,7 +53,7 @@ two-instance smoke test.
 
 ### Local Build Environment
 
-- Node.js 20+ with pnpm 8+
+- Node.js 22+ with pnpm 9+
 - Go 1.21+
 - Git (for version tagging)
 - SSH access to deployment servers
