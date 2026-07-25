@@ -93,7 +93,7 @@ jobs:
     needs: prepare
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           submodules: recursive
           ref: ${{ needs.prepare.outputs.git_ref }}
@@ -143,7 +143,7 @@ jobs:
     if: needs.prepare.outputs.deploy_method == 'ssh'
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           submodules: recursive
           ref: ${{ needs.prepare.outputs.git_ref }}
@@ -205,7 +205,7 @@ jobs:
     if: needs.prepare.outputs.deploy_method == 'http'
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           submodules: recursive
           ref: ${{ needs.prepare.outputs.git_ref }}
