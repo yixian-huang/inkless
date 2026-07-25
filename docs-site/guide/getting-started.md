@@ -3,7 +3,7 @@
 ## Prerequisites
 
 - **Go** 1.24+
-- **Node.js** 20+ with **pnpm** 9+
+- **Node.js** 22+ with **pnpm** 9+
 - **Git**
 
 ## Quick Start

@@ -3,7 +3,7 @@
 [![Quality Gate](https://github.com/yixian-huang/inkless/actions/workflows/quality-gate.yml/badge.svg)](https://github.com/yixian-huang/inkless/actions/workflows/quality-gate.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Go](https://img.shields.io/badge/Go-1.24+-00ADD8?logo=go&logoColor=white)](backend/go.mod)
-[![Node](https://img.shields.io/badge/Node-20+-339933?logo=node.js&logoColor=white)](package.json)
+[![Node](https://img.shields.io/badge/Node-22+-339933?logo=node.js&logoColor=white)](package.json)
 
 **Self-hosted, bilingual (zh/en) content platform** — Go API + React admin/SPA,
 configurable branding, themes, plugins, SQLite or PostgreSQL.
@@ -25,7 +25,7 @@ Status: **public alpha** (`0.1.0-alpha.x`). APIs and on-disk layout may still ch
 
 ## Quick start (development)
 
-**Prerequisites:** Go 1.24+, Node.js 20+, pnpm 9+, Make (recommended).
+**Prerequisites:** Go 1.24+, Node.js 22+, pnpm 9+, Make (recommended).
 
 ```bash
 git clone https://github.com/yixian-huang/inkless.git

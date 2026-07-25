@@ -1,7 +1,8 @@
 # Keep GitHub Actions and package ecosystems current.
 # https://docs.github.com/en/code-security/dependabot/dependabot-version-updates
 #
-# Groups reduce PR spam (one PR per ecosystem/group instead of per package).
+# Groups reduce PR spam: one PR per family/update-type instead of per package.
+# Majors are split from minor/patch so review stays intentional.
 
 version: 2
 updates:
@@ -9,21 +10,37 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
-    open-pull-requests-limit: 3
+    open-pull-requests-limit: 2
     groups:
-      github-actions:
+      github-actions-minor:
         patterns:
           - "*"
+        update-types:
+          - "minor"
+          - "patch"
+      github-actions-major:
+        patterns:
+          - "*"
+        update-types:
+          - "major"
 
   - package-ecosystem: "gomod"
     directory: "/backend"
     schedule:
       interval: "weekly"
-    open-pull-requests-limit: 3
+    open-pull-requests-limit: 2
     groups:
-      backend-go:
+      backend-go-minor:
         patterns:
           - "*"
+        update-types:
+          - "minor"
+          - "patch"
+      backend-go-major:
+        patterns:
+          - "*"
+        update-types:
+          - "major"
 
   - package-ecosystem: "npm"
     directory: "/"
@@ -31,6 +48,7 @@ updates:
       interval: "weekly"
     open-pull-requests-limit: 5
     groups:
+      # Keep editor stacks version-locked together
       tiptap:
         patterns:
           - "@tiptap/*"
@@ -38,15 +56,46 @@ updates:
         patterns:
           - "@codemirror/*"
           - "codemirror"
-      frontend-dev:
+      testing-library:
+        patterns:
+          - "@testing-library/*"
+      # Non-major bulk updates (safe weekly merges)
+      frontend-dev-minor:
         dependency-type: "development"
+        update-types:
+          - "minor"
+          - "patch"
         exclude-patterns:
           - "@tiptap/*"
           - "@codemirror/*"
           - "codemirror"
-      frontend-prod:
+          - "@testing-library/*"
+      frontend-prod-minor:
         dependency-type: "production"
+        update-types:
+          - "minor"
+          - "patch"
         exclude-patterns:
           - "@tiptap/*"
           - "@codemirror/*"
           - "codemirror"
+          - "@testing-library/*"
+      # Majors get their own PRs (review carefully)
+      frontend-dev-major:
+        dependency-type: "development"
+        update-types:
+          - "major"
+        exclude-patterns:
+          - "@tiptap/*"
+          - "@codemirror/*"
+          - "codemirror"
+          - "@testing-library/*"
+      frontend-prod-major:
+        dependency-type: "production"
+        update-types:
+          - "major"
+        exclude-patterns:
+          - "@tiptap/*"
+          - "@codemirror/*"
+          - "codemirror"
+          - "@testing-library/*"
