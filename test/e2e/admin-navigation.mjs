@@ -47,6 +47,28 @@ function clone(value) {
   return JSON.parse(JSON.stringify(value));
 }
 
+/**
+ * Expand a sidebar nav group. The 「设置」 group is defaultCollapsed, so ops links
+ * (数据迁移 / 系统状态) are unmounted until the header is toggled open.
+ * Idempotent when the group is already expanded.
+ */
+async function expandAdminNavGroup(page, groupLabel) {
+  const header = page.getByRole("button", { name: groupLabel, exact: true });
+  await header.waitFor({ state: "visible", timeout: 10_000 });
+
+  if (groupLabel === "设置") {
+    const hub = page.getByRole("link", { name: "设置中心" });
+    if (await hub.isVisible().catch(() => false)) {
+      return;
+    }
+    await header.click();
+    await hub.waitFor({ state: "visible", timeout: 5_000 });
+    return;
+  }
+
+  await header.click();
+}
+
 function createMockState() {
   return {
     nextPageId: 101,
@@ -585,11 +607,14 @@ async function run() {
     await page.waitForURL(`${baseURL}/admin/articles`);
     await page.getByRole("heading", { name: "文章管理" }).waitFor();
 
+    // 「设置」组 defaultCollapsed: true — expand before clicking ops items.
+    await expandAdminNavGroup(page, "设置");
     await page.getByRole("link", { name: "数据迁移" }).click();
     await page.waitForURL(`${baseURL}/admin/migration`);
     await page.getByRole("heading", { name: "数据迁移" }).waitFor();
     await page.getByText("暂无导入任务", { exact: true }).waitFor();
 
+    // On a settings path the group auto-expands; still assert ops links are available.
     await page.getByRole("link", { name: "系统状态" }).click();
     await page.waitForURL(`${baseURL}/admin/system-status`);
     await page.getByRole("heading", { name: "系统状态" }).waitFor();
@@ -597,6 +622,13 @@ async function run() {
     await page.getByText("sqlite", { exact: true }).waitFor();
     await page.getByRole("link", { name: "数据迁移" }).click();
     await page.waitForURL(`${baseURL}/admin/migration`);
+    await page.getByRole("heading", { name: "数据迁移" }).waitFor();
+    // Scope to main: system-status also has an AdminButton labeled「刷新」.
+    const migrationMain = page.locator("main");
+    await migrationMain.getByRole("heading", { name: "导入任务" }).waitFor();
+    await migrationMain.getByRole("button", { name: "刷新", exact: true }).waitFor({
+      state: "visible",
+    });
 
     createMigrationJob(state, {
       jobId: "mig-failed",
@@ -609,10 +641,10 @@ async function run() {
       retryable: true,
       finishedAt: new Date().toISOString(),
     });
-    await page.getByRole("button", { name: "刷新", exact: true }).click();
-    await page.getByText("失败", { exact: true }).waitFor();
-    await page.getByRole("button", { name: "重试", exact: true }).click();
-    await page.getByText("成功 2 条，失败 0 条", { exact: true }).waitFor();
+    await migrationMain.getByRole("button", { name: "刷新", exact: true }).click();
+    await migrationMain.getByText("失败", { exact: true }).waitFor();
+    await migrationMain.getByRole("button", { name: "重试", exact: true }).click();
+    await migrationMain.getByText("成功 2 条，失败 0 条", { exact: true }).waitFor();
     assert.equal(state.migrationStreamAttempts["mig-failed"], 2);
 
     await page.evaluate(() => {
@@ -632,7 +664,9 @@ async function run() {
     assert.equal(state.authRefreshes, 1);
 
     await page.goto(`${baseURL}/admin/pages`);
-    await page.getByRole("button", { name: "新建页面" }).click();
+    await page.getByRole("heading", { name: "页面管理" }).waitFor();
+    // Header + empty-state both render「新建页面」— click the first visible action.
+    await page.locator("main").getByRole("button", { name: "新建页面" }).first().click();
     await page.waitForURL(`${baseURL}/admin/pages/new`);
     await page.getByLabel("URL 路径 (slug)").fill("launch-page");
     await page.getByLabel("标题 (中文)").fill("发布页");
@@ -741,9 +775,10 @@ async function run() {
 
     await editorPage.goto(`${baseURL}/admin/pages`);
     await editorPage.getByRole("heading", { name: "页面管理" }).waitFor();
-    assert.equal(await editorPage.getByRole("button", { name: "新建页面" }).count(), 0);
-    assert.equal(await editorPage.getByRole("button", { name: "删除" }).count(), 0);
-    await editorPage.getByRole("button", { name: "编辑" }).click();
+    assert.equal(await editorPage.locator("main").getByRole("button", { name: "新建页面" }).count(), 0);
+    assert.equal(await editorPage.locator("main").getByRole("button", { name: "删除", exact: true }).count(), 0);
+    // exact: avoid matching the account menu ("editor 编辑")
+    await editorPage.locator("main").getByRole("button", { name: "编辑", exact: true }).click();
     await editorPage.waitForURL(`${baseURL}/admin/pages/edit/101`);
     await editorPage.getByRole("button", { name: "保存草稿" }).waitFor();
     assert.equal(await editorPage.getByRole("button", { name: "发布", exact: true }).count(), 0);
