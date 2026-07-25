@@ -12,9 +12,14 @@ The production deployment workflow consists of:
 
 All scripts support environment-based configuration and maintain version history for safe rollback operations.
 
-### Quick-Box artifact deploy (`hk`)
+### Artifact deploy (recommended for small app hosts)
 
-For production on Quick-Box environment **`hk`** (`82.158.226.66`), prefer **`deployMethod: artifact`**: a dedicated **build server** runs `scripts/qb-artifact-build.sh`; the VPS only runs `scripts/qb-artifact-activate.sh`. See [`OPS.md`](../OPS.md) and [`docs/quick-box-artifact-deploy-method.md`](quick-box-artifact-deploy-method.md).
+Prefer **`deployMethod: artifact`**: a dedicated **build server** runs
+`scripts/qb-artifact-build.sh`; the app host only runs
+`scripts/qb-artifact-activate.sh`. See [`OPS.md`](../OPS.md) and
+[`docs/quick-box-artifact-deploy-method.md`](quick-box-artifact-deploy-method.md).
+For maintainer topology notes (no host inventory in git), see
+[`docs/internal/operator-runbook.md`](internal/operator-runbook.md).
 
 ### Single-site instance boundary
 

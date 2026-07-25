@@ -21,7 +21,7 @@ We need a second corporate-line theme that is:
 1. New built-in theme **`editorial-firm`** with magazine / brand-atelier aesthetics.
 2. Lean IA: **Home / About / Services / Contact** only.
 3. Implementation depth: **theme package + section library**; pages are `renderMode: "dynamic"`.
-4. Zero forced migration for `corporate-classic` sites (e.g. blottingconsultancy.com).
+4. Zero forced migration for `corporate-classic` sites (e.g. <customer-site.example>).
 
 ### Non-goals (v1)
 

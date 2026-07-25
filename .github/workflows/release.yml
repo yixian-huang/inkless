@@ -1,0 +1,125 @@
+name: Release
+
+# Build versioned frontend/backend artifacts and attach them to a GitHub Release.
+# Does not deploy to any host (see deploy.yml for maintainer CD).
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Version label for artifacts (e.g. v0.1.0-alpha.2). Does not create a git tag."
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    name: Build release artifacts
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Resolve version
+        id: ver
+        run: |
+          set -euo pipefail
+          if [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ]; then
+            version="${{ inputs.tag }}"
+          else
+            version="${GITHUB_REF_NAME}"
+          fi
+          if [ -z "${version}" ]; then
+            echo "Empty version" >&2
+            exit 1
+          fi
+          echo "version=${version}" >> "${GITHUB_OUTPUT}"
+          echo "Resolved version: ${version}"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.9
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: backend/go.mod
+          cache: true
+          cache-dependency-path: backend/go.sum
+
+      - name: Build frontend artifact
+        env:
+          VERSION: ${{ steps.ver.outputs.version }}
+        run: ./scripts/build-frontend.sh
+
+      - name: Build backend artifact
+        env:
+          VERSION: ${{ steps.ver.outputs.version }}
+        run: ./scripts/build-backend.sh
+
+      - name: List artifacts
+        run: |
+          ls -la artifacts/
+          sha256sum artifacts/*-${{ steps.ver.outputs.version }}.tar.gz \
+            artifacts/*-${{ steps.ver.outputs.version }}.tar.gz.sha256 2>/dev/null || true
+
+      - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.ver.outputs.version }}
+          name: Inkless CMS ${{ steps.ver.outputs.version }}
+          generate_release_notes: true
+          body: |
+            ## Inkless CMS ${{ steps.ver.outputs.version }}
+
+            Self-hosted bilingual CMS — see [CHANGELOG](https://github.com/yixian-huang/inkless/blob/main/CHANGELOG.md) and [README](https://github.com/yixian-huang/inkless#readme).
+
+            ### Artifacts
+
+            - `frontend-*.tar.gz` — static SPA (`out/`)
+            - `backend-*.tar.gz` — API binary package
+            - matching `.sha256` checksums
+
+            ### Verify
+
+            ```bash
+            sha256sum -c frontend-${{ steps.ver.outputs.version }}.tar.gz.sha256
+            sha256sum -c backend-${{ steps.ver.outputs.version }}.tar.gz.sha256
+            ```
+
+            **Alpha software** — change default secrets and admin passwords before production use.
+            Report vulnerabilities via [SECURITY.md](https://github.com/yixian-huang/inkless/blob/main/SECURITY.md).
+          files: |
+            artifacts/frontend-${{ steps.ver.outputs.version }}.tar.gz
+            artifacts/frontend-${{ steps.ver.outputs.version }}.tar.gz.sha256
+            artifacts/backend-${{ steps.ver.outputs.version }}.tar.gz
+            artifacts/backend-${{ steps.ver.outputs.version }}.tar.gz.sha256
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload artifacts (workflow_dispatch without tag)
+        if: github.event_name == 'workflow_dispatch'
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-${{ steps.ver.outputs.version }}
+          path: |
+            artifacts/frontend-${{ steps.ver.outputs.version }}.tar.gz
+            artifacts/frontend-${{ steps.ver.outputs.version }}.tar.gz.sha256
+            artifacts/backend-${{ steps.ver.outputs.version }}.tar.gz
+            artifacts/backend-${{ steps.ver.outputs.version }}.tar.gz.sha256
+          retention-days: 14

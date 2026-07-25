@@ -209,7 +209,13 @@ All PRs must pass the CI quality gate:
 - [API Specification](docs/api-spec.md) -- REST API contract
 - [Data Model](docs/data-model.md) -- page config and translation rules
 
+## Security and conduct
+
+- Vulnerability reports: [SECURITY.md](SECURITY.md) (not public issues)
+- Community standards: [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)
+
 ## Getting Help
 
 - Open a [GitHub Issue](https://github.com/yixian-huang/inkless/issues) for bugs or feature requests
 - Check existing issues and discussions before opening a new one
+- Docs index: [docs/README.md](docs/README.md)

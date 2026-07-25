@@ -1,6 +1,6 @@
 # Repository Guidelines
 
-Short agent entrypoint. Deeper stack/architecture: [`Claude.md`](Claude.md). Ops topology: [`OPS.md`](OPS.md).
+Short agent entrypoint. Deeper stack/architecture: [`Claude.md`](Claude.md). Ops summary: [`OPS.md`](OPS.md); operator notes: [`docs/internal/`](docs/internal/).
 
 ## Stack & layout
 
@@ -26,16 +26,16 @@ cd backend && go test -v -race ./...
 
 ## Production site isolation (mandatory)
 
-**yx.ink ≠ inkless.run.** Domain ≠ process. Details: [`docs/ops-lessons-yx-ink-vs-inkless-run.md`](docs/ops-lessons-yx-ink-vs-inkless-run.md).
+**Domain ≠ process.** Two public brands need two processes (port, data dir, JWT). Details: [`docs/internal/ops-lessons-site-isolation.md`](docs/internal/ops-lessons-site-isolation.md).
 
-| Site | Role | Unit | Port | Data |
-|------|------|------|------|------|
-| **yx.ink** | Personal blog | `inkless` | `8088` | `/opt/inkless/data/` |
-| **inkless.run** | Product ops | `inkless-ops` | `8089` | `/opt/inkless-ops/data/` |
+| Site role | Unit (example) | Port | Data |
+|------|------|------|------|
+| Personal blog | `inkless` | `8088` | `/opt/inkless/data/` |
+| Product ops | `inkless-ops` | `8089` | `/opt/inkless-ops/data/` |
 
-1. Before any prod write: confirm **unit + port + `DB_DSN` + Caddy upstream** for the domain you mean.
-2. Never cross-write: personal = `/opt/inkless`, product = `/opt/inkless-ops` (separate JWT/env/DB).
-3. Backup before DB mutation; afterward verify **both** sites via `/public/bootstrap` (theme + identity).
+1. Before any prod write: confirm **unit + port + `DB_DSN` + reverse-proxy upstream** for the domain you mean (resolve hosts via `npc`, not hard-coded IPs in git).
+2. Never cross-write independent instances (separate JWT/env/DB trees).
+3. Backup before DB mutation; afterward verify **each** site via `/public/bootstrap` (theme + identity).
 
 ## Default delivery
 
@@ -50,7 +50,7 @@ After a coherent feature/fix (verification passes), **by default**:
 npc deploy impress hk-artifact --ref <branch-or-sha> --wait
 ```
 
-- Product (**inkless.run**): separate process `inkless-ops` on `:8089` / `/opt/inkless-ops`. Do **not** “fix product” by editing the personal DB. See `OPS.md` + ops lesson; code may share artifact symlinks, runtime state must not.
+- Product site: separate process (e.g. `inkless-ops` on `:8089` / `/opt/inkless-ops`). Do **not** “fix product” by editing another instance’s DB. See `OPS.md` + [`docs/internal/`](docs/internal/); code may share artifact symlinks, runtime state must not.
 - Skip auto-deploy when the user says so, change is docs-only, or deploy readiness is blocked — then say why and stop.
 
 ## Pointers
@@ -58,8 +58,8 @@ npc deploy impress hk-artifact --ref <branch-or-sha> --wait
 | Need | Where |
 |------|--------|
 | Architecture, backend, long-agent | `Claude.md` |
-| Deploy targets, dual-process helpers | `OPS.md` |
-| yx.ink vs inkless.run incident rules | `docs/ops-lessons-yx-ink-vs-inkless-run.md` |
+| Deploy summary / dual-process rules | `OPS.md`, `docs/internal/` |
+| Site isolation incident lesson | `docs/internal/ops-lessons-site-isolation.md` |
 | Article AI meta / SEO (design + eval) | `docs/article-ai-meta-seo.md` |
 | AI meta golden samples / scoring | `docs/article-ai-meta-golden-samples.md` |
 | Frontend flags | `BASE_PATH`, `IS_PREVIEW`, … in `frontend/vite.config.ts` |

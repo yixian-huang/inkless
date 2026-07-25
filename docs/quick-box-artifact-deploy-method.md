@@ -18,7 +18,7 @@ Quick-Box 当前 `deployMethod` 仅支持：
 | `docker` | Docker 镜像 | `docker save \| load`（`distribution: transfer`） | 多阶段 build 常 20–40+ 分钟 |
 | `script` | 由仓库脚本决定 | 无标准 artifact 层 | 取决于脚本实现 |
 
-inkless 在 `hk`（`82.158.226.66`）上的多次部署失败/超时，根因包括：
+inkless 在 `hk`（`<APP_HOST>`）上的多次部署失败/超时，根因包括：
 
 - 构建与部署同机，在目标 VPS 上跑 `pnpm build` + `CGO go build` + `docker build`
 - 构建阶段日志稀疏、心跳停滞，平台难以区分「慢」与「死」
@@ -88,7 +88,7 @@ scripts/deploy-http.sh     → HTTP multipart 上传 artifact（可选接收端�
   "deployMethod": "artifact",
 
   "buildServerName": "qb-build-01",
-  "deployServerNames": ["VIP Cloud - 82.158.226.66"],
+  "deployServerNames": ["VIP Cloud - <APP_HOST>"],
 
   "workDir": "/home/inkless",
   "gitRef": "main",
@@ -685,7 +685,7 @@ b.example.com {
     "hk": {
       "deployMethod": "artifact",
       "buildServer": { "id": "...", "name": "qb-build-01", "host": "..." },
-      "deployServers": [{ "id": "...", "host": "82.158.226.66" }],
+      "deployServers": [{ "id": "...", "host": "<APP_HOST>" }],
       "serviceReachable": false,
       "lastDeployment": {
         "id": "...",
@@ -735,7 +735,7 @@ b.example.com {
 2. `POST deploy-hooks/.../hk` 触发后，状态按 §4 流转，日志含 `build` / `transfer` / `activate` / `healthcheck` 四阶段
 3. build 阶段在 build server 完成，**deploy server 无 node/go 编译器亦可部署**
 4. 传输后 checksum 校验失败 → `transfer_failed`，不执行 activate
-5. activate 后 `curl http://82.158.226.66:8088/health` 返回 `healthy`，且 `healthCheckPassed: true`
+5. activate 后 `curl http://<APP_HOST>:8088/health` 返回 `healthy`，且 `healthCheckPassed: true`
 6. `cancel` 后远端 build/activate 进程终止，日志可见 `remote process terminated`
 7. 心跳失联 5 分钟 → `stale` 标记 + `recommendedAction`
 8. `rollback` 后服务恢复上一版本且 health 通过；仓库的双实例 smoke 还会验证 A 的
@@ -768,7 +768,7 @@ b.example.com {
 ## 14. 参考
 
 - inkless 部署文档：`docs/deployment.md`
-- inkless OPS（Quick-Box 现状）：`OPS.md`
+- Public ops summary: `OPS.md` · maintainer notes: `docs/internal/operator-runbook.md`
 - inkless 现有构建：`scripts/build-backend.sh`, `scripts/build-frontend.sh`
 - inkless 现有部署：`scripts/deploy.sh`, `scripts/deploy-workflow.json`
 - Quick-Box conventions（docker transfer）：`quick-ops` `server/src/routes/onboarding.ts`

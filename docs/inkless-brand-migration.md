@@ -97,7 +97,7 @@ state:
 | Go module | Source declares `github.com/yixian-huang/inkless/backend`; the repository now exists at that path, but no `backend/v*` tag exists. | Publish a `backend/vX.Y.Z` tag only after separate release authorization; a root `vX.Y.Z` tag is not a version of a subdirectory module. |
 | npm | The root, frontend, and docs packages are private. Registry lookups for `inkless`, `@inkless/web`, and `@inkless/cms` return 404; this machine is not authenticated to npm. | npm publication is not required for the product cutover. Reserve an npm scope only if a public SDK/package release is approved. |
 | Public old links | GitHub code search found no indexed external references to `yixian-huang/impress`. | There is no known consumer migration list, but private clones and bookmarks may still exist. |
-| Existing operated site | `yx.ink` resolves through Cloudflare but returned HTTP 502 during the check. Direct health checks to both `103.73.220.161:8088` and the older `82.158.226.66:8088` endpoint were not reachable. | No currently documented host is ready to receive `inkless.run` traffic. Restore origin health before any DNS write. |
+| Existing operated site | `yx.ink` resolves through Cloudflare but returned HTTP 502 during the check. Direct health checks to both `<HOST>:8088` and the older `<APP_HOST>:8088` endpoint were not reachable. | No currently documented host is ready to receive `inkless.run` traffic. Restore origin health before any DNS write. |
 
 Re-run the status probe at any time:
 
@@ -153,8 +153,8 @@ Exact objects:
 
 The DNS record names and types are fixed, but the target address is not yet
 safe to choose. Repository evidence names two different hosts: the older
-`OPS.md` endpoint at `82.158.226.66` and a newer gomami migration target at
-`103.73.220.161`. Neither direct health endpoint was reachable during the
+Documented app-host health endpoints (resolve current inventory from the
+control plane, not git). Neither direct health endpoint was reachable during the
 check, while the existing `yx.ink` Cloudflare route returned 502.
 
 Pending DNS objects:

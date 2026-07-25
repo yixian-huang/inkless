@@ -1,95 +1,72 @@
 # CI/CD Workflows
 
-This directory contains two GitHub Actions workflows:
-
-1. `quality-gate.yml` - CI quality checks
-2. `deploy.yml` - CD deployment automation (SSH or HTTP)
+| Workflow | Who | Purpose |
+|----------|-----|---------|
+| `quality-gate.yml` | Everyone | Merge gate (lint, tests, smoke build) |
+| `release.yml` | Community | Tag `v*` → GitHub Release artifacts |
+| `deploy.yml` | Maintainers | Optional CD to **your** hosts (needs secrets) |
 
 ## 1) quality-gate.yml
 
-`quality-gate.yml` is the merge gate. It runs:
+Merge gate. Typically runs:
 
-- Frontend checks: lint, type-check, unit tests, and Playwright admin navigation E2E
-- Backend checks: `go mod verify`, `go mod tidy`, `go vet`, `go test -race`
-- Integration smoke: frontend build + backend build
-- Summary job: fails if any upstream job fails
+- Frontend: lint, type-check, unit tests, theme smoke
+- Backend: `go mod verify` / `tidy`, `go vet`, `go test -race`
+- Integration smoke: frontend + backend build
+- Summary job fails if any upstream job fails
 
 ### Trigger
 
 - Push: `main`, `master`, `develop`
-- Pull request target: `main`, `master`, `develop`
+- Pull request targeting those branches
 
 ### Branch protection
 
-Require these checks before merge:
+Require Quality Gate checks before merge (exact job names as shown in Actions).
 
-- `Frontend Quality Checks`
-- `Backend Quality Checks`
-- `Integration Smoke Checks`
-- `Quality Gate Summary`
+## 2) release.yml
 
-## 2) deploy.yml
+Builds versioned frontend/backend tarballs and publishes a **GitHub Release** when
+you push a tag matching `v*`.
 
-`deploy.yml` provides automated deployment for frontend + backend after CI passes.
+```bash
+git tag -a v0.1.0-alpha.2 -m "Inkless v0.1.0-alpha.2"
+git push origin v0.1.0-alpha.2
+```
+
+Manual dry-run: **Actions → Release → Run workflow** (uploads CI artifacts only;
+does not create a tag).
+
+Does **not** SSH into production hosts.
+
+## 3) deploy.yml
+
+Optional maintainer deployment after CI (SSH or HTTP). **Not required for
+contributors.** Leave repository variable `AUTO_DEPLOY_ENABLED` unset/false on
+a pure upstream fork.
 
 ### Trigger
 
-- Automatic: `workflow_run` when `Quality Gate` succeeds on `main`/`master` and
-  repository variable `AUTO_DEPLOY_ENABLED` is set to `true`
-- Manual: `workflow_dispatch` (choose ref/method/environment/version)
-
-### Deployment methods
-
-- `ssh` method:
-  - Uses `scripts/deploy.sh`
-  - Copies frontend/backend artifacts via SSH/SCP
-  - Activates versions with atomic symlink swap
-  - Restarts backend service and checks health
-- `http` method:
-  - Uses `scripts/deploy-http.sh`
-  - Uploads both artifacts to a deployment API endpoint
-
-### Notifications
-
-After deploy, workflow supports:
-
-- Webhook notification (`NOTIFY_WEBHOOK_URL`)
-- Email notification (SMTP secrets configured)
+- Automatic: `workflow_run` when Quality Gate succeeds on `main`/`master` and
+  `AUTO_DEPLOY_ENABLED=true`
+- Manual: `workflow_dispatch`
 
 ### Required secrets (SSH mode)
 
 - `DEPLOY_HOST`
 - `DEPLOY_SSH_PRIVATE_KEY`
 
-Optional for SSH mode:
-
-- `DEPLOY_USER`
-- `DEPLOY_ROOT`
-- `DEPLOY_KNOWN_HOSTS`
+Optional: `DEPLOY_USER`, `DEPLOY_ROOT`, `DEPLOY_KNOWN_HOSTS`, notification secrets.
 
 ### Required secrets (HTTP mode)
 
 - `DEPLOY_HTTP_ENDPOINT`
+- optional `DEPLOY_HTTP_TOKEN`
 
-Optional for HTTP mode:
+See comments in `deploy.yml` for notification and variable knobs.
 
-- `DEPLOY_HTTP_TOKEN`
+## Related
 
-### Optional notification secrets
-
-- `NOTIFY_WEBHOOK_URL`
-- `SMTP_SERVER`
-- `SMTP_PORT`
-- `SMTP_USERNAME`
-- `SMTP_PASSWORD`
-- `NOTIFY_EMAIL_TO`
-- `NOTIFY_EMAIL_FROM`
-
-### Optional repository variables
-
-- `AUTO_DEPLOY_ENABLED` (`true` enables automatic deploys after the main branch
-  quality gate; unset/other values keep automatic deploys disabled)
-- `DEPLOY_METHOD` (default deploy method for auto run, `ssh`/`http`)
-- `DEPLOY_ENVIRONMENT` (default `production`)
-- `BACKEND_SERVICE` (for SSH script override)
-- `BACKEND_HEALTH_URL` (for SSH post-deploy health check)
+- [REPO_SETUP.md](../REPO_SETUP.md) — description, topics, Pages
+- [SECURITY.md](../../SECURITY.md)
+- [docs/deployment.md](../../docs/deployment.md)
