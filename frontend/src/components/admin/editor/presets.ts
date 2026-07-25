@@ -1,13 +1,15 @@
 import type { EditorPreset } from "./types";
+import type { EditorPorts } from "./ports/types";
 import { buildExtensions } from "./extension-groups";
 
 /** Full preset — all extensions, two-row toolbar, bubble menu, floating menu, all interactions */
 export const fullPreset: EditorPreset = {
   name: "full",
-  extensions: () =>
+  extensions: (ports?: EditorPorts) =>
     buildExtensions(
       { slashCommands: true, blockHandles: true, blockToolbar: true, imagePaste: true, dragDrop: true },
-      { formatting: true, media: true, mediaAdvanced: true, table: true, layout: true }
+      { formatting: true, media: true, mediaAdvanced: true, table: true, layout: true },
+      ports,
     ),
   toolbar: {
     rows: [
@@ -45,10 +47,11 @@ export const fullPreset: EditorPreset = {
 /** Standard preset — basic formatting + images/links/code, single-row toolbar, bubble menu */
 export const standardPreset: EditorPreset = {
   name: "standard",
-  extensions: () =>
+  extensions: (ports?: EditorPorts) =>
     buildExtensions(
       { slashCommands: true, blockHandles: false, blockToolbar: false, imagePaste: true, dragDrop: false },
-      { formatting: true, media: true, mediaAdvanced: false, table: true, layout: false }
+      { formatting: true, media: true, mediaAdvanced: false, table: true, layout: false },
+      ports,
     ),
   toolbar: {
     rows: [
@@ -77,10 +80,11 @@ export const standardPreset: EditorPreset = {
 /** Minimal preset — basic text formatting only, no fixed toolbar (bubble menu only) */
 export const minimalPreset: EditorPreset = {
   name: "minimal",
-  extensions: () =>
+  extensions: (ports?: EditorPorts) =>
     buildExtensions(
       { slashCommands: false, blockHandles: false, blockToolbar: false, imagePaste: false, dragDrop: false },
-      { formatting: true, media: false, mediaAdvanced: false, table: false, layout: false, enhancements: false }
+      { formatting: true, media: false, mediaAdvanced: false, table: false, layout: false, enhancements: false },
+      ports,
     ),
   toolbar: null,
   bubbleMenu: {

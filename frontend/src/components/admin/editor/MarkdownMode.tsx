@@ -10,7 +10,7 @@ import {
   PREVIEW_TYPOGRAPHY_CLASS,
   syncScrollRatio,
 } from "./markdownCmSetup";
-import { uploadAndInsertImage } from "@/lib/mediaUploadTracked";
+import type { MediaUploadPort } from "./ports/types";
 
 interface MarkdownModeProps {
   value: string;
@@ -19,6 +19,8 @@ interface MarkdownModeProps {
   contentKey?: string;
   showPreview?: boolean;
   label?: string;
+  /** Host image upload; without this, paste/drop images are ignored. */
+  upload?: MediaUploadPort;
 }
 
 function insertMarkdownAtCursor(view: EditorView, markdown: string) {
@@ -49,6 +51,7 @@ export default function MarkdownMode({
   contentKey,
   showPreview = true,
   label = "Markdown",
+  upload,
 }: MarkdownModeProps) {
   const hostRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<EditorView | null>(null);
@@ -58,6 +61,8 @@ export default function MarkdownMode({
   onChangeRef.current = onChange;
   const valueRef = useRef(value);
   valueRef.current = value;
+  const uploadRef = useRef(upload);
+  uploadRef.current = upload;
   const applyingExternalRef = useRef(false);
 
   const [debounced, setDebounced] = useState(value);
@@ -93,25 +98,29 @@ export default function MarkdownMode({
         }),
         EditorView.domEventHandlers({
           drop: (event, view) => {
+            const up = uploadRef.current;
+            if (!up) return false;
             const files = collectImageFilesFromDataTransfer(event.dataTransfer);
             if (files.length === 0) return false;
             event.preventDefault();
             for (const file of files) {
-              uploadAndInsertImage(file, (url, filename) => {
-                if (viewRef.current !== view) return;
-                insertMarkdownAtCursor(view, `\n![${filename}](${url})\n`);
+              up.uploadImage(file, (ref) => {
+                if (viewRef.current !== view || !ref.url) return;
+                insertMarkdownAtCursor(view, `\n![${ref.filename}](${ref.url})\n`);
               });
             }
             return true;
           },
           paste: (event, view) => {
+            const up = uploadRef.current;
+            if (!up) return false;
             const files = collectImageFilesFromClipboard(event.clipboardData);
             if (files.length === 0) return false;
             event.preventDefault();
             for (const file of files) {
-              uploadAndInsertImage(file, (url, filename) => {
-                if (viewRef.current !== view) return;
-                insertMarkdownAtCursor(view, `![${filename}](${url})`);
+              up.uploadImage(file, (ref) => {
+                if (viewRef.current !== view || !ref.url) return;
+                insertMarkdownAtCursor(view, `![${ref.filename}](${ref.url})`);
               });
             }
             return true;

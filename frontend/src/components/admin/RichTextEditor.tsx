@@ -20,15 +20,22 @@ export type { ModalControls, ModalState };
 
 // Legacy exports: EDITOR_EXTENSIONS and getEditorExtensions
 import { buildExtensions } from "@/components/admin/editor/extension-groups";
+import type { EditorPorts } from "@/components/admin/editor/ports/types";
+import { createInklessUploadPort } from "@/components/admin/editor-host/createUploadPort";
 
 export const EDITOR_EXTENSIONS = buildExtensions(
   { slashCommands: true, blockHandles: true, blockToolbar: true, imagePaste: false, dragDrop: true },
 );
 
-/** @deprecated Use getPreset("full").extensions() instead */
- 
-export function getEditorExtensions() {
-  return getPreset("full").extensions();
+/**
+ * @deprecated Prefer `getPreset("full").extensions(ports)` with an explicit host upload port.
+ * When called with no args, injects inkless upload so paste/drop keeps working.
+ */
+export function getEditorExtensions(ports?: EditorPorts) {
+  return getPreset("full").extensions({
+    ...ports,
+    upload: ports?.upload ?? createInklessUploadPort(),
+  });
 }
 
 // ── EditorToolbar wrapper (backward-compatible signature) ──
@@ -118,7 +125,8 @@ export default function RichTextEditor({ value, onChange, preset = "full" }: Ric
   onChangeRef.current = onChange;
 
   const presetConfig = useMemo(() => getPreset(preset), [preset]);
-  const extensions = useMemo(() => presetConfig.extensions(), [presetConfig]);
+  const ports = useMemo<EditorPorts>(() => ({ upload: createInklessUploadPort() }), []);
+  const extensions = useMemo(() => presetConfig.extensions(ports), [presetConfig, ports]);
 
   const editor = useEditor({
     extensions,

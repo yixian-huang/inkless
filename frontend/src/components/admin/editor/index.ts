@@ -6,9 +6,15 @@ export type {
   BubbleMenuConfig,
   ToolbarRow,
   ToolbarItemDef,
+  EditorPorts,
+  MediaUploadPort,
+  MediaRef,
 } from "./types";
 export type { ModalControls, ModalState } from "./types-internal";
 export { useModalState } from "./useModalState";
+
+// Host ports (types only — inkless adapters live in editor-host/)
+export { DEFAULT_EDITOR_IMAGE_MAX_BYTES } from "./ports/types";
 
 // Extension building — heavy; prefer dynamic import of RichTextEditor / LangEditorMountInner
 export { buildExtensions } from "./extension-groups";

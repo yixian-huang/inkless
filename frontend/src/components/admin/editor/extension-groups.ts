@@ -24,6 +24,7 @@ import CharacterCount from "@tiptap/extension-character-count";
 import { common, createLowlight } from "lowlight";
 import type { Extension } from "@tiptap/core";
 import type { EditorFeatures } from "./types";
+import type { EditorPorts } from "./ports/types";
 import {
   Iframe,
   Video,
@@ -129,22 +130,37 @@ export function enhancementExtensions(): Extension[] {
 }
 
 /** Interaction: slash commands, block handles, block toolbar, image paste */
-export function interactionExtensions(features: EditorFeatures): Extension[] {
+export function interactionExtensions(
+  features: EditorFeatures,
+  ports?: EditorPorts,
+): Extension[] {
   const exts: Extension[] = [];
   if (features.slashCommands) exts.push(SlashCommands as Extension);
   if (features.blockHandles) exts.push(BlockHandle as Extension);
   if (features.blockToolbar) exts.push(BlockToolbar as Extension);
   if (features.imagePaste) {
-    // Progress + retry via mediaUploadTracked bus (MediaUploadTray)
-    exts.push(ImagePaste as Extension);
+    // Upload via host MediaUploadPort (tray + retry stay on host)
+    exts.push(
+      ImagePaste.configure({
+        upload: ports?.upload,
+      }) as Extension,
+    );
   }
   return exts;
 }
 
-/** Build a complete extension array based on feature flags */
+/** Build a complete extension array based on feature flags + host ports */
 export function buildExtensions(
   features: EditorFeatures,
-  groups: { formatting?: boolean; media?: boolean; mediaAdvanced?: boolean; table?: boolean; layout?: boolean; enhancements?: boolean } = {}
+  groups: {
+    formatting?: boolean;
+    media?: boolean;
+    mediaAdvanced?: boolean;
+    table?: boolean;
+    layout?: boolean;
+    enhancements?: boolean;
+  } = {},
+  ports?: EditorPorts,
 ): Extension[] {
   const {
     formatting = true,
@@ -163,6 +179,6 @@ export function buildExtensions(
     ...(table ? tableExtensions() : []),
     ...(layout ? layoutExtensions() : []),
     ...(enhancements ? enhancementExtensions() : []),
-    ...interactionExtensions(features),
+    ...interactionExtensions(features, ports),
   ];
 }

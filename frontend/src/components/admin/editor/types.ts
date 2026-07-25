@@ -1,4 +1,7 @@
 import type { Extension } from "@tiptap/core";
+import type { EditorPorts } from "./ports/types";
+
+export type { EditorPorts, MediaUploadPort, MediaRef } from "./ports/types";
 
 export interface EditorFeatures {
   slashCommands: boolean;
@@ -21,7 +24,8 @@ export interface BubbleMenuConfig {
 
 export interface EditorPreset {
   name: string;
-  extensions: () => Extension[];
+  /** Build TipTap extensions; pass host ports so image paste etc. can talk to the app. */
+  extensions: (ports?: EditorPorts) => Extension[];
   toolbar: ToolbarConfig | null;
   bubbleMenu: BubbleMenuConfig | null;
   floatingMenu: boolean;
