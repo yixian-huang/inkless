@@ -1,10 +1,10 @@
 /**
  * Test: Editor Image Insert/Delete Freeze Detection
- * Tests on production: http://47.93.134.202:18090/admin
+ * Tests on production: http://<SERVER_REF>:18090/admin
  */
 import { chromium } from "playwright";
 
-const BASE = "http://47.93.134.202:18090";
+const BASE = "http://<SERVER_REF>:18090";
 const TIMEOUT = 15000;
 
 async function run() {

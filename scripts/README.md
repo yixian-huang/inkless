@@ -68,7 +68,7 @@ export VERSION="v1.2.3"
 
 ### Quick-Box artifact deploy (recommended for `hk`)
 
-Build server compiles; deploy server (`82.158.226.66`) only activates. See `OPS.md` and `docs/quick-box-artifact-deploy-method.md`.
+Build server compiles; deploy server (`<APP_HOST>`) only activates. See `OPS.md` and `docs/quick-box-artifact-deploy-method.md`.
 
 ```bash
 # Local dry-run (build only)

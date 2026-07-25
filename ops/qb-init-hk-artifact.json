@@ -2,8 +2,10 @@
   "repoUrl": "https://github.com/yixian-huang/inkless.git",
   "environmentName": "hk-artifact",
   "deployMethod": "artifact",
-  "buildServerName": "223.244.7.122",
-  "deployServerNames": ["VIP Cloud - 82.158.226.66"],
+  "buildServerName": "<BUILD_SERVER>",
+  "deployServerNames": [
+    "<DEPLOY_SERVER_NAME>"
+  ],
   "workDir": "/home/inkless",
   "artifactDeployConfig": {
     "manifestPath": "ops/artifact-manifest.json",
@@ -36,19 +38,49 @@
   "deployTimeout": 1800,
   "preDeployScript": "bash -c 'set -euo pipefail; R=/opt/inkless; mkdir -p \"$R/data\" \"$R/uploads\" \"$R/backend\" /var/lib/quickbox/incoming /var/lib/quickbox/staging; id inkless >/dev/null 2>&1 || useradd --system --home \"$R\" --shell /usr/sbin/nologin inkless 2>/dev/null || true; chown -R inkless:inkless \"$R/data\" \"$R/uploads\" 2>/dev/null || true'",
   "envVars": {
-    "PORT": { "value": "8088", "isSecret": false },
-    "ENV": { "value": "production", "isSecret": false },
-    "BASE_URL": { "value": "https://inkless.run", "isSecret": false },
-    "CORS_ALLOWED_ORIGINS": { "value": "https://inkless.run", "isSecret": false },
-    "SEED_MODE": { "value": "blank", "isSecret": false },
-    "SETUP_BOOTSTRAP": { "value": "true", "isSecret": false },
-    "FRONTEND_DIR": { "value": "/opt/inkless/frontend/current", "isSecret": false },
-    "UPLOAD_DIR": { "value": "/opt/inkless/uploads", "isSecret": false },
+    "PORT": {
+      "value": "8088",
+      "isSecret": false
+    },
+    "ENV": {
+      "value": "production",
+      "isSecret": false
+    },
+    "BASE_URL": {
+      "value": "https://inkless.run",
+      "isSecret": false
+    },
+    "CORS_ALLOWED_ORIGINS": {
+      "value": "https://inkless.run",
+      "isSecret": false
+    },
+    "SEED_MODE": {
+      "value": "blank",
+      "isSecret": false
+    },
+    "SETUP_BOOTSTRAP": {
+      "value": "true",
+      "isSecret": false
+    },
+    "FRONTEND_DIR": {
+      "value": "/opt/inkless/frontend/current",
+      "isSecret": false
+    },
+    "UPLOAD_DIR": {
+      "value": "/opt/inkless/uploads",
+      "isSecret": false
+    },
     "DB_DSN": {
       "value": "file:/opt/inkless/data/inkless.db?cache=shared&mode=rwc",
       "isSecret": false
     },
-    "JWT_SECRET": { "value": "REPLACE_ME", "isSecret": true },
-    "JWT_REFRESH_SECRET": { "value": "REPLACE_ME", "isSecret": true }
+    "JWT_SECRET": {
+      "value": "REPLACE_ME",
+      "isSecret": true
+    },
+    "JWT_REFRESH_SECRET": {
+      "value": "REPLACE_ME",
+      "isSecret": true
+    }
   }
 }
