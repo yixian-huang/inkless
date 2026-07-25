@@ -30,6 +30,6 @@
     "migrate:db": "./scripts/migrate-db.sh"
   },
   "devDependencies": {
-    "playwright": "^1.58.2"
+    "playwright": "^1.62.0"
   }
 }
