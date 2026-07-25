@@ -93,7 +93,7 @@ jobs:
     needs: prepare
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           submodules: recursive
           ref: ${{ needs.prepare.outputs.git_ref }}
@@ -104,7 +104,7 @@ jobs:
           node-version: "20"
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@v6
         with:
           version: 9.15.9
 
@@ -143,7 +143,7 @@ jobs:
     if: needs.prepare.outputs.deploy_method == 'ssh'
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           submodules: recursive
           ref: ${{ needs.prepare.outputs.git_ref }}
@@ -181,7 +181,7 @@ jobs:
           chmod 644 ~/.ssh/known_hosts
 
       - name: Download build artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: release-artifacts-${{ needs.prepare.outputs.version }}
           path: artifacts
@@ -205,7 +205,7 @@ jobs:
     if: needs.prepare.outputs.deploy_method == 'http'
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           submodules: recursive
           ref: ${{ needs.prepare.outputs.git_ref }}
@@ -221,7 +221,7 @@ jobs:
           fi
 
       - name: Download build artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: release-artifacts-${{ needs.prepare.outputs.version }}
           path: artifacts
@@ -325,7 +325,7 @@ jobs:
       - name: Send email notification
         if: ${{ env.SMTP_SERVER != '' && env.SMTP_USERNAME != '' && env.SMTP_PASSWORD != '' && env.NOTIFY_EMAIL_TO != '' && env.NOTIFY_EMAIL_FROM != '' }}
         continue-on-error: true
-        uses: dawidd6/action-send-mail@v3
+        uses: dawidd6/action-send-mail@v18
         with:
           server_address: ${{ env.SMTP_SERVER }}
           server_port: ${{ env.SMTP_PORT || '587' }}
