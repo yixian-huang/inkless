@@ -113,7 +113,7 @@ export function GlobalConfigProvider({ children }: { children: ReactNode }) {
   );
 }
 
-// eslint-disable-next-line react-refresh/only-export-components
+ 
 export function useGlobalConfig(): GlobalConfigContextValue {
   return useContext(GlobalConfigContext);
 }

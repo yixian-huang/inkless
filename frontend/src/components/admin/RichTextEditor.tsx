@@ -26,7 +26,7 @@ export const EDITOR_EXTENSIONS = buildExtensions(
 );
 
 /** @deprecated Use getPreset("full").extensions() instead */
-// eslint-disable-next-line react-refresh/only-export-components
+ 
 export function getEditorExtensions() {
   return getPreset("full").extensions();
 }
@@ -101,7 +101,7 @@ export function EditorModals({ editor, state }: { editor: Editor; state: ModalSt
 }
 
 // Re-export light hook (no TipTap cost at import sites that only need modals).
-// eslint-disable-next-line react-refresh/only-export-components
+ 
 export { useModalState } from "@/components/admin/editor/useModalState";
 
 // ── Standalone RichTextEditor ──

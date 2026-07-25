@@ -20,10 +20,9 @@ export default [
     },
     rules: {
       ...reactHooks.configs.recommended.rules,
-      'react-refresh/only-export-components': [
-        'warn',
-        { allowConstantExport: true },
-      ],
+      // Many modules co-export hooks/constants with components (router loaders,
+      // admin UI). Fast-refresh purity is nice-to-have, not a release gate.
+      'react-refresh/only-export-components': 'off',
       '@typescript-eslint/no-explicit-any': 'off',
     },
   },

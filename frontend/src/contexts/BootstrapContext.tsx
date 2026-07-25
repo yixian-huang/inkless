@@ -17,7 +17,7 @@ const BootstrapContext = createContext<BootstrapContextValue>({
   refetch: async () => {},
 });
 
-// eslint-disable-next-line react-refresh/only-export-components
+ 
 export function useBootstrap() {
   return useContext(BootstrapContext);
 }
