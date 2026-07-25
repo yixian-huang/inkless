@@ -325,7 +325,7 @@ jobs:
       - name: Send email notification
         if: ${{ env.SMTP_SERVER != '' && env.SMTP_USERNAME != '' && env.SMTP_PASSWORD != '' && env.NOTIFY_EMAIL_TO != '' && env.NOTIFY_EMAIL_FROM != '' }}
         continue-on-error: true
-        uses: dawidd6/action-send-mail@v3
+        uses: dawidd6/action-send-mail@v18
         with:
           server_address: ${{ env.SMTP_SERVER }}
           server_port: ${{ env.SMTP_PORT || '587' }}
