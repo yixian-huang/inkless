@@ -17,7 +17,7 @@
     "@codemirror/lang-html": "^6.4.11",
     "@codemirror/lang-markdown": "^6.5.1",
     "@codemirror/search": "^6.6.0",
-    "@codemirror/state": "^6.6.0",
+    "@codemirror/state": "^6.7.1",
     "@codemirror/theme-one-dark": "^6.1.3",
     "@codemirror/view": "^6.40.0",
     "@inkless/theme-blog-first": "github:yixian-huang/inkless-theme-blog-first#9bffe9d",
