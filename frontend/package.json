@@ -26,7 +26,7 @@
     "@inkless/theme-product-first": "github:yixian-huang/inkless-theme-product-first#ea8502df0b10f6666b46b7ecdaf1c6ad71a1306d",
     "@stripe/react-stripe-js": "4.0.2",
     "@supabase/supabase-js": "2.57.4",
-    "@tiptap/core": "~3.28.0",
+    "@tiptap/core": "~3.29.0",
     "@tiptap/extension-bubble-menu": "~3.28.0",
     "@tiptap/extension-character-count": "~3.28.0",
     "@tiptap/extension-code-block-lowlight": "~3.28.0",
