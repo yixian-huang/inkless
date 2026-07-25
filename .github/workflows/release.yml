@@ -45,7 +45,7 @@ jobs:
           echo "Resolved version: ${version}"
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: "20"
 
@@ -55,7 +55,7 @@ jobs:
           version: 9.15.9
 
       - name: Setup Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v7
         with:
           go-version-file: backend/go.mod
           cache: true
@@ -114,7 +114,7 @@ jobs:
 
       - name: Upload artifacts (workflow_dispatch without tag)
         if: github.event_name == 'workflow_dispatch'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: release-${{ steps.ver.outputs.version }}
           path: |
