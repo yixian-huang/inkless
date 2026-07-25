@@ -1,5 +1,7 @@
 # Keep GitHub Actions and package ecosystems current.
 # https://docs.github.com/en/code-security/dependabot/dependabot-version-updates
+#
+# Groups reduce PR spam (one PR per ecosystem/group instead of per package).
 
 version: 2
 updates:
@@ -7,16 +9,44 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
-    open-pull-requests-limit: 5
+    open-pull-requests-limit: 3
+    groups:
+      github-actions:
+        patterns:
+          - "*"
 
   - package-ecosystem: "gomod"
     directory: "/backend"
     schedule:
       interval: "weekly"
-    open-pull-requests-limit: 5
+    open-pull-requests-limit: 3
+    groups:
+      backend-go:
+        patterns:
+          - "*"
 
   - package-ecosystem: "npm"
     directory: "/"
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 5
+    groups:
+      tiptap:
+        patterns:
+          - "@tiptap/*"
+      codemirror:
+        patterns:
+          - "@codemirror/*"
+          - "codemirror"
+      frontend-dev:
+        dependency-type: "development"
+        exclude-patterns:
+          - "@tiptap/*"
+          - "@codemirror/*"
+          - "codemirror"
+      frontend-prod:
+        dependency-type: "production"
+        exclude-patterns:
+          - "@tiptap/*"
+          - "@codemirror/*"
+          - "codemirror"
