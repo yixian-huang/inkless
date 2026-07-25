@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef } from "react";
 import { useEditor, type Editor } from "@tiptap/react";
-import { getPreset } from "@/components/admin/editor/presets";
+import { createEditorKit } from "@/components/admin/editor/createEditorKit";
 import type { EditorPorts } from "@/components/admin/editor/ports/types";
+import type { EditorPresetName } from "@/components/admin/editor/createEditorKit";
 import { sanitizePastedHtml } from "../utils/sanitizePastedHtml";
 
 export type LangEditorMountInnerProps = {
@@ -12,6 +13,7 @@ export type LangEditorMountInnerProps = {
   onFlushBody?: (html: string) => void;
   /** Host ports (upload + picker). Must be stable for the editor lifetime. */
   ports: EditorPorts;
+  preset?: EditorPresetName;
 };
 
 /**
@@ -25,10 +27,11 @@ export function LangEditorMountInner({
   onEditor,
   onFlushBody,
   ports,
+  preset = "full",
 }: LangEditorMountInnerProps) {
   const extensions = useMemo(
-    () => getPreset("full").extensions(ports),
-    [ports],
+    () => createEditorKit(preset, ports).extensions,
+    [preset, ports],
   );
   const onDirtyRef = useRef(onDirty);
   onDirtyRef.current = onDirty;

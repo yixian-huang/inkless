@@ -1,19 +1,20 @@
 import { useEditor, EditorContent } from "@tiptap/react";
 import { useEffect, useRef, useMemo, memo } from "react";
 import type { Editor } from "@tiptap/react";
-import { getPreset, fullPreset } from "@/components/admin/editor/presets";
 import EditorToolbarComponent from "@/components/admin/editor/EditorToolbar";
 import EditorBubbleMenu from "@/components/admin/editor/EditorBubbleMenu";
 import TableBubbleMenu from "@/components/admin/editor/TableBubbleMenu";
 import EditorFloatingMenu from "@/components/admin/editor/EditorFloatingMenu";
 import type { ModalControls, ModalState } from "@/components/admin/editor/types-internal";
 import type { EditorPorts } from "@/components/admin/editor/ports/types";
-import { buildExtensions } from "@/components/admin/editor/extension-groups";
+import {
+  createEditorKit,
+  getEditorSurface,
+  type EditorPresetName,
+} from "@/components/admin/editor/createEditorKit";
 import { createInklessUploadPort } from "@/components/admin/editor-host/createUploadPort";
 import { useInklessMediaPicker } from "@/components/admin/editor-host/useInklessMediaPicker";
-import {
-  InklessEditorModals,
-} from "@/components/admin/editor-host/InklessEditorModals";
+import { InklessEditorModals } from "@/components/admin/editor-host/InklessEditorModals";
 
 // ── Re-export backward-compatible API ──
 export { ToolbarButton, ToolbarDivider } from "@/components/admin/editor/EditorToolbar";
@@ -23,22 +24,12 @@ export { useModalState } from "@/components/admin/editor/useModalState";
 /** @deprecated Prefer InklessEditorModals from editor-host */
 export { InklessEditorModals as EditorModals };
 
-export const EDITOR_EXTENSIONS = buildExtensions(
-  { slashCommands: true, blockHandles: true, blockToolbar: true, imagePaste: false, dragDrop: true },
-);
+export { createEditorKit, getEditorSurface } from "@/components/admin/editor/createEditorKit";
+export type { EditorKit, EditorSurface, EditorPresetName } from "@/components/admin/editor/createEditorKit";
 
-/**
- * @deprecated Prefer `getPreset("full").extensions(ports)` with explicit host ports.
- * When called with no args, injects inkless upload only (no picker).
- */
-export function getEditorExtensions(ports?: EditorPorts) {
-  return getPreset("full").extensions({
-    ...ports,
-    upload: ports?.upload ?? createInklessUploadPort(),
-  });
-}
+const fullSurface = getEditorSurface("full");
 
-/** Backward-compatible EditorToolbar — uses full preset's toolbar config */
+/** Article / shell toolbar wired to the full preset chrome (no extension build). */
 export const EditorToolbar = memo(function EditorToolbar({
   editor,
   modals,
@@ -46,8 +37,14 @@ export const EditorToolbar = memo(function EditorToolbar({
   editor: Editor;
   modals: ModalControls;
 }) {
-  if (!fullPreset.toolbar) return null;
-  return <EditorToolbarComponent editor={editor} modals={modals} config={fullPreset.toolbar} />;
+  if (!fullSurface.toolbar) return null;
+  return (
+    <EditorToolbarComponent
+      editor={editor}
+      modals={modals}
+      config={fullSurface.toolbar}
+    />
+  );
 });
 
 // ── Standalone RichTextEditor ──
@@ -55,9 +52,13 @@ export const EditorToolbar = memo(function EditorToolbar({
 interface RichTextEditorProps {
   value: string;
   onChange: (value: string) => void;
-  preset?: "full" | "standard" | "minimal";
+  preset?: EditorPresetName;
 }
 
+/**
+ * Reference full-stack editor: createEditorKit + host ports + chrome + modals.
+ * Article page may still disassemble pieces, but must share createEditorKit / getEditorSurface.
+ */
 export default function RichTextEditor({
   value,
   onChange,
@@ -67,7 +68,6 @@ export default function RichTextEditor({
   const onChangeRef = useRef(onChange);
   onChangeRef.current = onChange;
 
-  const presetConfig = useMemo(() => getPreset(preset), [preset]);
   const ports = useMemo<EditorPorts>(
     () => ({
       upload: createInklessUploadPort(),
@@ -75,13 +75,14 @@ export default function RichTextEditor({
     }),
     [picker],
   );
-  const extensions = useMemo(
-    () => presetConfig.extensions(ports),
-    [presetConfig, ports],
+
+  const kit = useMemo(
+    () => createEditorKit(preset, ports),
+    [preset, ports],
   );
 
   const editor = useEditor({
-    extensions,
+    extensions: kit.extensions,
     content: value,
     onUpdate: ({ editor: e }) => {
       onChangeRef.current(e.getHTML());
@@ -100,12 +101,14 @@ export default function RichTextEditor({
 
   return (
     <div className="border border-slate-200 rounded-lg overflow-hidden">
-      {presetConfig.toolbar && (
-        <EditorToolbarComponent editor={editor} modals={modals} config={presetConfig.toolbar} />
+      {kit.toolbar && (
+        <EditorToolbarComponent editor={editor} modals={modals} config={kit.toolbar} />
       )}
-      {presetConfig.bubbleMenu && <EditorBubbleMenu editor={editor} />}
-      {presetConfig.bubbleMenu && <TableBubbleMenu editor={editor} />}
-      {presetConfig.floatingMenu && <EditorFloatingMenu editor={editor} />}
+      {kit.bubbleMenu && (
+        <EditorBubbleMenu editor={editor} config={kit.bubbleMenu} />
+      )}
+      {kit.bubbleMenu && <TableBubbleMenu editor={editor} />}
+      {kit.floatingMenu && <EditorFloatingMenu editor={editor} />}
       <EditorContent editor={editor} />
       <InklessEditorModals editor={editor} state={state} consumers={consumers} />
     </div>

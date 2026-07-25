@@ -19,11 +19,13 @@ export { useModalState } from "./useModalState";
 // Host ports (types only — inkless adapters live in editor-host/)
 export { DEFAULT_EDITOR_IMAGE_MAX_BYTES } from "./ports/types";
 
-// Extension building — heavy; prefer dynamic import of RichTextEditor / LangEditorMountInner
+// Extension building — heavy; prefer createEditorKit / dynamic import of surfaces
 export { buildExtensions } from "./extension-groups";
 
-// Presets
+// Presets + unified kit entry
 export { getPreset, fullPreset, standardPreset, minimalPreset } from "./presets";
+export { createEditorKit, getEditorSurface } from "./createEditorKit";
+export type { EditorKit, EditorSurface, EditorPresetName } from "./createEditorKit";
 
 // Toolbar
 export { default as EditorToolbar, ToolbarButton, ToolbarDivider } from "./EditorToolbar";

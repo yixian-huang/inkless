@@ -129,13 +129,13 @@ TipTap 扩展是有状态的——初始化时绑定 `this.editor`、`this.stora
 
 ```ts
 // ❌ 两个编辑器共享同一组扩展
-const extensions = useMemo(() => getEditorExtensions(), []);
+const extensions = useMemo(() => createEditorKit("full", ports).extensions, [ports]);
 const editorA = useEditor({ extensions });
 const editorB = useEditor({ extensions });
 
-// ✅ 每个编辑器独立实例
-const extA = useMemo(() => getEditorExtensions(), []);
-const extB = useMemo(() => getEditorExtensions(), []);
+// ✅ 每个编辑器独立实例（各自 createEditorKit / 各自 ports）
+const extA = useMemo(() => createEditorKit("full", portsA).extensions, [portsA]);
+const extB = useMemo(() => createEditorKit("full", portsB).extensions, [portsB]);
 const editorA = useEditor({ extensions: extA });
 const editorB = useEditor({ extensions: extB });
 ```
