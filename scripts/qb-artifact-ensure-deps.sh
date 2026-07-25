@@ -5,6 +5,38 @@ set -euo pipefail
 qb_log_info() { echo "[qb-artifact][INFO] $*"; }
 qb_log_warn() { echo "[qb-artifact][WARN] $*" >&2; }
 
+# True if $1 >= $2 (semver-ish, uses sort -V).
+version_ge() {
+  local a="$1" b="$2"
+  [[ -n "${a}" && -n "${b}" ]] || return 1
+  [[ "$(printf '%s\n%s\n' "${b}" "${a}" | sort -V | head -1)" == "${b}" ]]
+}
+
+resolve_go_version() {
+  # 1) explicit env  2) backend/go.mod in cwd or WORKDIR  3) fallback pin
+  if [[ -n "${QB_GO_VERSION:-}" ]]; then
+    echo "${QB_GO_VERSION}"
+    return 0
+  fi
+  local mod=""
+  if [[ -f backend/go.mod ]]; then
+    mod="backend/go.mod"
+  elif [[ -n "${WORKDIR:-}" && -f "${WORKDIR}/backend/go.mod" ]]; then
+    mod="${WORKDIR}/backend/go.mod"
+  elif [[ -f go.mod ]]; then
+    mod="go.mod"
+  fi
+  if [[ -n "${mod}" ]]; then
+    local from_mod
+    from_mod="$(awk '/^go[[:space:]]+/ { print $2; exit }' "${mod}" 2>/dev/null || true)"
+    if [[ -n "${from_mod}" ]]; then
+      echo "${from_mod}"
+      return 0
+    fi
+  fi
+  echo "1.25.7"
+}
+
 ensure_build_essential() {
   if command -v gcc >/dev/null 2>&1; then
     qb_log_info "gcc present: $(gcc --version | head -1)"
@@ -23,14 +55,20 @@ ensure_build_essential() {
 }
 
 ensure_go() {
-  local ver="${QB_GO_VERSION:-1.25.0}"
-  if command -v go >/dev/null 2>&1 && go version 2>/dev/null | grep -q "go${ver} "; then
-    qb_log_info "go present: $(go version)"
-    return 0
-  fi
+  local ver
+  ver="$(resolve_go_version)"
+  export PATH="/usr/local/go/bin:${PATH}"
+
   if command -v go >/dev/null 2>&1; then
+    local cur
+    cur="$(go version 2>/dev/null | awk '{print $3}' | sed 's/^go//')"
+    if version_ge "${cur}" "${ver}"; then
+      qb_log_info "go present and sufficient: $(go version) (need >= ${ver})"
+      return 0
+    fi
     qb_log_warn "upgrading go to ${ver} (was: $(go version 2>/dev/null || echo missing))"
   fi
+
   local arch
   arch="$(uname -m)"
   case "${arch}" in
@@ -43,6 +81,7 @@ ensure_go() {
   curl -fsSL "https://go.dev/dl/go${ver}.linux-${arch}.tar.gz" | tar -C /usr/local -xzf -
   export PATH="/usr/local/go/bin:${PATH}"
   ln -sf /usr/local/go/bin/go /usr/local/bin/go 2>/dev/null || true
+  ln -sf /usr/local/go/bin/gofmt /usr/local/bin/gofmt 2>/dev/null || true
   go version
 }
 
