@@ -124,7 +124,7 @@ type RouteDeps struct {
 	ContentDocRepo repository.ContentDocumentRepository
 	AuditWriter    audit.Writer
 	Build          BuildInfo
-	// APIKeyAuth optional long-lived token authenticator (PicGo).
+	// APIKeyAuth optional long-lived token authenticator (PicGo / local agents).
 	APIKeyAuth middleware.APIKeyAuthenticator
 }
 

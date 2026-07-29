@@ -43,6 +43,7 @@ Inkless 是一个双语（zh/en）React SPA + Go/Gin CMS。下表以当前仓库
 | AI 建站向导 | production | 使用当前 AI provider 生成计划并写入 `unified_pages` composable 草稿，可继续编辑和发布 |
 | AI 翻译 | production | 动态使用当前 AI provider；未配置返回 503；文章翻译默认预览并提供显式覆盖保护 |
 | AI 文章元数据 / SEO | beta | Phase 1 补齐 + Phase 1.5 质检/黄金样本/本地统计；Phase 2 单页 SEO 体检见 [`docs/article-ai-meta-seo.md`](article-ai-meta-seo.md) |
+| 本地 Agent 接入 | production | 长期 API Key（`ink_…`）支持 content scopes（文章/页面/媒体/分类标签）；RBAC ∩ scope；审计 actor 标注 `api_key:id`。官方说明 [`docs/agent-access.md`](agent-access.md)（替代直连 DB） |
 | 远端存储 | production | S3/OSS 配置保存前真实探测，配置热切换；普通与分片上传统一走 active StorageProvider |
 | 外部插件运行时 | beta | 公开 Go SDK/proto；zip 按实际解压字节限额并原子安装、独立进程启停、在途 RPC 有界排空、provider 注册/恢复、启动恢复、可回滚卸载和管理 API 已闭环；启用态卸载提交前始终保留 DB enabled 真相，失败或进程崩溃后可恢复文件、进程与 provider；`file-notifier` 已通过黑盒验证；默认关闭，仅系统管理员可显式启用 |
 | 管理端质量门禁 | production | lint、typecheck、前后端测试、Go race test、构建及 Playwright 页面发布、定时发布、系统状态和迁移链路 |

@@ -439,14 +439,15 @@ func TestAuth_APIKeyBearer(t *testing.T) {
 	router := setupTestRouter()
 	keyAuth := &fakeAPIKeyAuth{principal: &service.APIKeyPrincipal{
 		UserID: 9, Username: "alice", Role: model.RoleAdmin,
-		Scopes: []string{"media:create"}, KeyID: 3,
+		Scopes: []string{"media:create", "articles:update"}, KeyID: 3,
 	}}
 
 	router.GET("/protected", Auth(testJWTSecret, keyAuth), func(c *gin.Context) {
 		uc := GetUserContext(c)
 		require.NotNil(t, uc)
 		assert.Equal(t, uint(9), uc.UserID)
-		assert.Equal(t, []string{"media:create"}, GetAPIKeyScopes(c))
+		assert.Equal(t, []string{"media:create", "articles:update"}, GetAPIKeyScopes(c))
+		assert.Equal(t, uint(3), GetAPIKeyID(c))
 		c.JSON(http.StatusOK, gin.H{"ok": true})
 	})
 

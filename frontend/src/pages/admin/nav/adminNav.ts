@@ -272,7 +272,7 @@ export const adminNavGroups: AdminNavGroup[] = [
         label: "API Key",
         group: "settings",
         icon: KeyRound,
-        description: "PicGo 等客户端上传密钥",
+        description: "PicGo / 本地 Agent 长期密钥",
         settingsSection: "integrations",
       },
       {

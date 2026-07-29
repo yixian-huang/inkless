@@ -105,10 +105,72 @@ func TestAPIKeyDefaultScopeAndInvalid(t *testing.T) {
 		t.Fatalf("default scopes=%v", key.Scopes)
 	}
 
-	if _, _, err := svc.Create(ctx, u.ID, "bad", []string{"articles:delete"}); err == nil {
+	// settings:manage is intentionally not grantable via personal API keys
+	if _, _, err := svc.Create(ctx, u.ID, "bad", []string{"settings:manage"}); err == nil {
+		t.Fatal("want invalid scope")
+	}
+	if _, _, err := svc.Create(ctx, u.ID, "bad2", []string{"articles:foo"}); err == nil {
 		t.Fatal("want invalid scope")
 	}
 	if _, _, err := svc.Create(ctx, u.ID, "", []string{"media:create"}); err == nil {
 		t.Fatal("want invalid name")
+	}
+}
+
+func TestAPIKeyContentScopesForAgent(t *testing.T) {
+	db := setupAPIKeyDB(t)
+	svc := NewAPIKeyService(db)
+	ctx := context.Background()
+	var u model.User
+	_ = db.First(&u, "username = ?", "alice")
+
+	scopes := []string{
+		"articles:read",
+		"articles:update",
+		"pages:read",
+		"pages:update",
+		"media:create",
+		"categories:read",
+		"tags:read",
+	}
+	plain, key, err := svc.Create(ctx, u.ID, "content-agent", scopes)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if plain == "" || key == nil {
+		t.Fatal("expected token and key")
+	}
+	if len(key.Scopes) != len(scopes) {
+		t.Fatalf("scopes=%v", key.Scopes)
+	}
+	p, err := svc.Authenticate(ctx, plain)
+	if err != nil || p == nil {
+		t.Fatalf("auth: %+v %v", p, err)
+	}
+	if len(p.Scopes) != len(scopes) {
+		t.Fatalf("auth scopes=%v", p.Scopes)
+	}
+
+	// allow-list helper stays in sync with map
+	list := AllowedAPIKeyScopeList()
+	if len(list) == 0 {
+		t.Fatal("empty allow list")
+	}
+	for _, s := range list {
+		if _, ok := AllowedAPIKeyScopes[s]; !ok {
+			t.Fatalf("list has %q not in map", s)
+		}
+	}
+	for s := range AllowedAPIKeyScopes {
+		found := false
+		for _, x := range list {
+			if x == s {
+				found = true
+				break
+			}
+		}
+		if !found {
+			t.Fatalf("map has %q not in list", s)
+		}
 	}
 }

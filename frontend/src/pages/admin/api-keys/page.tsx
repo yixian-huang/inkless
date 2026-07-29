@@ -1,6 +1,8 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Check, Copy, KeyRound, Plus, Trash2 } from "lucide-react";
 import {
+  API_KEY_SCOPE_OPTIONS,
+  API_KEY_SCOPE_PRESETS,
   createAPIKey,
   listAPIKeys,
   revokeAPIKey,
@@ -44,6 +46,13 @@ function errMessage(err: unknown, fallback: string): string {
   );
 }
 
+const SCOPE_GROUP_LABEL: Record<string, string> = {
+  media: "媒体",
+  articles: "文章",
+  pages: "页面",
+  taxonomy: "分类 / 标签",
+};
+
 export default function AdminAPIKeysPage() {
   useDocumentTitle("API Key");
   const { confirm, confirmDialog } = useAdminConfirm();
@@ -57,10 +66,19 @@ export default function AdminAPIKeysPage() {
 
   const [createOpen, setCreateOpen] = useState(false);
   const [name, setName] = useState("");
+  const [selectedScopes, setSelectedScopes] = useState<string[]>(["media:create"]);
   const [creating, setCreating] = useState(false);
 
   const [revealedToken, setRevealedToken] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+
+  const scopesByGroup = useMemo(() => {
+    const groups: Record<string, typeof API_KEY_SCOPE_OPTIONS> = {};
+    for (const opt of API_KEY_SCOPE_OPTIONS) {
+      (groups[opt.group] ??= []).push(opt);
+    }
+    return groups;
+  }, []);
 
   const showStatus = (type: "success" | "error", message: string) => {
     setStatus({ type, message });
@@ -85,7 +103,18 @@ export default function AdminAPIKeysPage() {
 
   const openCreate = () => {
     setName("");
+    setSelectedScopes(["media:create"]);
     setCreateOpen(true);
+  };
+
+  const toggleScope = (scope: string) => {
+    setSelectedScopes((prev) =>
+      prev.includes(scope) ? prev.filter((s) => s !== scope) : [...prev, scope],
+    );
+  };
+
+  const applyPreset = (scopes: string[]) => {
+    setSelectedScopes([...scopes]);
   };
 
   const handleCreate = async () => {
@@ -94,9 +123,13 @@ export default function AdminAPIKeysPage() {
       showStatus("error", "请填写名称");
       return;
     }
+    if (selectedScopes.length === 0) {
+      showStatus("error", "请至少选择一个权限范围");
+      return;
+    }
     setCreating(true);
     try {
-      const res = await createAPIKey({ name: trimmed, scopes: ["media:create"] });
+      const res = await createAPIKey({ name: trimmed, scopes: selectedScopes });
       setCreateOpen(false);
       setRevealedToken(res.token);
       setCopied(false);
@@ -122,7 +155,7 @@ export default function AdminAPIKeysPage() {
   const handleRevoke = async (key: APIKey) => {
     const ok = await confirm({
       title: "吊销 API Key",
-      message: `确定吊销「${key.name}」吗？使用该密钥的客户端将立即无法上传。`,
+      message: `确定吊销「${key.name}」吗？使用该密钥的客户端或本地 Agent 将立即失效。`,
       confirmLabel: "吊销",
       danger: true,
     });
@@ -141,7 +174,7 @@ export default function AdminAPIKeysPage() {
       {confirmDialog}
       <AdminPageHeader
         title="API Key"
-        description="为 PicGo 等客户端签发长期密钥。明文仅在创建时显示一次；权限为 RBAC 与 key scope 的交集。"
+        description="为 PicGo、本地 Agent 等客户端签发长期密钥。明文仅在创建时显示一次；有效权限为用户 RBAC 与 key scope 的交集。"
         actions={
           <AdminButton type="button" onClick={openCreate}>
             <Plus className="mr-1.5 h-4 w-4" />
@@ -159,18 +192,19 @@ export default function AdminAPIKeysPage() {
           <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blue-100 text-blue-700">
             <KeyRound className="h-4 w-4" />
           </span>
-          <div className="min-w-0 text-sm text-slate-600">
-            <p className="font-medium text-slate-800">PicGo 对接要点</p>
-            <ul className="mt-1 list-disc space-y-0.5 pl-4 text-xs leading-relaxed">
-              <li>
-                上传地址：<code className="rounded bg-white/80 px-1">POST /admin/media/upload</code>
-              </li>
+          <div className="min-w-0 space-y-2 text-sm text-slate-600">
+            <p className="font-medium text-slate-800">接入方式</p>
+            <ul className="list-disc space-y-0.5 pl-4 text-xs leading-relaxed">
               <li>
                 Header：<code className="rounded bg-white/80 px-1">Authorization: Bearer ink_…</code>
               </li>
               <li>
-                JSON Path：<code className="rounded bg-white/80 px-1">url</code>（文件字段{" "}
-                <code className="rounded bg-white/80 px-1">file</code>）
+                PicGo 上传：<code className="rounded bg-white/80 px-1">POST /admin/media/upload</code>
+                ，JSON Path <code className="rounded bg-white/80 px-1">url</code>
+              </li>
+              <li>
+                内容 Agent：Admin API（文章 / 页面 SEO 与草稿），详见仓库{" "}
+                <code className="rounded bg-white/80 px-1">docs/agent-access.md</code>
               </li>
             </ul>
           </div>
@@ -182,7 +216,7 @@ export default function AdminAPIKeysPage() {
       ) : items.length === 0 ? (
         <AdminEmptyState
           title="还没有 API Key"
-          description="新建一把 scope 为 media:create 的密钥，即可在 PicGo 里常驻配置上传。"
+          description="可选择 PicGo 上传或内容 Agent 预设，一键签发最小权限密钥。"
           action={
             <AdminButton type="button" onClick={openCreate}>
               新建 Key
@@ -261,12 +295,12 @@ export default function AdminAPIKeysPage() {
           </>
         }
       >
-        <div className="space-y-4">
-          <AdminField label="名称" hint="便于识别，例如 picgo-mac">
+        <div className="max-h-[70vh] space-y-4 overflow-y-auto pr-1">
+          <AdminField label="名称" hint="便于识别，例如 picgo-mac / content-agent">
             <AdminInput
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="picgo"
+              placeholder="content-agent"
               maxLength={64}
               autoFocus
               onKeyDown={(e) => {
@@ -274,10 +308,75 @@ export default function AdminAPIKeysPage() {
               }}
             />
           </AdminField>
-          <AdminField label="权限范围">
-            <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700">
-              <code className="text-xs">media:create</code>
-              <span className="ml-2 text-xs text-slate-500">（当前仅支持媒体上传）</span>
+
+          <AdminField label="快速预设">
+            <div className="flex flex-wrap gap-2">
+              {API_KEY_SCOPE_PRESETS.map((preset) => {
+                const active =
+                  selectedScopes.length === preset.scopes.length &&
+                  preset.scopes.every((s) => selectedScopes.includes(s));
+                return (
+                  <button
+                    key={preset.id}
+                    type="button"
+                    onClick={() => applyPreset(preset.scopes)}
+                    className={`rounded-xl border px-3 py-2 text-left text-xs transition ${
+                      active
+                        ? "border-blue-300 bg-blue-50 text-blue-900"
+                        : "border-slate-200 bg-white text-slate-700 hover:border-slate-300"
+                    }`}
+                  >
+                    <div className="font-medium">{preset.label}</div>
+                    <div className="mt-0.5 text-[11px] text-slate-500">{preset.description}</div>
+                  </button>
+                );
+              })}
+            </div>
+          </AdminField>
+
+          <AdminField
+            label="权限范围"
+            hint="运行时权限 = 你的 RBAC ∩ 下列 scope。发布 / 删除请尽量少开。"
+          >
+            <div className="space-y-3">
+              {Object.entries(scopesByGroup).map(([group, opts]) => (
+                <div key={group} className="rounded-xl border border-slate-200 bg-slate-50/80 p-3">
+                  <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    {SCOPE_GROUP_LABEL[group] ?? group}
+                  </div>
+                  <div className="grid gap-1.5 sm:grid-cols-2">
+                    {opts.map((opt) => {
+                      const checked = selectedScopes.includes(opt.value);
+                      return (
+                        <label
+                          key={opt.value}
+                          className={`flex cursor-pointer items-start gap-2 rounded-lg border px-2.5 py-2 text-sm ${
+                            checked
+                              ? "border-blue-200 bg-white"
+                              : "border-transparent bg-transparent hover:bg-white/70"
+                          }`}
+                        >
+                          <input
+                            type="checkbox"
+                            className="mt-0.5"
+                            checked={checked}
+                            onChange={() => toggleScope(opt.value)}
+                          />
+                          <span className="min-w-0">
+                            <span className="block font-mono text-xs text-slate-800">{opt.value}</span>
+                            <span className="block text-xs text-slate-500">
+                              {opt.label}
+                              {opt.caution ? (
+                                <span className="ml-1 text-amber-700">· 慎用</span>
+                              ) : null}
+                            </span>
+                          </span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
             </div>
           </AdminField>
         </div>

@@ -39,6 +39,8 @@ Inkless documentation lives in three places:
 - [product-roadmap.md](product-roadmap.md) — capability map + backlog (historical sections remain)  
 - [business-requirements.md](business-requirements.md)  
 - [article-ai-meta-seo.md](article-ai-meta-seo.md)  
+- [agent-access.md](agent-access.md) — local agents via API Key (no direct DB)  
+- [picgo.md](picgo.md) — PicGo / media API Key 
 
 ## Internal (maintainers)
 

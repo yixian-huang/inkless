@@ -11,6 +11,8 @@ type metadataContextKey struct{}
 type Metadata struct {
 	Actor     string
 	ActorID   uint
+	// APIKeyID is set when the request authenticated with a personal API key (ink_…).
+	APIKeyID  uint
 	IP        string
 	UserAgent string
 	RequestID string
@@ -31,14 +33,21 @@ func MetadataFromContext(ctx context.Context) Metadata {
 }
 
 // ActorLabel returns a stable, human-readable actor identifier.
+// API key calls are labeled as "username (api_key:N)" so audit logs distinguish
+// browser sessions from local agents / PicGo clients without losing the owner.
 func (m Metadata) ActorLabel() string {
-	if m.Actor != "" {
-		return m.Actor
+	base := m.Actor
+	if base == "" {
+		if m.ActorID != 0 {
+			base = "user:" + strconv.FormatUint(uint64(m.ActorID), 10)
+		} else {
+			base = "system"
+		}
 	}
-	if m.ActorID != 0 {
-		return "user:" + strconv.FormatUint(uint64(m.ActorID), 10)
+	if m.APIKeyID != 0 {
+		return base + " (api_key:" + strconv.FormatUint(uint64(m.APIKeyID), 10) + ")"
 	}
-	return "system"
+	return base
 }
 
 // AddMetadata adds non-sensitive request metadata to audit event details.
@@ -48,6 +57,10 @@ func AddMetadata(details map[string]interface{}, metadata Metadata) map[string]i
 	}
 	if metadata.ActorID != 0 {
 		details["actor_id"] = metadata.ActorID
+	}
+	if metadata.APIKeyID != 0 {
+		details["api_key_id"] = metadata.APIKeyID
+		details["auth_method"] = "api_key"
 	}
 	if metadata.IP != "" {
 		details["ip"] = metadata.IP

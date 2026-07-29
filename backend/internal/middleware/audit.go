@@ -144,6 +144,9 @@ func auditMetadata(c *gin.Context) audit.Metadata {
 		metadata.Actor = user.Username
 		metadata.ActorID = user.UserID
 	}
+	if keyID := GetAPIKeyID(c); keyID != 0 {
+		metadata.APIKeyID = keyID
+	}
 	if metadata.Actor == "" {
 		if actor, ok := c.Get(auditActorHintKey); ok {
 			metadata.Actor, _ = actor.(string)

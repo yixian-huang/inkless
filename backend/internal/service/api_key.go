@@ -25,8 +25,55 @@ const (
 )
 
 // AllowedAPIKeyScopes is the allow-list for key scopes at creation time.
+// Scopes mirror RBAC resource:action strings; runtime enforcement is RBAC ∩ key scope.
+// Keep destructive / settings:manage out of defaults in the UI; they remain opt-in here.
 var AllowedAPIKeyScopes = map[string]struct{}{
+	// Media (PicGo / uploads)
 	"media:create": {},
+	"media:read":   {},
+	// Articles (local agents: SEO, body edit, publish)
+	"articles:read":    {},
+	"articles:create":  {},
+	"articles:update":  {},
+	"articles:publish": {},
+	"articles:delete":  {},
+	// Unified pages (draft / SEO / publish)
+	"pages:read":    {},
+	"pages:create":  {},
+	"pages:update":  {},
+	"pages:publish": {},
+	"pages:delete":  {},
+	// Taxonomy (optional for agent tag/category alignment)
+	"categories:read":   {},
+	"categories:create": {},
+	"categories:update": {},
+	"tags:read":         {},
+	"tags:create":       {},
+	"tags:update":       {},
+}
+
+// AllowedAPIKeyScopeList returns scopes in stable order for docs/UI/tests.
+func AllowedAPIKeyScopeList() []string {
+	return []string{
+		"media:create",
+		"media:read",
+		"articles:read",
+		"articles:create",
+		"articles:update",
+		"articles:publish",
+		"articles:delete",
+		"pages:read",
+		"pages:create",
+		"pages:update",
+		"pages:publish",
+		"pages:delete",
+		"categories:read",
+		"categories:create",
+		"categories:update",
+		"tags:read",
+		"tags:create",
+		"tags:update",
+	}
 }
 
 var (

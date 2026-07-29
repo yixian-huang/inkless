@@ -4,6 +4,8 @@
 
 **推荐鉴权**：长期 **API Key**（`ink_…`），见下文。也可用登录 JWT，但会过期，不适合桌面客户端常驻配置。
 
+> 同一套 API Key 也可给本地 Agent 做 SEO / 页面编辑（需额外 content scope）。见 **[agent-access.md](agent-access.md)**。
+
 ---
 
 ## 1. 创建 API Key
@@ -40,7 +42,7 @@ curl -sS -X POST 'https://YOUR_HOST/admin/api-keys' \
 ```
 
 - **`token` 仅此一次**，请立即保存。  
-- 默认 scope：`media:create`（只允许上传媒体，不能用 key 改文章等）。  
+- PicGo 默认 scope：`media:create`。也可在创建时勾选 content scopes（本地 Agent）；完整说明见 [agent-access.md](agent-access.md)。  
 - 列表：`GET /admin/api-keys`；吊销：`DELETE /admin/api-keys/:id`。  
 - **管理 Key 必须用登录 JWT**（`ink_…` 不能自管 Key，防泄露后横向扩权）。
 

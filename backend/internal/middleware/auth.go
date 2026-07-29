@@ -139,6 +139,32 @@ func GetAPIKeyScopes(c *gin.Context) []string {
 	return scopes
 }
 
+// GetAPIKeyID returns the personal API key id when the request used an ink_… key; 0 otherwise.
+func GetAPIKeyID(c *gin.Context) uint {
+	if c == nil {
+		return 0
+	}
+	v, ok := c.Get(apiKeyIDKey)
+	if !ok {
+		return 0
+	}
+	switch id := v.(type) {
+	case uint:
+		return id
+	case int:
+		if id > 0 {
+			return uint(id)
+		}
+	case int64:
+		if id > 0 {
+			return uint(id)
+		}
+	case uint64:
+		return uint(id)
+	}
+	return 0
+}
+
 // RequireSessionJWT rejects personal API keys. Use for sensitive self-service
 // routes such as creating/revoking API keys (must use a browser/session JWT).
 func RequireSessionJWT() gin.HandlerFunc {

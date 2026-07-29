@@ -79,10 +79,19 @@ describe("admin route access metadata", () => {
       "system:manage",
       "pages:create",
       "media:create",
+      "articles:read",
+      "pages:read",
     ]);
     expect(
       hasAdminRoutePermission(getAdminRoutePermission("/admin/settings"), (p) => p === "backups:read"),
     ).toBe(true);
-    expect(getAdminRoutePermission("/admin/api-keys")).toBe("media:create");
+    expect(getAdminRoutePermission("/admin/api-keys")).toEqual([
+      "media:create",
+      "articles:read",
+      "pages:read",
+    ]);
+    expect(
+      hasAdminRoutePermission(getAdminRoutePermission("/admin/api-keys"), (p) => p === "articles:read"),
+    ).toBe(true);
   });
 });

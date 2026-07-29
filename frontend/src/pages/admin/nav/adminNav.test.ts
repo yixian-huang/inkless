@@ -82,6 +82,11 @@ describe("adminNav registry", () => {
     expect(items.some((i) => i.path === "/admin/ai-settings")).toBe(false);
   });
 
+  it("exposes API keys for articles:read (content agents)", () => {
+    const items = getSettingsHubItems((p) => p === "articles:read");
+    expect(items.some((i) => i.path === "/admin/api-keys")).toBe(true);
+  });
+
   it("adminRouteAccess still lists known production capabilities", () => {
     expect(adminRouteAccess.some((r) => r.path === "/admin/settings")).toBe(true);
   });
