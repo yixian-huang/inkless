@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"os"
 	"strings"
+
+	"github.com/yixian-huang/inkless/backend/internal/themecatalog"
 )
 
 // LoadResult contains configuration plus bootstrap metadata.
@@ -133,6 +135,10 @@ func loadBase() (*Config, error) {
 	// content_documents → unified_pages migration is complete:
 	// LEGACY_CONTENT_DOC_FALLBACK=0|false|off
 	cfg.LegacyContentDocFallback = parseBoolDefaultTrue(os.Getenv("LEGACY_CONTENT_DOC_FALLBACK"))
+
+	// Official theme catalog (Phase A). See docs/design-official-extension-store-phase-a.md
+	cfg.ThemeCatalogURL = strings.TrimSpace(os.Getenv("INKLESS_THEME_CATALOG_URL"))
+	cfg.ThemeUMDAllowHosts = themecatalog.ParseAllowHosts(os.Getenv("INKLESS_THEME_UMD_ALLOW_HOSTS"))
 
 	return cfg, nil
 }

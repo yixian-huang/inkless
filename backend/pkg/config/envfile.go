@@ -26,6 +26,9 @@ BACKUP_DIR={{.BackupDir}}
 # FRONTEND_DIR=./frontend/out
 # BASE_URL=https://your-domain.com
 # CORS_ALLOWED_ORIGINS=http://localhost:3000
+# Official theme catalog (Phase A) — optional remote index; empty uses embedded fallback
+# INKLESS_THEME_CATALOG_URL=https://inkless.run/marketplace/v1/themes.json
+# INKLESS_THEME_UMD_ALLOW_HOSTS=github.com,cdn.jsdelivr.net,inkless.run
 `
 
 // EnvFileParams holds values written into a .env file.

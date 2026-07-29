@@ -25,6 +25,15 @@ type Config struct {
 	// public reads when true (default). Set LEGACY_CONTENT_DOC_FALLBACK=0
 	// after migration to skip the dual-track merge when unified has content.
 	LegacyContentDocFallback bool
+
+	// ThemeCatalogURL is the optional remote official themes index
+	// (INKLESS_THEME_CATALOG_URL). Empty → use embedded fallback only until
+	// remote fetch is wired (Phase A catalog service).
+	ThemeCatalogURL string
+	// ThemeUMDAllowHosts is the HTTPS host allowlist for marketplace/official
+	// theme UMD URLs (INKLESS_THEME_UMD_ALLOW_HOSTS, comma-separated).
+	// Empty env → themecatalog.DefaultUMDAllowHosts.
+	ThemeUMDAllowHosts []string
 }
 
 const defaultSQLiteDSN = "file:./data/inkless.db?cache=shared&mode=rwc"

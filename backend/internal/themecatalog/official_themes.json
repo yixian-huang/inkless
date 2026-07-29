@@ -1,0 +1,185 @@
+{
+  "schemaVersion": 1,
+  "updatedAt": "2026-07-29T00:00:00Z",
+  "themes": [
+    {
+      "slug": "product-first",
+      "themeId": "product-first",
+      "name": "Product First",
+      "nameZh": "产品优先",
+      "description": "Software product landing: hero, capabilities, install CTA, optional changelog",
+      "descriptionZh": "软件产品介绍站：主视觉、能力、安装引导、可选更新日志",
+      "author": "Inkless CMS",
+      "category": "product",
+      "tags": ["product", "landing", "oss", "saas"],
+      "iconUrl": "",
+      "previewUrl": "",
+      "repoUrl": "https://github.com/yixian-huang/inkless-theme-product-first",
+      "contractVersion": "1",
+      "minHostVersion": "0.1.0-alpha.2",
+      "latest": {
+        "version": "0.1.5",
+        "umdUrl": "https://github.com/yixian-huang/inkless-theme-product-first/releases/download/v0.1.5/theme.umd.js",
+        "changelog": "v0.1.5: expand Features page into shipped capability catalog",
+        "sha256": "",
+        "publishedAt": "2026-07-20T12:20:31Z"
+      },
+      "versions": [
+        {
+          "version": "0.1.5",
+          "umdUrl": "https://github.com/yixian-huang/inkless-theme-product-first/releases/download/v0.1.5/theme.umd.js",
+          "changelog": "v0.1.5: expand Features page into shipped capability catalog",
+          "sha256": "",
+          "publishedAt": "2026-07-20T12:20:31Z"
+        }
+      ],
+      "defaultFeaturesHint": {
+        "publicPages": {
+          "home": true,
+          "blog": false,
+          "contact": true,
+          "about": false,
+          "advantages": false,
+          "coreServices": false,
+          "cases": false,
+          "experts": false
+        }
+      },
+      "official": true
+    },
+    {
+      "slug": "blog-first",
+      "themeId": "blog-first",
+      "name": "Blog First",
+      "nameZh": "博客优先",
+      "description": "Minimal personal blog: author intro and recent posts on home",
+      "descriptionZh": "极简个人博客：首页展示作者介绍与最近文章",
+      "author": "Inkless CMS",
+      "category": "blog",
+      "tags": ["blog", "personal", "reading"],
+      "iconUrl": "",
+      "previewUrl": "",
+      "repoUrl": "https://github.com/yixian-huang/inkless-theme-blog-first",
+      "contractVersion": "1",
+      "minHostVersion": "0.1.0-alpha.2",
+      "latest": {
+        "version": "1.0.0",
+        "umdUrl": "https://github.com/yixian-huang/inkless-theme-blog-first/releases/download/v1.0.0/theme.umd.js",
+        "changelog": "Stable blog-first release",
+        "sha256": "",
+        "publishedAt": "2026-07-01T00:00:00Z"
+      },
+      "versions": [
+        {
+          "version": "1.0.0",
+          "umdUrl": "https://github.com/yixian-huang/inkless-theme-blog-first/releases/download/v1.0.0/theme.umd.js",
+          "changelog": "Stable blog-first release",
+          "sha256": "",
+          "publishedAt": "2026-07-01T00:00:00Z"
+        }
+      ],
+      "defaultFeaturesHint": {
+        "publicPages": {
+          "home": true,
+          "blog": true,
+          "contact": false,
+          "about": false
+        }
+      },
+      "official": true
+    },
+    {
+      "slug": "editorial-firm",
+      "themeId": "editorial-firm",
+      "name": "Editorial Firm",
+      "nameZh": "编辑机构",
+      "description": "Magazine-style firm site: home, about, services, contact",
+      "descriptionZh": "杂志气质机构官网：首页、关于、服务、联系",
+      "author": "Inkless CMS",
+      "category": "corporate",
+      "tags": ["editorial", "firm", "magazine"],
+      "iconUrl": "",
+      "previewUrl": "",
+      "repoUrl": "https://github.com/yixian-huang/inkless-theme-editorial-firm",
+      "contractVersion": "1",
+      "minHostVersion": "0.1.0-alpha.2",
+      "latest": {
+        "version": "0.1.0",
+        "umdUrl": "https://github.com/yixian-huang/inkless-theme-editorial-firm/releases/download/v0.1.0/theme.umd.js",
+        "changelog": "Initial editorial-firm release",
+        "sha256": "",
+        "publishedAt": "2026-07-15T00:00:00Z"
+      },
+      "versions": [
+        {
+          "version": "0.1.0",
+          "umdUrl": "https://github.com/yixian-huang/inkless-theme-editorial-firm/releases/download/v0.1.0/theme.umd.js",
+          "changelog": "Initial editorial-firm release",
+          "sha256": "",
+          "publishedAt": "2026-07-15T00:00:00Z"
+        }
+      ],
+      "defaultFeaturesHint": {
+        "publicPages": {
+          "home": true,
+          "blog": false,
+          "contact": true,
+          "about": true
+        }
+      },
+      "official": true
+    },
+    {
+      "slug": "corporate-classic",
+      "themeId": "corporate-classic",
+      "name": "Corporate Classic",
+      "nameZh": "企业经典",
+      "description": "Professional corporate site matrix (built-in; activate without UMD download)",
+      "descriptionZh": "专业企业官网页矩阵（内置主题，无需下载 UMD）",
+      "author": "Inkless CMS",
+      "category": "corporate",
+      "tags": ["corporate", "consulting", "builtin"],
+      "iconUrl": "",
+      "previewUrl": "",
+      "repoUrl": "https://github.com/yixian-huang/inkless",
+      "contractVersion": "1",
+      "minHostVersion": "0.1.0-alpha.2",
+      "latest": {
+        "version": "1.0.0",
+        "umdUrl": "",
+        "changelog": "Ships as host built-in",
+        "sha256": "",
+        "publishedAt": "2026-07-01T00:00:00Z"
+      },
+      "versions": [],
+      "builtinOnly": true,
+      "official": true
+    },
+    {
+      "slug": "minimal-starter",
+      "themeId": "minimal-starter",
+      "name": "Minimal Starter",
+      "nameZh": "极简起步",
+      "description": "Minimal built-in theme demonstrating third-party extension path",
+      "descriptionZh": "最简内置主题，演示第三方主题扩展路径",
+      "author": "Inkless CMS",
+      "category": "starter",
+      "tags": ["minimal", "builtin", "demo"],
+      "iconUrl": "",
+      "previewUrl": "",
+      "repoUrl": "https://github.com/yixian-huang/inkless",
+      "contractVersion": "1",
+      "minHostVersion": "0.1.0-alpha.2",
+      "latest": {
+        "version": "1.0.0",
+        "umdUrl": "",
+        "changelog": "Ships as host built-in",
+        "sha256": "",
+        "publishedAt": "2026-07-01T00:00:00Z"
+      },
+      "versions": [],
+      "builtinOnly": true,
+      "official": true
+    }
+  ]
+}

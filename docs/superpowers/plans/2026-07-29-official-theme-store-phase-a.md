@@ -12,7 +12,8 @@ Admin can browse an **official theme catalog** and **one-click install** (option
 
 ### Backend
 
-- [ ] **A1** Embed fallback catalog JSON + `INKLESS_THEME_CATALOG_URL` + URL host allowlist config  
+- [x] **A1** Embed fallback catalog JSON + `INKLESS_THEME_CATALOG_URL` + URL host allowlist config  
+
 - [ ] **A2** Catalog fetch service (TTL cache, refresh flag, fallback on error)  
 - [ ] **A3** `installState` merge (builtin / installed / active / incompatible) + unit tests  
 - [ ] **A4** `GET /admin/extensions/themes/catalog`  
