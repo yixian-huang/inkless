@@ -421,7 +421,7 @@ if ((source === "external" || source === "marketplace") && externalUrl) {
 | ID | 任务 | 产出 | 验收 |
 |----|------|------|------|
 | A1 | 定稿 allowlist env + 内嵌 fallback JSON | `backend/internal/themecatalog` + config | ✅ 无网可 `LoadEmbedded()`；env `INKLESS_THEME_CATALOG_URL` / `INKLESS_THEME_UMD_ALLOW_HOSTS` |
-| A2 | Catalog 拉取与缓存（内存 TTL 5–15m） | Go service | `refresh=1` 绕过缓存；失败回落 embedded |
+| A2 | Catalog 拉取与缓存（内存 TTL 5–15m） | `themecatalog.Loader` | ✅ TTL 默认 10m；`refresh` 绕过；失败→stale cache→embedded；HTTPS catalog URL SSRF 基线 |
 | A3 | 合并 installState 算法 | unit tests | builtin/installed/active/incompatible 用例 |
 
 ### P0 — API
