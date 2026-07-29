@@ -10,6 +10,7 @@ import { resolveLocale } from '@/utils/locale';
 import { useBranding } from '@/hooks/useBranding';
 import { useLocaleMode } from '@/hooks/useLocaleMode';
 import { isFeatureEnabled, routeFeatureMap } from '@/router/featureMap';
+import { mergeMenuAndThemeNav } from '@/theme/layouts/chrome/useSiteNavigation';
 
 interface NavItem {
   label?: string;
@@ -25,12 +26,14 @@ export default function Header() {
   const branding = useBranding();
   const { isMono, currentLocale } = useLocaleMode();
   const { headerNavItems, menuNavItems } = useThemePages();
-  // Priority: primary menu > theme pages > global config
-  const navigation: NavItem[] = menuNavItems.length > 0
-    ? menuNavItems.map((item) => ({ label: item.label, href: item.path }))
-    : headerNavItems.length > 0
-      ? headerNavItems.map((item) => ({ label: item.label, href: item.path }))
-      : (globalConfig.nav?.items || []);
+  // Merge primary menu + theme/auto pages (menu labels win on path clash).
+  const navigation: NavItem[] =
+    menuNavItems.length > 0 || headerNavItems.length > 0
+      ? mergeMenuAndThemeNav(menuNavItems, headerNavItems).map((item) => ({
+          label: item.label,
+          href: item.path,
+        }))
+      : globalConfig.nav?.items || [];
   const visibleNav = navigation.filter((item) => {
     if (!item.href) return true;
     const key = routeFeatureMap[item.href];
