@@ -73,7 +73,7 @@
     "@types/turndown": "^5.0.6",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
-    "typescript": "~5.8.3",
+    "typescript": "~7.0.2",
     "vitest": "^4.1.10"
   }
 }
