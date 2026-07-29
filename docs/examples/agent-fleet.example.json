@@ -1,0 +1,54 @@
+{
+  "version": 1,
+  "default_site": "personal-blog",
+  "sites": {
+    "personal-blog": {
+      "label": "Personal blog",
+      "base_url": "https://yx.example.com",
+      "api_key_env": "INKLESS_KEY_PERSONAL",
+      "scopes_expected": [
+        "articles:read",
+        "articles:update",
+        "pages:read",
+        "pages:update",
+        "media:create",
+        "categories:read",
+        "tags:read"
+      ],
+      "publish_policy": "manual",
+      "brand": "personal",
+      "locale_default": "zh",
+      "verify": {
+        "whoami": true,
+        "public_path": "/public/bootstrap"
+      }
+    },
+    "product-ops": {
+      "label": "Product ops site",
+      "base_url": "https://ops.example.com",
+      "api_key_env": "INKLESS_KEY_OPS",
+      "scopes_expected": [
+        "articles:read",
+        "articles:update",
+        "pages:read",
+        "pages:update",
+        "media:create"
+      ],
+      "publish_policy": "never",
+      "brand": "product",
+      "locale_default": "zh",
+      "notes": "Draft SEO only; humans publish in admin.",
+      "verify": {
+        "whoami": true
+      }
+    },
+    "client-a": {
+      "label": "Client A brochure site",
+      "base_url": "https://a.example.com",
+      "api_key_env": "INKLESS_KEY_CLIENT_A",
+      "publish_policy": "never",
+      "brand": "client",
+      "locale_default": "en"
+    }
+  }
+}

@@ -203,8 +203,9 @@ export default function AdminAPIKeysPage() {
                 ，JSON Path <code className="rounded bg-white/80 px-1">url</code>
               </li>
               <li>
-                内容 Agent：Admin API（文章 / 页面 SEO 与草稿），详见仓库{" "}
-                <code className="rounded bg-white/80 px-1">docs/agent-access.md</code>
+                内容 Agent：Admin API（文章 / 页面 SEO 与草稿）；多站用 Fleet +{" "}
+                <code className="rounded bg-white/80 px-1">GET /admin/agent/whoami</code>
+                ，见 <code className="rounded bg-white/80 px-1">docs/agent-access.md</code>
               </li>
             </ul>
           </div>

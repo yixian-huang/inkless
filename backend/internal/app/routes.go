@@ -74,6 +74,10 @@ type Handlers struct {
 		Create(*gin.Context)
 		Revoke(*gin.Context)
 	}
+	// Agent multi-site discovery (whoami); optional for tests that omit it.
+	Agent interface {
+		Whoami(*gin.Context)
+	}
 	Analytics      *analyticsHandler.Handler
 	Dashboard      *dashboardHandler.Handler
 	Category       *categoryHandler.Handler

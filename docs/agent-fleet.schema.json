@@ -1,0 +1,105 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://inkless.run/schemas/agent-fleet.schema.json",
+  "title": "Inkless Agent Fleet Registry",
+  "description": "Local (or private ops) registry of Inkless instances for multi-site content agents. Each site is one process/instance with its own base_url and API key. Does not introduce multi-tenant site_id in the CMS core (ADR-0001).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "sites"],
+  "properties": {
+    "version": {
+      "type": "integer",
+      "const": 1,
+      "description": "Registry schema version."
+    },
+    "default_site": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+      "description": "Optional default site id when a task does not name a site."
+    },
+    "sites": {
+      "type": "object",
+      "minProperties": 1,
+      "propertyNames": {
+        "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"
+      },
+      "additionalProperties": {
+        "$ref": "#/$defs/site"
+      }
+    }
+  },
+  "$defs": {
+    "site": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["base_url"],
+      "properties": {
+        "label": {
+          "type": "string",
+          "description": "Human-readable name for agents and UIs."
+        },
+        "base_url": {
+          "type": "string",
+          "format": "uri",
+          "pattern": "^https?://",
+          "description": "Instance canonical origin (no trailing slash). Must match that instance BASE_URL / whoami.baseUrl."
+        },
+        "api_key_env": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Environment variable holding the ink_… key for this site. Prefer env refs over plaintext."
+        },
+        "api_key_file": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Optional path to a file containing the plaintext key (single line). Mutually exclusive with embedding secrets in git."
+        },
+        "scopes_expected": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 3 },
+          "uniqueItems": true,
+          "description": "Scopes the agent expects on the key; compare with whoami.scopes after connect."
+        },
+        "publish_policy": {
+          "type": "string",
+          "enum": ["never", "manual", "allow"],
+          "default": "manual",
+          "description": "never = refuse publish endpoints; manual = only when user explicitly asks; allow = agent may publish when task requires."
+        },
+        "brand": {
+          "type": "string",
+          "description": "Optional tag for filtering (personal, product, client, …)."
+        },
+        "locale_default": {
+          "type": "string",
+          "enum": ["zh", "en"],
+          "description": "Default locale hint for content generation."
+        },
+        "notes": {
+          "type": "string",
+          "description": "Free-form operator notes (not sent to the CMS)."
+        },
+        "verify": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "whoami": {
+              "type": "boolean",
+              "default": true,
+              "description": "Call GET /admin/agent/whoami before writes and match baseUrl."
+            },
+            "public_path": {
+              "type": "string",
+              "description": "Optional public path to hit after publish (e.g. / or /public/bootstrap)."
+            }
+          }
+        }
+      },
+      "anyOf": [
+        { "required": ["api_key_env"] },
+        { "required": ["api_key_file"] }
+      ]
+    }
+  }
+}

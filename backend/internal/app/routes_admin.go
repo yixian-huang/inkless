@@ -19,6 +19,7 @@ func registerAdminRoutes(
 	userRepo repository.UserRepository,
 	rbacCache *cache.Cache,
 ) {
+	registerAdminAgent(admin, h)
 	registerAdminDashboard(admin, h, require)
 	registerAdminMedia(admin, h, require)
 	registerAdminContent(admin, h, require, userRepo, rbacCache)
@@ -30,6 +31,15 @@ func registerAdminRoutes(
 	registerAdminPlugins(admin, h, require)
 	registerAdminAI(admin, h, require)
 	registerAdminSystem(admin, h, require)
+}
+
+// registerAdminAgent mounts discovery endpoints for local multi-site agents.
+// Auth only (no require): any valid JWT or ink_ key may probe the instance.
+func registerAdminAgent(admin *gin.RouterGroup, h *Handlers) {
+	if h.Agent == nil {
+		return
+	}
+	admin.GET("/agent/whoami", h.Agent.Whoami)
 }
 
 func registerAdminDashboard(admin *gin.RouterGroup, h *Handlers, require requireFn) {

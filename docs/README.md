@@ -40,6 +40,8 @@ Inkless documentation lives in three places:
 - [business-requirements.md](business-requirements.md)  
 - [article-ai-meta-seo.md](article-ai-meta-seo.md)  
 - [agent-access.md](agent-access.md) — local agents via API Key (no direct DB)  
+- [agent-fleet.schema.json](agent-fleet.schema.json) — multi-site fleet registry schema  
+- [examples/agent-fleet.example.json](examples/agent-fleet.example.json) — sample multi-site fleet  
 - [picgo.md](picgo.md) — PicGo / media API Key 
 
 ## Internal (maintainers)

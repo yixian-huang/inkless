@@ -8,6 +8,7 @@ import (
 	"github.com/yixian-huang/inkless/backend/internal/cache"
 	"github.com/yixian-huang/inkless/backend/internal/db"
 	"github.com/yixian-huang/inkless/backend/internal/eventbus"
+	agentHandler "github.com/yixian-huang/inkless/backend/internal/handler/agent"
 	aiHandler "github.com/yixian-huang/inkless/backend/internal/handler/ai"
 	apiKeyHandler "github.com/yixian-huang/inkless/backend/internal/handler/api_key"
 	analyticsHandler "github.com/yixian-huang/inkless/backend/internal/handler/analytics"
@@ -244,6 +245,7 @@ func wireHandlers(
 		Bootstrap:      bootstrapHandler.NewHandler(r.contentDoc, r.installedTheme, r.page, r.unifiedPage, r.siteConfig, publicCache),
 		Media:          mediaHandler.NewHandlerWithStorage(r.media, cfg.UploadDir, "", storageRuntime),
 		APIKey:         apiKeyHandler.NewHandler(apiKeySvc),
+		Agent:          agentHandler.NewHandler(cfg.BaseURL, build.Version),
 		Analytics:      analyticsHandler.NewHandler(r.pageView).WithCache(publicCache),
 		Dashboard:      dashboardHandler.NewHandler(r.article, r.unifiedPage, r.media, r.pageView).WithCache(publicCache),
 		Category:       categoryHandler.NewHandler(r.category, r.article),
