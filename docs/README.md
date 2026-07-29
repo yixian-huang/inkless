@@ -16,7 +16,7 @@ Inkless documentation lives in three places:
 | Contribute code | [../CONTRIBUTING.md](../CONTRIBUTING.md) |
 | Understand layering | [architecture.md](architecture.md) · [developer-guide.md](developer-guide.md) |
 | Deploy to a server | [deployment.md](deployment.md) · [docker-setup.md](docker-setup.md) |
-| Theme packages | [theme-contract.md](theme-contract.md) |
+| Theme packages / host boundary | [theme-contract.md](theme-contract.md) · [adr/0002-theme-host-boundary.md](adr/0002-theme-host-boundary.md) |
 | Report a vulnerability | [../SECURITY.md](../SECURITY.md) |
 
 ## Public guides (recommended)
@@ -30,6 +30,7 @@ Inkless documentation lives in three places:
 - [theme-contract.md](theme-contract.md)  
 - [testing-strategy.md](testing-strategy.md)  
 - [adr/0001-single-instance-single-site.md](adr/0001-single-instance-single-site.md)  
+- [adr/0002-theme-host-boundary.md](adr/0002-theme-host-boundary.md) — Host vs Theme ownership  
 
 ## Product / research (may lag code)
 
