@@ -216,6 +216,14 @@ func (h *Handler) AdminThemeInstall(c *gin.Context) {
 		return
 	}
 
+	// Optional integrity check when catalog provides sha256 (A14).
+	if strings.TrimSpace(ver.SHA256) != "" && strings.TrimSpace(ver.UMDURL) != "" {
+		if vErr := themecatalog.VerifyUMDSHA256(c.Request.Context(), ver.UMDURL, ver.SHA256, h.allowHosts); vErr != nil {
+			apierror.Message(c, http.StatusBadRequest, "主题包校验失败: "+vErr.Error())
+			return
+		}
+	}
+
 	theme, created, err := h.upsertInstalledFromCatalog(c, entry, ver)
 	if err != nil {
 		apierror.Message(c, http.StatusInternalServerError, "安装主题失败: "+err.Error())

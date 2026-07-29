@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import {
   listInstalledThemes,
   activateTheme,
@@ -153,7 +154,16 @@ export default function ThemeManagementModal({ onClose }: ThemeManagementModalPr
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex shrink-0 items-center justify-between border-b border-slate-100 px-5 py-4 sm:px-6">
-          <h3 className="text-base font-semibold tracking-tight text-slate-900">主题管理</h3>
+          <div className="flex items-center gap-3">
+            <h3 className="text-base font-semibold tracking-tight text-slate-900">主题管理</h3>
+            <Link
+              to="/admin/theme-market"
+              onClick={onClose}
+              className="rounded-full bg-teal-50 px-2.5 py-0.5 text-xs font-medium text-teal-800 hover:bg-teal-100"
+            >
+              浏览主题市场 →
+            </Link>
+          </div>
           <button
             type="button"
             onClick={onClose}

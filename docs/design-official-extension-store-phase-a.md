@@ -437,20 +437,20 @@ if ((source === "external" || source === "marketplace") && externalUrl) {
 
 | ID | 任务 | 产出 | 验收 |
 |----|------|------|------|
-| A8 | API client `extensionsThemes.ts` | typed fetch | |
-| A9 | 主题市场页/Tab UI | 卡片列表 + 安装按钮 | 安装成功出现在已安装 |
-| A10 | 安装并激活 + bootstrap refetch | | 前台 IA 变化 |
-| A11 | 不兼容/错误态文案 | | |
-| A12 | 入口：主题管理「浏览市场」+ 侧栏 | | |
+| A8 | API client `extensionsThemes.ts` | `frontend/src/api/extensionsThemes.ts` | ✅ |
+| A9 | 主题市场页/Tab UI | `/admin/theme-market` | ✅ 卡片 + 状态 badge |
+| A10 | 安装并激活 + bootstrap refetch | market page | ✅ |
+| A11 | 不兼容/错误态文案 | market page | ✅ |
+| A12 | 入口：主题管理「浏览市场」+ 侧栏 | nav + theme page | ✅ |
 
 ### P1 — 体验与运维
 
 | ID | 任务 | 产出 | 验收 |
 |----|------|------|------|
-| A13 | 更新到 catalog latest | | version/url 更新 |
-| A14 | sha256 校验（若 catalog 提供） | | 篡改 UMD 失败 |
-| A15 | 官方 themes.json 仓或 inkless.run 静态发布 | ops runbook | |
-| A16 | E2E：市场安装 product-first 冒烟 | playwright/node | CI 可选 |
+| A13 | 更新到 catalog latest | 复用 install | ✅ 市场页「更新」按钮 |
+| A14 | sha256 校验（若 catalog 提供） | `VerifyUMDSHA256` | ✅ 有 sha256 则下载校验 |
+| A15 | 官方 themes.json 仓或 inkless.run 静态发布 | ops | ⏳ 待发布真实 UMD release |
+| A16 | 冒烟脚本 | `scripts/smoke-theme-catalog.sh` | ✅ |
 
 ### P2 — 显式不做（登记）
 
