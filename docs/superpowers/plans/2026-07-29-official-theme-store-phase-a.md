@@ -18,7 +18,8 @@ Admin can browse an **official theme catalog** and **one-click install** (option
 
 - [x] **A3** `installState` merge (builtin / installed / active / incompatible) + unit tests  
 
-- [ ] **A4** `GET /admin/extensions/themes/catalog`  
+- [x] **A4** `GET /admin/extensions/themes/catalog`  
+
 - [ ] **A5** `POST /admin/extensions/themes/install` (validate official, contract, allowlist, upsert)  
 - [ ] **A6** `activate=true` → existing SetActive + SeedThemePages + cache invalidate  
 - [ ] **A7** Persist `source=marketplace`; ensure public bootstrap exposes it  

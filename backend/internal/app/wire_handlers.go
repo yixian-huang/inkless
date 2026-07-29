@@ -19,6 +19,7 @@ import (
 	chunkedUploadHandler "github.com/yixian-huang/inkless/backend/internal/handler/chunked_upload"
 	dashboardHandler "github.com/yixian-huang/inkless/backend/internal/handler/dashboard"
 	emailSettingsHandler "github.com/yixian-huang/inkless/backend/internal/handler/email_settings"
+	extensionsHandler "github.com/yixian-huang/inkless/backend/internal/handler/extensions"
 	featuresHandler "github.com/yixian-huang/inkless/backend/internal/handler/features"
 	feedHandler "github.com/yixian-huang/inkless/backend/internal/handler/feed"
 	globalConfigHandler "github.com/yixian-huang/inkless/backend/internal/handler/global_config"
@@ -57,6 +58,7 @@ import (
 	"github.com/yixian-huang/inkless/backend/internal/repository"
 	"github.com/yixian-huang/inkless/backend/internal/service"
 	install "github.com/yixian-huang/inkless/backend/internal/setup"
+	"github.com/yixian-huang/inkless/backend/internal/themecatalog"
 	"github.com/yixian-huang/inkless/backend/pkg/audit"
 	"github.com/yixian-huang/inkless/backend/pkg/config"
 	appLogger "github.com/yixian-huang/inkless/backend/pkg/logger"
@@ -219,6 +221,7 @@ func wireHandlers(
 	marketplaceSvc := service.NewMarketplaceService(r.marketplace)
 	wizardSvc := service.NewWizardServiceWithRegistry(registry, r.unifiedPage)
 	themeExportSvc := service.NewThemeExportService(r.pageTemplate, r.siteConfig)
+	themeCatalogLoader := themecatalog.NewLoader(cfg.ThemeCatalogURL)
 
 	apiKeySvc := service.NewAPIKeyService(database.DB)
 
@@ -249,8 +252,14 @@ func wireHandlers(
 		SEO:            seoHandler.NewHandler(database.DB),
 		Search:         searchhandler.NewHandler(searchService),
 		Role:           roleHandler.NewHandler(r.role, r.user).WithRBACCache(rbacCache),
-		Marketplace:    marketplaceHandler.NewHandler(marketplaceSvc),
-		Plugin:         pluginHandler.NewHandler(pluginManager, registry, cfg.ExternalPlugins),
+		Marketplace: marketplaceHandler.NewHandler(marketplaceSvc),
+		Extensions: extensionsHandler.NewHandler(
+			themeCatalogLoader,
+			r.installedTheme,
+			build.Version,
+			cfg.ThemeUMDAllowHosts,
+		),
+		Plugin: pluginHandler.NewHandler(pluginManager, registry, cfg.ExternalPlugins),
 		Wizard:         wizardHandler.NewHandler(wizardSvc),
 		AI:             aiHandler.NewHandler(registry, aiConfigSvc),
 		ChunkedUpload:  chunkedUploadHandler.NewHandler(chunkedUploadSvc),

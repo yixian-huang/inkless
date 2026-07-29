@@ -428,7 +428,7 @@ if ((source === "external" || source === "marketplace") && externalUrl) {
 
 | ID | 任务 | 产出 | 验收 |
 |----|------|------|------|
-| A4 | `GET /admin/extensions/themes/catalog` | handler + RBAC | 鉴权 401/403；结构符合 §5.1 |
+| A4 | `GET /admin/extensions/themes/catalog` | `extensions.Handler` + RBAC `themes:read` | ✅ Loader+Merge；`refresh=1`；扁平 items + installState |
 | A5 | `POST /admin/extensions/themes/install` | validate + upsert installed_themes | 非法 URL/契约失败 400 |
 | A6 | `activate=true` 走现有 SetActive + SeedThemePages | 复用 | 与手动 activate 行为一致 |
 | A7 | source=`marketplace` + 前端 loadExternal 识别 | model/migration if needed | 激活后前台加载 UMD |

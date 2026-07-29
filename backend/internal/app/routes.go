@@ -20,6 +20,7 @@ import (
 	chunkedUploadHandler "github.com/yixian-huang/inkless/backend/internal/handler/chunked_upload"
 	dashboardHandler "github.com/yixian-huang/inkless/backend/internal/handler/dashboard"
 	emailSettingsHandler "github.com/yixian-huang/inkless/backend/internal/handler/email_settings"
+	extensionsHandler "github.com/yixian-huang/inkless/backend/internal/handler/extensions"
 	featuresHandler "github.com/yixian-huang/inkless/backend/internal/handler/features"
 	feedHandler "github.com/yixian-huang/inkless/backend/internal/handler/feed"
 	globalConfigHandler "github.com/yixian-huang/inkless/backend/internal/handler/global_config"
@@ -91,6 +92,7 @@ type Handlers struct {
 	Search         *searchhandler.Handler
 	Role           *roleHandler.Handler
 	Marketplace    *marketplaceHandler.Handler
+	Extensions     *extensionsHandler.Handler
 	Plugin         *pluginHandler.Handler
 	Wizard         *wizardHandler.Handler
 	AI             *aiHandler.Handler
