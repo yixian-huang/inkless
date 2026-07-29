@@ -88,10 +88,28 @@ EOF
   echo "  wrote $dropin"
 }
 
-# sudoers: only restart the three known units (both /bin and /usr/bin paths)
+# Deferred restart helper (process cannot systemctl-restart itself synchronously)
+HELPER=/usr/local/sbin/inkless-deferred-restart
+cat >"$HELPER" <<'EOF'
+#!/bin/bash
+set -euo pipefail
+unit="${1:-}"
+case "$unit" in
+  inkless|inkless.service|inkless-ops|inkless-ops.service|inkless-imgli|inkless-imgli.service) ;;
+  *) echo "refusing unit: $unit" >&2; exit 2 ;;
+esac
+unit="${unit%.service}"
+nohup /bin/bash -c "sleep 1; /usr/bin/systemctl restart ${unit}.service" \
+  >"/tmp/inkless-deferred-restart-${unit}.log" 2>&1 &
+echo "scheduled restart ${unit}"
+EOF
+chmod 755 "$HELPER"
+echo "wrote $HELPER"
+
 SUDOERS=/etc/sudoers.d/inkless-self-update
 cat >"$SUDOERS" <<'EOF'
-# Managed by ops-enable-host-self-update-gomami.sh — host self-update restarts only
+# Managed by ops-enable-host-self-update-gomami.sh
+inkless ALL=(root) NOPASSWD: /usr/local/sbin/inkless-deferred-restart inkless, /usr/local/sbin/inkless-deferred-restart inkless-ops, /usr/local/sbin/inkless-deferred-restart inkless-imgli
 inkless ALL=(root) NOPASSWD: /usr/bin/systemctl restart inkless, /usr/bin/systemctl restart inkless.service, /bin/systemctl restart inkless, /bin/systemctl restart inkless.service
 inkless ALL=(root) NOPASSWD: /usr/bin/systemctl restart inkless-ops, /usr/bin/systemctl restart inkless-ops.service, /bin/systemctl restart inkless-ops, /bin/systemctl restart inkless-ops.service
 inkless ALL=(root) NOPASSWD: /usr/bin/systemctl restart inkless-imgli, /usr/bin/systemctl restart inkless-imgli.service, /bin/systemctl restart inkless-imgli, /bin/systemctl restart inkless-imgli.service

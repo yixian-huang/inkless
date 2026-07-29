@@ -1211,24 +1211,41 @@ func (s *HostSelfUpdateService) restartUnit(ctx context.Context) error {
 	if strings.ContainsAny(unit, "/\\ \t\n") || strings.Contains(unit, "..") {
 		return fmt.Errorf("invalid unit name")
 	}
-	// 1) direct systemctl (works if process has rights)
-	cmd := exec.CommandContext(ctx, "systemctl", "restart", unit)
-	out, err := cmd.CombinedOutput()
-	if err == nil {
-		return nil
-	}
-	directErr := fmt.Errorf("systemctl: %w: %s", err, truncate(string(out), 200))
 
-	// 2) passwordless sudo (requires sudoers + NoNewPrivileges=false)
+	// Never restart ourselves synchronously: the process would be killed mid-call
+	// and sudo/systemctl often returns "Access denied" / terminated. Schedule a
+	// short-delayed restart via helper or nohup, then poll health.
+	helper := "/usr/local/sbin/inkless-deferred-restart"
+	if _, err := os.Stat(helper); err == nil {
+		if _, lookErr := exec.LookPath("sudo"); lookErr == nil {
+			cmd := exec.CommandContext(ctx, "sudo", "-n", helper, unit)
+			out, err := cmd.CombinedOutput()
+			if err == nil {
+				return nil
+			}
+			s.logger.Warn("deferred-restart helper failed", "err", err, "out", truncate(string(out), 200))
+		}
+	}
+
+	// Fallback: passwordless sudo + nohup sleep restart (requires sudoers for systemctl)
 	if _, lookErr := exec.LookPath("sudo"); lookErr == nil {
-		cmd = exec.CommandContext(ctx, "sudo", "-n", "systemctl", "restart", unit)
-		out, err = cmd.CombinedOutput()
+		// shell-escaped unit already validated
+		script := fmt.Sprintf("nohup /bin/sh -c 'sleep 1; /usr/bin/systemctl restart %s || /bin/systemctl restart %s' >/tmp/inkless-deferred-restart.log 2>&1 &", unit, unit)
+		cmd := exec.CommandContext(ctx, "sudo", "-n", "/bin/sh", "-c", script)
+		out, err := cmd.CombinedOutput()
 		if err == nil {
 			return nil
 		}
-		return fmt.Errorf("%v; sudo -n systemctl: %w: %s", directErr, err, truncate(string(out), 200))
+		return fmt.Errorf("deferred sudo restart: %w: %s", err, truncate(string(out), 200))
 	}
-	return directErr
+
+	// Last resort (dev): direct async systemctl
+	cmd := exec.Command("/bin/sh", "-c", fmt.Sprintf("nohup systemctl restart %s >/tmp/inkless-deferred-restart.log 2>&1 &", unit))
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("async systemctl: %w: %s", err, truncate(string(out), 200))
+	}
+	return nil
 }
 
 func (s *HostSelfUpdateService) waitHealth(ctx context.Context) error {
