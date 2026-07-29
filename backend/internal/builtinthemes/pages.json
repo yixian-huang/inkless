@@ -93,6 +93,30 @@
       "navConfig": { "showInHeader": true, "showInFooter": true }
     },
     {
+      "slug": "get-started",
+      "contentKey": "get-started",
+      "renderMode": "hardcoded",
+      "sortOrder": 2,
+      "title": { "zh": "上手", "en": "Get started" },
+      "navConfig": { "showInHeader": true, "showInFooter": true }
+    },
+    {
+      "slug": "use-cases",
+      "contentKey": "use-cases",
+      "renderMode": "hardcoded",
+      "sortOrder": 3,
+      "title": { "zh": "用例", "en": "Use cases" },
+      "navConfig": { "showInHeader": true, "showInFooter": true }
+    },
+    {
+      "slug": "agents",
+      "contentKey": "agents",
+      "renderMode": "hardcoded",
+      "sortOrder": 4,
+      "title": { "zh": "面向 Agent", "en": "For agents" },
+      "navConfig": { "showInHeader": true, "showInFooter": true }
+    },
+    {
       "slug": "contact",
       "contentKey": "contact",
       "renderMode": "hardcoded",

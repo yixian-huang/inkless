@@ -24,7 +24,7 @@
     "@inkless/theme-blog-first": "github:yixian-huang/inkless-theme-blog-first#9bffe9d",
     "@inkless/theme-corporate-classic": "workspace:*",
     "@inkless/theme-editorial-firm": "github:yixian-huang/inkless-theme-editorial-firm#e92a3be923ebeeb58927559b23fc98b81b5d9388",
-    "@inkless/theme-product-first": "github:yixian-huang/inkless-theme-product-first#ea8502df0b10f6666b46b7ecdaf1c6ad71a1306d",
+    "@inkless/theme-product-first": "github:yixian-huang/inkless-theme-product-first#e1382a718c95bfe63e75b8def236969392019828",
     "@stripe/react-stripe-js": "4.0.2",
     "@supabase/supabase-js": "2.110.8",
     "@tiptap/core": "~3.29.0",
