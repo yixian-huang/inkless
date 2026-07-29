@@ -1,7 +1,7 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { SectionRenderer } from "@/theme/sections";
-import { useSectionRegistry } from "@/plugins/hooks";
+import { useSectionRegistry, useThemeManager } from "@/plugins/hooks";
 import type { SectionData, SectionSettings } from "@/theme/types";
 import {
   HOST_PAGE_PRESET_METAS,
@@ -9,6 +9,10 @@ import {
   isHostPagePresetId,
   type HostPagePresetId,
 } from "@/theme/pagePresets";
+import {
+  checkPageSlug,
+  themePageSlugsFromManifest,
+} from "@/lib/pageSlugConflict";
 import PropertiesPanel from "./components/PropertiesPanel";
 import { useDragSort } from "./hooks/useDragSort";
 import {
@@ -49,6 +53,7 @@ export default function PageEditorPage() {
   const isNew = !id;
   const pageId = id ? Number(id) : 0;
   const { metas: sectionMetas } = useSectionRegistry();
+  const { activeTheme } = useThemeManager();
   const { refetch: refetchBootstrap } = useBootstrap();
   const { hasPermission } = useAuth();
   const canCreate = hasPermission("pages:create");
@@ -57,6 +62,8 @@ export default function PageEditorPage() {
 
   // -- page metadata --
   const [slug, setSlug] = useState("");
+  /** Slug loaded from server — used so theme conflicts don't block keeping existing path */
+  const [savedSlug, setSavedSlug] = useState("");
   const [zhTitle, setZhTitle] = useState("");
   const [enTitle, setEnTitle] = useState("");
   const [mode, setMode] = useState<"template" | "composable">("composable");
@@ -64,6 +71,20 @@ export default function PageEditorPage() {
   const [sortOrder, setSortOrder] = useState(0);
   const [status, setStatus] = useState("draft");
   const [metadataDirty, setMetadataDirty] = useState(false);
+
+  const themeSlugs = useMemo(
+    () => themePageSlugsFromManifest(activeTheme?.pages),
+    [activeTheme],
+  );
+
+  const slugCheck = useMemo(
+    () =>
+      checkPageSlug(slug, {
+        themeSlugs,
+        allowSlug: isNew ? undefined : savedSlug || undefined,
+      }),
+    [slug, themeSlugs, isNew, savedSlug],
+  );
   /** Host composable preset for new pages */
   const [presetId, setPresetId] = useState<HostPagePresetId | "">("");
   /** Page-level config fields stored alongside sections in draftConfig */
@@ -102,6 +123,7 @@ export default function PageEditorPage() {
         getUnifiedPageDraft(pageId),
       ]);
       setSlug(meta.slug);
+      setSavedSlug(meta.slug);
       setZhTitle(meta.zhTitle);
       setEnTitle(meta.enTitle);
       setMode(meta.mode);
@@ -277,7 +299,11 @@ export default function PageEditorPage() {
   const handleCreate = async () => {
     if (!canCreate) return;
     clearMessages();
-    if (!slug.trim()) { setError("请输入 URL 路径"); return; }
+    const check = checkPageSlug(slug, { themeSlugs });
+    if (check.blocking) {
+      setError(check.messageZh);
+      return;
+    }
     setSaving(true);
     try {
       let sectionsToCreate = sections;
@@ -300,7 +326,7 @@ export default function PageEditorPage() {
       if (layoutForCreate) draftConfig.layout = layoutForCreate;
       if (headerForCreate !== undefined) draftConfig.showPageHeader = headerForCreate;
       const result = await createUnifiedPage({
-        slug,
+        slug: check.slug,
         zhTitle,
         enTitle,
         mode,
@@ -357,15 +383,25 @@ export default function PageEditorPage() {
   const handleSaveMetadata = async () => {
     if (!canUpdate) return;
     clearMessages();
+    const check = checkPageSlug(slug, {
+      themeSlugs,
+      allowSlug: savedSlug || undefined,
+    });
+    if (check.blocking) {
+      setError(check.messageZh);
+      return;
+    }
     setMetadataSaving(true);
     try {
       await updateUnifiedPage(pageId, {
-        slug,
+        slug: check.slug,
         zhTitle,
         enTitle,
         sortOrder,
         showInNav,
       });
+      setSlug(check.slug);
+      setSavedSlug(check.slug);
       setMetadataDirty(false);
       if (status === "published") {
         await refetchBootstrap();
@@ -587,7 +623,7 @@ export default function PageEditorPage() {
           {isNew && canCreate ? (
             <button
               onClick={handleCreate}
-              disabled={saving || !slug.trim()}
+              disabled={saving || slugCheck.blocking}
               className="inline-flex h-8 items-center justify-center rounded-lg bg-blue-600 px-3 text-xs font-medium text-white shadow-sm hover:bg-blue-700 disabled:opacity-50"
             >
               {saving ? "创建中..." : "创建"}
@@ -676,7 +712,11 @@ export default function PageEditorPage() {
             {!isNew && canUpdate && (
               <button
                 onClick={handleSaveMetadata}
-                disabled={metadataSaving || !metadataDirty || !slug.trim()}
+                disabled={
+                  metadataSaving ||
+                  !metadataDirty ||
+                  slugCheck.blocking
+                }
                 className="px-3 py-1.5 text-xs border border-blue-300 text-blue-700 rounded-xl hover:bg-blue-50 disabled:opacity-50"
               >
                 {metadataSaving ? "保存中..." : "保存页面信息"}
@@ -687,7 +727,7 @@ export default function PageEditorPage() {
             <div>
               <label htmlFor="page-slug" className="block text-xs font-medium text-slate-600 mb-1">URL 路径 (slug)</label>
               <div className="flex items-center">
-                <span className="text-slate-400 text-sm mr-1">/</span>
+                <span className="text-slate-400 text-sm mr-1">/p/</span>
                 <input
                   id="page-slug"
                   type="text"
@@ -697,9 +737,23 @@ export default function PageEditorPage() {
                     setMetadataDirty(true);
                   }}
                   placeholder="about-us"
-                  className="flex-1 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                  aria-invalid={slugCheck.blocking && slug.trim() !== ""}
+                  className={`flex-1 rounded-lg border bg-white px-3 py-1.5 text-sm shadow-sm focus:outline-none focus:ring-2 ${
+                    slugCheck.blocking && slug.trim() !== ""
+                      ? "border-red-300 focus:border-red-500 focus:ring-red-500/20"
+                      : "border-slate-200 focus:border-blue-500 focus:ring-blue-500/20"
+                  }`}
                 />
               </div>
+              {slugCheck.blocking && slug.trim() !== "" ? (
+                <p className="mt-1 text-xs text-red-600" role="alert">
+                  {slugCheck.messageZh}
+                </p>
+              ) : (
+                <p className="mt-1 text-xs text-slate-500">
+                  公开地址为 /p/&#123;slug&#125;。勿使用系统路径或当前主题已声明的页面（如 features）。
+                </p>
+              )}
             </div>
             <div>
               <label htmlFor="page-title-zh" className="block text-xs font-medium text-slate-600 mb-1">标题 (中文)</label>

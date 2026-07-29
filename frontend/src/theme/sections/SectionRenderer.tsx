@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import type { DynamicPageLayout, SectionData, SectionSettings } from "../types";
 import { useSectionRegistry, useContentMaxWidth } from "@/plugins/hooks";
 import { resolveLocale } from "@/utils/locale";
+import UnknownSectionFallback from "./UnknownSectionFallback";
 
 interface SectionWrapperProps {
   settings?: SectionSettings;
@@ -134,14 +135,19 @@ export default function SectionRenderer({
   }, [section, locale]);
 
   if (!Component) {
-    if (import.meta.env.DEV) {
-      return (
-        <div className="p-4 bg-yellow-50 text-yellow-800 border border-yellow-200 rounded mx-4 my-2">
-          Unknown section type: <code>{section.type}</code>
-        </div>
-      );
-    }
-    return null;
+    // Production + admin: never blank the stack; config data is preserved (ADR-0002 附录 B).
+    return (
+      <SectionWrapper
+        settings={section.settings}
+        pageLayout={pageLayout}
+        sectionType={section.type}
+      >
+        <UnknownSectionFallback
+          type={section.type}
+          detailed={import.meta.env.DEV}
+        />
+      </SectionWrapper>
+    );
   }
 
   return (

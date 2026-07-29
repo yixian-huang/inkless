@@ -2,6 +2,7 @@ package unified_page
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -27,6 +28,43 @@ func TestValidatePublicPageSlug(t *testing.T) {
 	require.Error(t, validatePublicPageSlug("health"))
 	require.Error(t, validatePublicPageSlug("version"))
 	require.Error(t, validatePublicPageSlug("metrics"))
+}
+
+type stubActiveThemeRepo struct {
+	themeID string
+}
+
+func (s *stubActiveThemeRepo) List(context.Context) ([]*model.InstalledTheme, error) {
+	return nil, nil
+}
+func (s *stubActiveThemeRepo) FindByThemeID(context.Context, string) (*model.InstalledTheme, error) {
+	return nil, gorm.ErrRecordNotFound
+}
+func (s *stubActiveThemeRepo) FindActive(context.Context) (*model.InstalledTheme, error) {
+	if s.themeID == "" {
+		return nil, gorm.ErrRecordNotFound
+	}
+	return &model.InstalledTheme{ThemeID: s.themeID, IsActive: true}, nil
+}
+func (s *stubActiveThemeRepo) SetActive(context.Context, string) error { return nil }
+func (s *stubActiveThemeRepo) Create(context.Context, *model.InstalledTheme) error {
+	return nil
+}
+func (s *stubActiveThemeRepo) Update(context.Context, *model.InstalledTheme) error {
+	return nil
+}
+func (s *stubActiveThemeRepo) Delete(context.Context, uint) error { return nil }
+
+func TestValidateSlugAgainstActiveTheme_ProductFirst(t *testing.T) {
+	require.NotEmpty(t, service.BuiltInThemePages)
+
+	h := NewHandler(nil, nil, nil, nil, nil).WithInstalledThemes(&stubActiveThemeRepo{themeID: "product-first"})
+	defs := service.BuiltInThemePages["product-first"]
+	if len(defs) == 0 {
+		t.Skip("no product-first builtin pages in this build")
+	}
+	require.Error(t, h.validateSlugAgainstActiveTheme(t.Context(), defs[0].Slug))
+	require.NoError(t, h.validateSlugAgainstActiveTheme(t.Context(), "privacy-policy"))
 }
 
 func TestAdminUpdatePersistsNavigationMetadataAndInvalidatesPublicCaches(t *testing.T) {

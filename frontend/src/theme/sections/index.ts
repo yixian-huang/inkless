@@ -36,5 +36,6 @@ export const sectionMetas: SectionMeta[] = [
 ];
 
 export { default as SectionRenderer } from "./SectionRenderer";
+export { default as UnknownSectionFallback } from "./UnknownSectionFallback";
 
 export { sectionSchemas, settingsSchema } from "../sectionSchemas";
