@@ -258,7 +258,7 @@ func wireHandlers(
 			r.installedTheme,
 			build.Version,
 			cfg.ThemeUMDAllowHosts,
-		),
+		).WithActivation(themePageService, publicCache),
 		Plugin: pluginHandler.NewHandler(pluginManager, registry, cfg.ExternalPlugins),
 		Wizard:         wizardHandler.NewHandler(wizardSvc),
 		AI:             aiHandler.NewHandler(registry, aiConfigSvc),

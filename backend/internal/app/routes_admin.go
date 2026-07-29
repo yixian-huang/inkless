@@ -175,9 +175,10 @@ func registerAdminThemes(admin *gin.RouterGroup, h *Handlers, require requireFn)
 	admin.GET("/theme-packages", require("themes", "manage"), h.ThemeExport.List)
 	admin.PUT("/theme-packages/:id/apply", require("themes", "manage"), h.ThemeExport.Apply)
 
-	// Official theme catalog (Phase A extension store)
+	// Official theme catalog / install (Phase A extension store)
 	if h.Extensions != nil {
 		admin.GET("/extensions/themes/catalog", require("themes", "read"), h.Extensions.AdminThemeCatalog)
+		admin.POST("/extensions/themes/install", require("themes", "manage"), h.Extensions.AdminThemeInstall)
 	}
 }
 
