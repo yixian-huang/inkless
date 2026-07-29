@@ -5,6 +5,11 @@ BUILD_TIME ?= $(shell date -u '+%Y-%m-%dT%H:%M:%SZ')
 
 # Frontend dev server talks to the local API on this URL
 DEV_API_URL ?= http://localhost:8088
+# Optional live-link theme clones (relative to frontend/). Example:
+#   make dev-frontend THEME_PRODUCT_FIRST_PATH=../inkless-theme-product-first
+THEME_PRODUCT_FIRST_PATH ?=
+THEME_BLOG_FIRST_PATH ?=
+THEME_EDITORIAL_FIRM_PATH ?=
 
 # ── 版本信息 ─────────────────────────────────────────────
 GIT_COMMIT  := $(shell git rev-parse --short HEAD 2>/dev/null || echo "unknown")
@@ -35,8 +40,13 @@ dev-backend: ## 启动后端（需先 build-backend）
 	export UPLOAD_DIR=./uploads && \
 	./inkless-api-latest
 
-dev-frontend: ## 启动前端 dev server
-	@cd frontend && VITE_API_BASE_URL=$(DEV_API_URL) pnpm dev
+dev-frontend: ## 启动前端 dev server（可传 THEME_*_PATH 实时链主题仓库）
+	@cd frontend && \
+	VITE_API_BASE_URL=$(DEV_API_URL) \
+	THEME_PRODUCT_FIRST_PATH="$(THEME_PRODUCT_FIRST_PATH)" \
+	THEME_BLOG_FIRST_PATH="$(THEME_BLOG_FIRST_PATH)" \
+	THEME_EDITORIAL_FIRM_PATH="$(THEME_EDITORIAL_FIRM_PATH)" \
+	pnpm dev
 
 # ── 构建 ──────────────────────────────────────────────────
 build-backend: ## 编译后端（自动注入版本信息）
