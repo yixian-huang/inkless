@@ -65,3 +65,15 @@ When using NoPanel from this monorepo’s agent workflow:
 # Example — project/env names are yours, not committed inventory
 npc deploy <project> <env> --ref main --wait
 ```
+
+### Host self-update (planned)
+
+Day-to-day **host** version bumps across multiple isolated instances can eventually
+use in-admin “check release + one-click apply” instead of always calling npc.
+That path is **not** a substitute for control-plane install, proxy/env changes, or
+shared-tree surgery. Design (probe source, artifacts, security, npc boundary,
+site-isolation checklist):
+
+→ [`docs/design-host-self-update-mvp.md`](docs/design-host-self-update-mvp.md)
+
+Theme package auto-update (UMD/catalog) is a separate feature under the theme market.
