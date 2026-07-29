@@ -349,6 +349,7 @@ curl -sS -X POST "$INKLESS_BASE_URL/admin/pages/ID/publish" \
 ```markdown
 ## Inkless content agent (fleet)
 
+- Prefer official CLI: `inkless site whoami --site <id>`, `inkless articles … --site <id>`.
 - Load fleet registry (JSON Schema: docs/agent-fleet.schema.json).
 - Every task must name site_id (or use default_site); never invent base_url.
 - Resolve {base_url, api_key} from that profile only.
@@ -386,7 +387,62 @@ curl -sS -X POST "$INKLESS_BASE_URL/admin/pages/ID/publish" \
 
 ---
 
-## 10. 相关文档
+## 10. 官方 CLI（`inkless site` / `articles` / `pages`）
+
+二进制：`backend/cmd/inkless`（与 migrate/serve 同一 CLI）。
+
+```bash
+cd backend && go install ./cmd/inkless/
+# 或
+go build -o inkless ./cmd/inkless/
+```
+
+### 10.1 常用命令
+
+| 命令 | 说明 |
+|------|------|
+| `inkless site list [--fleet path]` | 列出 fleet 中的站 |
+| `inkless site resolve --site <id>` | 解析 baseUrl / 掩码 key / policy |
+| `inkless site whoami --site <id>` | 探针 `/admin/agent/whoami` |
+| `inkless articles list --site <id> [--missing-seo]` | 列文章；可筛缺 SEO |
+| `inkless articles get <id> --site <id>` | 拉全文 JSON |
+| `inkless articles apply <id> --from-file patch.json --site <id> [--dry-run]` | GET→merge→PUT |
+| `inkless pages list\|get\|get-draft\|put-draft\|publish` | 页面维护（publish 尊重 policy） |
+
+公共 flags：`--fleet`、`--site`、`--base-url`、`--api-key`、`--json`、`--no-verify`、`--timeout`。
+
+### 10.2 单站
+
+```bash
+export INKLESS_BASE_URL='https://YOUR_HOST'
+export INKLESS_API_KEY='ink_…'
+inkless site whoami
+inkless articles list --missing-seo --json
+```
+
+### 10.3 多站
+
+```bash
+# ~/.config/inkless/fleet.json  （见 examples/agent-fleet.example.json）
+export INKLESS_KEY_OPS='ink_…'
+inkless site list
+inkless site whoami --site product-ops
+inkless articles list --site product-ops --missing-seo
+inkless articles apply 12 --site product-ops --from-file ./seo-patch.json --dry-run
+inkless articles apply 12 --site product-ops --from-file ./seo-patch.json
+```
+
+`publish_policy=never` 时 `pages publish` 会拒绝；`manual` 需 `--force`。
+
+### 10.4 写操作安全
+
+- 默认会 whoami 校验 `baseUrl`（可用 `--no-verify` 关闭，不推荐）  
+- `articles apply` 合并补丁，避免 PUT 清空未出现的字段  
+- 优先 `--dry-run` 再写  
+
+---
+
+## 11. 相关文档
 
 - [agent-fleet.schema.json](agent-fleet.schema.json) — Fleet JSON Schema  
 - [examples/agent-fleet.example.json](examples/agent-fleet.example.json) — 多站示例  
