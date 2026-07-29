@@ -431,7 +431,7 @@ if ((source === "external" || source === "marketplace") && externalUrl) {
 | A4 | `GET /admin/extensions/themes/catalog` | `extensions.Handler` + RBAC `themes:read` | ✅ Loader+Merge；`refresh=1`；扁平 items + installState |
 | A5 | `POST /admin/extensions/themes/install` | validate + upsert installed_themes | ✅ official/契约/allowlist；marketplace UMD upsert |
 | A6 | `activate=true` 走现有 SetActive + SeedThemePages | `WithActivation` | ✅ SetActive + seed + bootstrap invalidate |
-| A7 | source=`marketplace` + 前端 loadExternal 识别 | model/migration if needed | 激活后前台加载 UMD |
+| A7 | source=`marketplace` + 前端 loadExternal 识别 | `isRemoteThemeSource` + ThemeManagerContext | ✅ bootstrap 已透传 source/externalUrl；SPA 对 marketplace 加载 UMD |
 
 ### P0 — 前端
 

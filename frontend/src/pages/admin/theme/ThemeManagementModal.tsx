@@ -7,6 +7,10 @@ import {
   type InstalledThemeDTO,
 } from "@/api/installedThemes";
 import { themeManager } from "@/plugins/ThemeManager";
+import {
+  isUninstallableThemeSource,
+  themeSourceBadgeLabel,
+} from "@/plugins/themeSource";
 import { useBootstrap } from "@/contexts/BootstrapContext";
 import {
   AdminButton,
@@ -210,9 +214,13 @@ export default function ThemeManagementModal({ onClose }: ThemeManagementModalPr
                             当前主题
                           </span>
                         )}
-                        {theme.source === "external" && (
-                          <span className="absolute left-2 top-2 rounded-full bg-violet-500 px-2 py-0.5 text-xs font-medium text-white">
-                            外部
+                        {themeSourceBadgeLabel(theme.source) && (
+                          <span
+                            className={`absolute left-2 top-2 rounded-full px-2 py-0.5 text-xs font-medium text-white ${
+                              theme.source === "marketplace" ? "bg-teal-600" : "bg-violet-500"
+                            }`}
+                          >
+                            {themeSourceBadgeLabel(theme.source)}
                           </span>
                         )}
                       </div>
@@ -227,7 +235,7 @@ export default function ThemeManagementModal({ onClose }: ThemeManagementModalPr
                         <div className="flex items-center justify-between">
                           <span className="text-xs text-slate-400">{theme.author}</span>
                           <div className="flex gap-2">
-                            {theme.source === "external" && !theme.isActive && (
+                            {isUninstallableThemeSource(theme.source) && !theme.isActive && (
                               <AdminButton
                                 size="sm"
                                 variant="ghost"

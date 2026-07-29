@@ -23,7 +23,8 @@ Admin can browse an **official theme catalog** and **one-click install** (option
 - [x] **A5** `POST /admin/extensions/themes/install` (validate official, contract, allowlist, upsert)  
 - [x] **A6** `activate=true` → existing SetActive + SeedThemePages + cache invalidate  
 
-- [ ] **A7** Persist `source=marketplace`; ensure public bootstrap exposes it  
+- [x] **A7** Persist `source=marketplace`; ensure public bootstrap exposes it  
+
 
 ### Frontend
 
@@ -32,7 +33,8 @@ Admin can browse an **official theme catalog** and **one-click install** (option
 - [ ] **A10** Install + activate + bootstrap refetch  
 - [ ] **A11** Error / incompatible states  
 - [ ] **A12** Nav entry + link from theme gallery  
-- [ ] **A7-fe** `ThemeManagerContext`: loadExternal for `source === "marketplace"`  
+- [x] **A7-fe** `ThemeManagerContext`: loadExternal for `source === "marketplace"`  
+
 
 ### Ops / release
 
