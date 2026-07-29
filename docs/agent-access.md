@@ -442,10 +442,22 @@ inkless articles apply 12 --site product-ops --from-file ./seo-patch.json
 
 ---
 
-## 11. 相关文档
+## 11. MCP（宿主 Agent）
+
+本地 MCP 服务器：`inkless mcp serve`（stdio，规格 `2026-07-28`）。
+
+- 设计：[design-inkless-mcp.md](design-inkless-mcp.md)  
+- 用法：[agent-mcp.md](agent-mcp.md)  
+
+与 CLI 共享 fleet / agentcli；不引入 CMS 多租户。
+
+---
+
+## 12. 相关文档
 
 - [agent-fleet.schema.json](agent-fleet.schema.json) — Fleet JSON Schema  
 - [examples/agent-fleet.example.json](examples/agent-fleet.example.json) — 多站示例  
+- [agent-mcp.md](agent-mcp.md) — MCP 服务器  
 - [picgo.md](picgo.md) — 媒体上传  
 - [article-ai-meta-seo.md](article-ai-meta-seo.md) — 文章 AI SEO  
 - [adr/0001-single-instance-single-site.md](adr/0001-single-instance-single-site.md) — 单实例单站  

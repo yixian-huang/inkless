@@ -14,7 +14,7 @@ func TestRootCmd(t *testing.T) {
 	for _, sub := range cmd.Commands() {
 		subNames[sub.Name()] = true
 	}
-	expected := []string{"init", "serve", "migrate", "seed", "site", "articles", "pages"}
+	expected := []string{"init", "serve", "migrate", "seed", "site", "articles", "pages", "mcp"}
 	for _, name := range expected {
 		if !subNames[name] {
 			t.Errorf("expected subcommand %q to be registered", name)

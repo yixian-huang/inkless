@@ -42,6 +42,8 @@ Inkless documentation lives in three places:
 - [agent-access.md](agent-access.md) — local agents via API Key (no direct DB)  
 - [agent-fleet.schema.json](agent-fleet.schema.json) — multi-site fleet registry schema  
 - [examples/agent-fleet.example.json](examples/agent-fleet.example.json) — sample multi-site fleet  
+- [agent-mcp.md](agent-mcp.md) — MCP server (`inkless mcp serve`, 2026-07-28)  
+- [design-inkless-mcp.md](design-inkless-mcp.md) — MCP design  
 - [picgo.md](picgo.md) — PicGo / media API Key 
 
 ## Internal (maintainers)

@@ -38,6 +38,7 @@ See docs/agent-access.md.`,
 	cmd.AddCommand(siteCmd())
 	cmd.AddCommand(articlesCmd())
 	cmd.AddCommand(pagesCmd())
+	cmd.AddCommand(mcpCmd())
 
 	return cmd
 }
