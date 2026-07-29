@@ -56,8 +56,9 @@ Inkless 是一个双语（zh/en）React SPA + Go/Gin CMS。下表以当前仓库
 - QA 已动态读取当前 AI provider，但向量索引仍为进程内存实现，重启会丢失，保持 experimental。
 - 远端存储切换不迁移历史对象；媒体保留 provider/key，历史 provider 必须仍可访问。
 - experimental 多站点管理壳已在当前本地分支撤销；产品不建设共享数据库多租户，核心内容不引入 `site_id`。多个独立站点以多个隔离实例运行；该状态尚未合并或发布。
-- Marketplace 仍只提供登记/下载信息，尚未接入真实包分发、签名、升级和管理 UI；本地外部插件可通过管理 API 安装、启停、重启恢复和卸载，但二进制按可信服务端代码处理，manifest permission 不构成 OS 沙箱，含 secret settings 的包当前会被拒绝。Beta 仅开放 canonical notifier/search/captcha；external storage、依赖、路由与前端注入仍保留。
-- **官方扩展商店 Phase A（设计已定稿，待实现）**：仅官方主题一键安装（远程/内嵌 catalog → `installed_themes` + UMD）；不开放第三方上架、不做插件市场闭环。见 [`docs/design-official-extension-store-phase-a.md`](design-official-extension-store-phase-a.md)。
+- Marketplace **旧**登记 API 仍保留；**官方主题商店 Phase A 已落地**（`/admin/theme-market`、catalog + 一键安装/更新、可选主题自动更新 A17）。不开放第三方上架、不做插件市场闭环。见 [`docs/design-official-extension-store-phase-a.md`](design-official-extension-store-phase-a.md)。
+- 本地外部插件可通过管理 API 安装、启停、重启恢复和卸载，但二进制按可信服务端代码处理，manifest permission 不构成 OS 沙箱，含 secret settings 的包当前会被拒绝。Beta 仅开放 canonical notifier/search/captcha；external storage、依赖、路由与前端注入仍保留。
+- **Host 自更新 H0/H1 已落地**（系统状态检查 GitHub Release + 可选一键升级本实例）；不替代控制面首装/基建。见 [`docs/design-host-self-update-mvp.md`](design-host-self-update-mvp.md)、[`OPS.md`](../OPS.md)。
 - 线索管理、预约咨询和商业化流程尚未形成完整产品闭环。
 
 ---

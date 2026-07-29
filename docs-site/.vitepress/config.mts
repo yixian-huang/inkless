@@ -19,6 +19,8 @@ export default defineConfig({
           { text: "Getting Started", link: "/guide/getting-started" },
           { text: "Blog-first Mode", link: "/guide/blog-first" },
           { text: "Theme Layout", link: "/guide/theme-layout" },
+          { text: "Theme Market", link: "/guide/theme-market" },
+          { text: "Host Updates", link: "/guide/host-updates" },
           { text: "Architecture", link: "/guide/architecture" },
           { text: "Extension Points", link: "/guide/extension-points" },
           { text: "Your First Plugin", link: "/guide/first-plugin" },

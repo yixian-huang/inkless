@@ -16,12 +16,12 @@ configurable branding, themes, plugins, SQLite or PostgreSQL.
 | | |
 |--|--|
 | **Bilingual by default** | Chinese / English content and UI with locale-aware public pages |
-| **Themes** | Pluggable theme packages (contract-versioned host facade) |
+| **Themes** | Contract-versioned theme packages + **official theme market** (one-click install from catalog) |
 | **Extensible** | Event bus, providers (search / storage / notifier / captcha), external plugin runtime (beta) |
-| **Self-hosted** | Single binary API, SPA frontend, Docker Compose or versioned artifacts |
-| **Operator-friendly** | Web setup wizard, CLI (`inkless`), backups, audit log, RBAC |
+| **Self-hosted** | Single binary API, SPA frontend, Docker Compose or versioned GitHub Release artifacts |
+| **Operator-friendly** | Web setup wizard, CLI (`inkless`), backups, audit log, RBAC; optional in-admin host update from Releases |
 
-Status: **public alpha** (`0.1.0-alpha.x`). APIs and on-disk layout may still change; see [CHANGELOG](CHANGELOG.md).
+Status: **public alpha** (`0.1.x`). APIs and on-disk layout may still change; see [CHANGELOG](CHANGELOG.md).
 
 ## Screenshots
 
@@ -85,17 +85,28 @@ cd backend && go build -o inkless ./cmd/inkless
 | New contributors | [CONTRIBUTING.md](CONTRIBUTING.md) |
 | Architecture | [docs/architecture.md](docs/architecture.md) · [docs/developer-guide.md](docs/developer-guide.md) |
 | Deploy / Docker | [docs/deployment.md](docs/deployment.md) · [docs/docker-setup.md](docs/docker-setup.md) |
-| Themes / plugins | [docs/theme-contract.md](docs/theme-contract.md) · [docs-site/guide/first-plugin.md](docs-site/guide/first-plugin.md) |
+| Themes / plugins | [docs/theme-contract.md](docs/theme-contract.md) · [docs-site/guide/extension-points.md](docs-site/guide/extension-points.md) · [docs-site/guide/theme-market.md](docs-site/guide/theme-market.md) |
 | Docs site (VitePress) | [docs-site/](docs-site/) — `cd docs-site && pnpm install && pnpm dev` |
 | Security | [SECURITY.md](SECURITY.md) |
-| Public ops summary | [OPS.md](OPS.md) |
+| Public ops summary | [OPS.md](OPS.md) (multi-instance, optional host self-update) |
 
 Full index: [docs/README.md](docs/README.md).
 
+### Official theme catalog
+
+Public index (used by the admin theme market when configured):
+
+- <https://inkless.run/marketplace/v1/themes.json>
+
+UMD packages are published primarily via each theme’s **GitHub Releases** (catalog
+points at those URLs). In admin: **Appearance → Theme market**
+(`/admin/theme-market`).
+
 ## Releases
 
-Latest alpha: **[v0.1.0-alpha.2](https://github.com/yixian-huang/inkless/releases/tag/v0.1.0-alpha.2)**
-(see [CHANGELOG](CHANGELOG.md)).
+Latest: **[v0.1.1](https://github.com/yixian-huang/inkless/releases/tag/v0.1.1)**
+(see [CHANGELOG](CHANGELOG.md)). Prior alpha:
+[v0.1.0-alpha.2](https://github.com/yixian-huang/inkless/releases/tag/v0.1.0-alpha.2).
 
 Tag pushes build artifacts via
 [`.github/workflows/release.yml`](.github/workflows/release.yml):
@@ -108,9 +119,14 @@ Tag pushes build artifacts via
 
 ```bash
 # After merging release notes on main:
-git tag -a v0.1.0-alpha.2 -m "Inkless v0.1.0-alpha.2"
-git push origin v0.1.0-alpha.2
+git tag -a v0.1.1 -m "Inkless v0.1.1"
+git push origin v0.1.1
 ```
+
+**Versioning (practice):** day-to-day work lands on `main` (continuous deploy).
+Milestone **SemVer tags** cut Release assets for installers and optional
+in-admin **host self-update** (Admin → System status → About & updates).
+See [OPS.md](OPS.md).
 
 Container images on GHCR are planned; until then prefer release assets or build
 from source with `./scripts/build-frontend.sh` and `./scripts/build-backend.sh`.
