@@ -10,6 +10,9 @@ import ChecklistSection from "./ChecklistSection";
 import ContactFormSection from "./ContactFormSection";
 import CompanyProfileSection from "./CompanyProfileSection";
 import RichTextSection from "./RichTextSection";
+import CtaSection from "./CtaSection";
+import FaqSection from "./FaqSection";
+import StepsSection from "./StepsSection";
 
 export const sectionRegistry: Record<string, ComponentType<SectionProps<any>>> = {
   "hero": HeroSection,
@@ -21,6 +24,9 @@ export const sectionRegistry: Record<string, ComponentType<SectionProps<any>>> =
   "contact-form": ContactFormSection,
   "company-profile": CompanyProfileSection,
   "rich-text": RichTextSection,
+  "cta": CtaSection,
+  "faq": FaqSection,
+  "steps": StepsSection,
 };
 
 export const sectionMetas: SectionMeta[] = [
@@ -33,6 +39,9 @@ export const sectionMetas: SectionMeta[] = [
   { type: "contact-form", label: "Contact Form", labelZh: "联系表单" },
   { type: "company-profile", label: "Company Profile", labelZh: "公司简介" },
   { type: "rich-text", label: "Rich Text", labelZh: "富文本" },
+  { type: "cta", label: "CTA Band", labelZh: "行动号召" },
+  { type: "faq", label: "FAQ", labelZh: "常见问题" },
+  { type: "steps", label: "Steps", labelZh: "步骤" },
 ];
 
 export { default as SectionRenderer } from "./SectionRenderer";

@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { SectionRenderer } from "@/theme/sections";
 import { useSectionRegistry, useThemeManager } from "@/plugins/hooks";
-import type { SectionData, SectionSettings } from "@/theme/types";
+import type { DynamicPageLayout, SectionData, SectionSettings } from "@/theme/types";
+import DynamicPagePreview from "@/theme/DynamicPagePreview";
 import {
   HOST_PAGE_PRESET_METAS,
   buildHostPagePreset,
@@ -88,8 +88,9 @@ export default function PageEditorPage() {
   /** Host composable preset for new pages */
   const [presetId, setPresetId] = useState<HostPagePresetId | "">("");
   /** Page-level config fields stored alongside sections in draftConfig */
-  const [pageLayout, setPageLayout] = useState<string | undefined>(undefined);
-  const [showPageHeader, setShowPageHeader] = useState<boolean | undefined>(undefined);
+  const [pageLayout, setPageLayout] = useState<DynamicPageLayout | string>("auto");
+  /** auto = omit showPageHeader; true/false force */
+  const [showPageHeaderMode, setShowPageHeaderMode] = useState<"auto" | "on" | "off">("auto");
 
   // -- section editor state --
   const [sections, setSections] = useState<SectionData[]>([]);
@@ -150,10 +151,15 @@ export default function PageEditorPage() {
       }));
       setSections(loadedSections);
       setSectionJson(JSON.stringify(loadedSections, null, 2));
-      setPageLayout(typeof config?.layout === "string" ? config.layout : undefined);
-      setShowPageHeader(
-        typeof config?.showPageHeader === "boolean" ? config.showPageHeader : undefined,
+      setPageLayout(
+        typeof config?.layout === "string" && config.layout
+          ? config.layout
+          : "auto",
       );
+      if (config?.showPageHeader === true) setShowPageHeaderMode("on");
+      else if (config?.showPageHeader === false) setShowPageHeaderMode("off");
+      else setShowPageHeaderMode("auto");
+
     } catch {
       setError("加载页面失败");
     } finally {
@@ -267,14 +273,23 @@ export default function PageEditorPage() {
   // -- clear messages --
   const clearMessages = () => { setError(""); setSuccessMsg(""); };
 
+  const resolvedShowPageHeader = useMemo((): boolean | undefined => {
+    if (showPageHeaderMode === "on") return true;
+    if (showPageHeaderMode === "off") return false;
+    return undefined;
+  }, [showPageHeaderMode]);
+
   const buildDraftConfig = useCallback(
     (sectionsToSave: SectionData[]) => {
       const cfg: Record<string, unknown> = { sections: sectionsToSave };
-      if (pageLayout) cfg.layout = pageLayout;
-      if (showPageHeader !== undefined) cfg.showPageHeader = showPageHeader;
+      if (pageLayout && pageLayout !== "auto") cfg.layout = pageLayout;
+      else cfg.layout = "auto";
+      if (resolvedShowPageHeader !== undefined) {
+        cfg.showPageHeader = resolvedShowPageHeader;
+      }
       return cfg;
     },
-    [pageLayout, showPageHeader],
+    [pageLayout, resolvedShowPageHeader],
   );
 
   const applyPreset = useCallback(
@@ -286,8 +301,10 @@ export default function PageEditorPage() {
       setSections(built.sections);
       setSectionJson(JSON.stringify(built.sections, null, 2));
       setSelectedIndex(built.sections.length ? 0 : null);
-      setPageLayout(built.layout);
-      setShowPageHeader(built.showPageHeader);
+      setPageLayout(built.layout || "auto");
+      if (built.showPageHeader === true) setShowPageHeaderMode("on");
+      else if (built.showPageHeader === false) setShowPageHeaderMode("off");
+      else setShowPageHeaderMode("auto");
       setPresetId(id);
       setSuccessMsg(`已套用配方：${HOST_PAGE_PRESET_METAS.find((m) => m.id === id)?.labelZh ?? id}`);
       setTimeout(() => setSuccessMsg(""), 2500);
@@ -307,8 +324,9 @@ export default function PageEditorPage() {
     setSaving(true);
     try {
       let sectionsToCreate = sections;
-      let layoutForCreate = pageLayout;
-      let headerForCreate = showPageHeader;
+      let layoutForCreate: string | undefined =
+        pageLayout && pageLayout !== "auto" ? String(pageLayout) : "auto";
+      let headerForCreate = resolvedShowPageHeader;
       if (editorMode === "json") {
         const parsed = JSON.parse(sectionJson);
         sectionsToCreate = Array.isArray(parsed) ? parsed : [];
@@ -319,11 +337,13 @@ export default function PageEditorPage() {
           enTitle: enTitle || slug,
         });
         sectionsToCreate = built.sections;
-        layoutForCreate = built.layout;
+        layoutForCreate = built.layout || "auto";
         headerForCreate = built.showPageHeader;
       }
-      const draftConfig: Record<string, unknown> = { sections: sectionsToCreate };
-      if (layoutForCreate) draftConfig.layout = layoutForCreate;
+      const draftConfig: Record<string, unknown> = {
+        sections: sectionsToCreate,
+        layout: layoutForCreate || "auto",
+      };
       if (headerForCreate !== undefined) draftConfig.showPageHeader = headerForCreate;
       const result = await createUnifiedPage({
         slug: check.slug,
@@ -859,6 +879,43 @@ export default function PageEditorPage() {
               </label>
             </div>
           </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3 p-3 rounded-lg bg-slate-50 border border-slate-100">
+            <div>
+              <label htmlFor="page-layout" className="block text-xs font-medium text-slate-600 mb-1">
+                呈现布局（写入草稿 config）
+              </label>
+              <select
+                id="page-layout"
+                value={pageLayout || "auto"}
+                onChange={(e) => setPageLayout(e.target.value)}
+                className="w-full rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+              >
+                <option value="auto">自动（按区块推断）</option>
+                <option value="reading">阅读（页眉 + 栏宽）</option>
+                <option value="landing">落地（全宽 section 栈）</option>
+              </select>
+            </div>
+            <div>
+              <label htmlFor="page-header-mode" className="block text-xs font-medium text-slate-600 mb-1">
+                页级标题头
+              </label>
+              <select
+                id="page-header-mode"
+                value={showPageHeaderMode}
+                onChange={(e) =>
+                  setShowPageHeaderMode(e.target.value as "auto" | "on" | "off")
+                }
+                className="w-full rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+              >
+                <option value="auto">自动</option>
+                <option value="on">始终显示</option>
+                <option value="off">隐藏</option>
+              </select>
+            </div>
+            <p className="md:col-span-2 text-xs text-slate-500">
+              布局与标题头随「保存草稿」写入 published 前的 draftConfig；预览区与公开 DynamicPage 壳一致。
+            </p>
+          </div>
         </div>
 
       {/* -- editor body -- */}
@@ -923,27 +980,32 @@ export default function PageEditorPage() {
             )}
           </div>
 
-          {/* Center: preview */}
-          <div className="flex-1 overflow-y-auto bg-slate-50">
+          {/* Center: preview — same shell as public DynamicPage */}
+          <div className="flex-1 overflow-y-auto bg-slate-100/80">
             {sections.length === 0 ? (
               <div className="flex items-center justify-center h-full text-sm text-slate-400">
                 {isComposable ? "点击左侧「+ 添加区块」开始构建页面" : "暂无内容"}
               </div>
             ) : (
-              <div className="border-l border-r border-slate-100">
-                {sections.map((s, i) => (
-                  <div
-                    key={s.id}
-                    onClick={() => setSelectedIndex(i)}
-                    className={`relative cursor-pointer transition-all ${
-                      selectedIndex === i
-                        ? "ring-2 ring-blue-400 ring-inset"
-                        : "hover:ring-1 hover:ring-gray-300 hover:ring-inset"
-                    }`}
-                  >
-                    <SectionRenderer section={s} />
-                  </div>
-                ))}
+              <div className="min-h-full border-x border-slate-200/80 bg-white shadow-sm">
+                <div className="sticky top-0 z-10 px-3 py-1.5 bg-slate-50/95 border-b border-slate-200 text-[11px] text-slate-500 flex items-center justify-between">
+                  <span>
+                    预览 · layout={pageLayout || "auto"}
+                    {showPageHeaderMode !== "auto"
+                      ? ` · header=${showPageHeaderMode}`
+                      : ""}
+                  </span>
+                  <span className="text-slate-400">与公开页同壳</span>
+                </div>
+                <DynamicPagePreview
+                  title={zhTitle || enTitle || slug || "页面标题"}
+                  description=""
+                  layout={pageLayout || "auto"}
+                  showPageHeader={resolvedShowPageHeader}
+                  sections={sections}
+                  selectedIndex={selectedIndex}
+                  onSelectSection={setSelectedIndex}
+                />
               </div>
             )}
           </div>

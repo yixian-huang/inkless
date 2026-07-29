@@ -24,16 +24,16 @@ export const HOST_PAGE_PRESET_METAS: HostPagePresetMeta[] = [
     id: "doc-guide",
     labelZh: "上手指南",
     labelEn: "Guide",
-    descriptionZh: "短 Hero + 富文本 + 可选清单",
-    descriptionEn: "Compact hero + rich text + optional checklist",
-    layout: "reading",
+    descriptionZh: "短 Hero + 富文本 + 步骤 + CTA",
+    descriptionEn: "Compact hero + rich text + steps + CTA",
+    layout: "landing",
   },
   {
     id: "landing-use-cases",
     labelZh: "用例落地",
     labelEn: "Use-cases landing",
-    descriptionZh: "Hero + 卡片网格 + 富文本说明",
-    descriptionEn: "Hero + card grid + rich text body",
+    descriptionZh: "Hero + 文字卡片 + 富文本 + CTA",
+    descriptionEn: "Hero + text cards + rich text + CTA",
     layout: "landing",
   },
 ];
@@ -96,6 +96,24 @@ export function buildHostPagePreset(
             data: { content: body, alignment: "left" },
             settings: { padding: "md", maxWidth: "reading", background: "surface" },
           },
+          {
+            id: sid("faq"),
+            type: "faq",
+            variant: "default",
+            data: {
+              title: bilingual("常见问题", "FAQ"),
+              items: [
+                {
+                  question: bilingual("如何修改本页？", "How do I edit this page?"),
+                  answer: bilingual(
+                    "在管理端 → 页面中编辑草稿并发布。",
+                    "Edit the draft under Admin → Pages, then publish.",
+                  ),
+                },
+              ],
+            },
+            settings: { padding: "md", maxWidth: "reading", background: "surface" },
+          },
         ],
       };
 
@@ -123,18 +141,41 @@ export function buildHostPagePreset(
           settings: { padding: "md", maxWidth: "reading", background: "surface" },
         },
         {
-          id: sid("check"),
-          type: "checklist",
+          id: sid("steps"),
+          type: "steps",
           variant: "default",
           data: {
-            categories: [
+            title: bilingual("推荐步骤", "Suggested steps"),
+            steps: [
               {
-                title: bilingual("检查清单", "Checklist"),
-                items: ["确认环境就绪", "完成基础配置", "验证公开页面"],
+                title: bilingual("确认环境", "Prepare environment"),
+                description: bilingual("准备服务器或本机开发环境", "Server or local dev environment"),
+              },
+              {
+                title: bilingual("完成配置", "Configure"),
+                description: bilingual("站点身份、主题与基础开关", "Identity, theme, and feature toggles"),
+              },
+              {
+                title: bilingual("验证公开页", "Verify public pages"),
+                description: bilingual("检查首页与关键路由", "Check home and key routes"),
               },
             ],
           },
           settings: { padding: "md", maxWidth: "layout", background: "surface-alt" },
+        },
+        {
+          id: sid("cta"),
+          type: "cta",
+          variant: "default",
+          data: {
+            title: bilingual("下一步", "Next steps"),
+            subtitle: bilingual("浏览能力页或继续完善内容", "Explore features or keep refining content"),
+            primaryLabel: bilingual("查看能力", "View features"),
+            primaryHref: "/features",
+            secondaryLabel: bilingual("面向 Agent", "For agents"),
+            secondaryHref: "/p/agents",
+          },
+          settings: { padding: "lg", maxWidth: "layout", background: "surface" },
         },
       ];
       return { layout: "landing", showPageHeader: false, sections };
@@ -163,6 +204,7 @@ export function buildHostPagePreset(
           data: {
             title: bilingual("典型场景", "Use cases"),
             columns: 3,
+            preferTextCards: true,
             cards: [
               {
                 title: bilingual("个人博客", "Personal blog"),
@@ -195,6 +237,19 @@ export function buildHostPagePreset(
           variant: "default",
           data: { content: body, alignment: "left" },
           settings: { padding: "md", maxWidth: "reading", background: "surface" },
+        },
+        {
+          id: sid("cta"),
+          type: "cta",
+          variant: "default",
+          data: {
+            title: bilingual("开始搭建", "Start building"),
+            primaryLabel: bilingual("快速开始", "Get started"),
+            primaryHref: "/p/get-started",
+            secondaryLabel: bilingual("能力一览", "Features"),
+            secondaryHref: "/features",
+          },
+          settings: { padding: "lg", maxWidth: "layout", background: "surface" },
         },
       ];
       return { layout: "landing", showPageHeader: false, sections };

@@ -23,11 +23,20 @@ func TestBuildDocSimple(t *testing.T) {
 		t.Fatalf("layout=%v", cfg["layout"])
 	}
 	sections, ok := cfg["sections"].([]map[string]any)
-	if !ok || len(sections) != 1 {
+	if !ok || len(sections) < 1 {
 		t.Fatalf("sections=%v", cfg["sections"])
 	}
 	if sections[0]["type"] != "rich-text" {
 		t.Fatalf("type=%v", sections[0]["type"])
+	}
+	types := map[string]bool{}
+	for _, s := range sections {
+		if t, ok := s["type"].(string); ok {
+			types[t] = true
+		}
+	}
+	if !types["faq"] {
+		t.Fatalf("expected faq section, got %#v", types)
 	}
 }
 
@@ -42,6 +51,15 @@ func TestBuildDocGuideHasHero(t *testing.T) {
 	}
 	if sections[0]["variant"] != "compact" {
 		t.Fatalf("variant=%v", sections[0]["variant"])
+	}
+	types := map[string]bool{}
+	for _, s := range sections {
+		if t, ok := s["type"].(string); ok {
+			types[t] = true
+		}
+	}
+	if !types["steps"] || !types["cta"] {
+		t.Fatalf("expected steps+cta, got %#v", types)
 	}
 }
 

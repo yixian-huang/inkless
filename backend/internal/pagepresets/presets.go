@@ -13,9 +13,9 @@ import (
 type ID string
 
 const (
-	DocSimple         ID = "doc-simple"
-	DocGuide          ID = "doc-guide"
-	LandingUseCases   ID = "landing-use-cases"
+	DocSimple       ID = "doc-simple"
+	DocGuide        ID = "doc-guide"
+	LandingUseCases ID = "landing-use-cases"
 )
 
 // Meta describes a preset for listing.
@@ -49,14 +49,14 @@ func All() []Meta {
 		},
 		{
 			ID: DocGuide, LabelZh: "上手指南", LabelEn: "Guide",
-			DescriptionZh: "短 Hero + 富文本 + 可选清单",
-			DescriptionEn: "Compact hero + rich text + optional checklist",
+			DescriptionZh: "短 Hero + 富文本 + 步骤 + CTA",
+			DescriptionEn: "Compact hero + rich text + steps + CTA",
 			Layout:        "landing",
 		},
 		{
 			ID: LandingUseCases, LabelZh: "用例落地", LabelEn: "Use-cases landing",
-			DescriptionZh: "Hero + 卡片网格 + 富文本说明",
-			DescriptionEn: "Hero + card grid + rich text body",
+			DescriptionZh: "Hero + 文字卡片 + 富文本 + CTA",
+			DescriptionEn: "Hero + text cards + rich text + CTA",
 			Layout:        "landing",
 		},
 	}
@@ -135,12 +135,27 @@ func Build(id ID, opts Options) (map[string]any, error) {
 						"padding": "md", "maxWidth": "reading", "background": "surface",
 					},
 				},
+				{
+					"id": newID("faq"), "type": "faq", "variant": "default",
+					"data": map[string]any{
+						"title": bilingual("常见问题", "FAQ"),
+						"items": []map[string]any{
+							{
+								"question": bilingual("如何修改本页？", "How do I edit this page?"),
+								"answer":   bilingual("在管理端 → 页面中编辑草稿并发布。", "Edit the draft under Admin → Pages, then publish."),
+							},
+						},
+					},
+					"settings": map[string]any{
+						"padding": "md", "maxWidth": "reading", "background": "surface",
+					},
+				},
 			},
 		}, nil
 
 	case DocGuide:
 		if zhSub == "" {
-			zhSub = "分步说明与关键资源"
+			zhSub = "分步说明与相关资源"
 		}
 		if enSub == "" {
 			enSub = "Steps and related resources"
@@ -170,17 +185,40 @@ func Build(id ID, opts Options) (map[string]any, error) {
 					},
 				},
 				{
-					"id": newID("check"), "type": "checklist", "variant": "default",
+					"id": newID("steps"), "type": "steps", "variant": "default",
 					"data": map[string]any{
-						"categories": []map[string]any{
+						"title": bilingual("推荐步骤", "Suggested steps"),
+						"steps": []map[string]any{
 							{
-								"title": bilingual("检查清单", "Checklist"),
-								"items": []string{"确认环境就绪", "完成基础配置", "验证公开页面"},
+								"title":       bilingual("确认环境", "Prepare environment"),
+								"description": bilingual("准备服务器或本机开发环境", "Server or local dev environment"),
+							},
+							{
+								"title":       bilingual("完成配置", "Configure"),
+								"description": bilingual("站点身份、主题与基础开关", "Identity, theme, and feature toggles"),
+							},
+							{
+								"title":       bilingual("验证公开页", "Verify public pages"),
+								"description": bilingual("检查首页与关键路由", "Check home and key routes"),
 							},
 						},
 					},
 					"settings": map[string]any{
 						"padding": "md", "maxWidth": "layout", "background": "surface-alt",
+					},
+				},
+				{
+					"id": newID("cta"), "type": "cta", "variant": "default",
+					"data": map[string]any{
+						"title":          bilingual("下一步", "Next steps"),
+						"subtitle":       bilingual("浏览能力页或继续完善内容", "Explore features or keep refining content"),
+						"primaryLabel":   bilingual("查看能力", "View features"),
+						"primaryHref":    "/features",
+						"secondaryLabel": bilingual("面向 Agent", "For agents"),
+						"secondaryHref":  "/p/agents",
+					},
+					"settings": map[string]any{
+						"padding": "lg", "maxWidth": "layout", "background": "surface",
 					},
 				},
 			},
@@ -210,8 +248,9 @@ func Build(id ID, opts Options) (map[string]any, error) {
 				{
 					"id": newID("cards"), "type": "card-grid", "variant": "default",
 					"data": map[string]any{
-						"title":   bilingual("典型场景", "Use cases"),
-						"columns": 3,
+						"title":           bilingual("典型场景", "Use cases"),
+						"columns":         3,
+						"preferTextCards": true,
 						"cards": []map[string]any{
 							{
 								"title":       bilingual("个人博客", "Personal blog"),
@@ -238,6 +277,19 @@ func Build(id ID, opts Options) (map[string]any, error) {
 					},
 					"settings": map[string]any{
 						"padding": "md", "maxWidth": "reading", "background": "surface",
+					},
+				},
+				{
+					"id": newID("cta"), "type": "cta", "variant": "default",
+					"data": map[string]any{
+						"title":          bilingual("开始搭建", "Start building"),
+						"primaryLabel":   bilingual("快速开始", "Get started"),
+						"primaryHref":    "/p/get-started",
+						"secondaryLabel": bilingual("能力一览", "Features"),
+						"secondaryHref":  "/features",
+					},
+					"settings": map[string]any{
+						"padding": "lg", "maxWidth": "layout", "background": "surface",
 					},
 				},
 			},

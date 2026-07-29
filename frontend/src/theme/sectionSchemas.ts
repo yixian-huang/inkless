@@ -25,6 +25,12 @@ export const sectionSchemas: Record<string, FieldSchema[]> = {
       { label: "3列", value: 3 },
       { label: "4列", value: 4 },
     ]},
+    {
+      key: "preferTextCards",
+      type: "boolean",
+      label: "无图时用文字卡片（默认开）",
+      defaultValue: true,
+    },
     { key: "cards", type: "array", label: "卡片", itemSchema: [
       { key: "title", type: "bilingual", label: "标题" },
       { key: "titleEn", type: "text", label: "英文标题 (legacy)" },
@@ -87,6 +93,38 @@ export const sectionSchemas: Record<string, FieldSchema[]> = {
       { label: "左对齐", value: "left" },
       { label: "居中", value: "center" },
     ]},
+  ],
+  cta: [
+    { key: "title", type: "bilingual", label: "标题" },
+    { key: "subtitle", type: "bilingual-textarea", label: "副标题" },
+    { key: "primaryLabel", type: "bilingual", label: "主按钮文案" },
+    { key: "primaryHref", type: "text", label: "主按钮链接" },
+    { key: "secondaryLabel", type: "bilingual", label: "次按钮文案" },
+    { key: "secondaryHref", type: "text", label: "次按钮链接" },
+  ],
+  faq: [
+    { key: "title", type: "bilingual", label: "标题" },
+    {
+      key: "items",
+      type: "array",
+      label: "问答",
+      itemSchema: [
+        { key: "question", type: "bilingual", label: "问题" },
+        { key: "answer", type: "bilingual-textarea", label: "回答" },
+      ],
+    },
+  ],
+  steps: [
+    { key: "title", type: "bilingual", label: "标题" },
+    {
+      key: "steps",
+      type: "array",
+      label: "步骤",
+      itemSchema: [
+        { key: "title", type: "bilingual", label: "步骤标题" },
+        { key: "description", type: "bilingual-textarea", label: "说明" },
+      ],
+    },
   ],
   // editorial-firm theme sections (ef-*) — additive only
   ...editorialFirmSectionSchemas,
