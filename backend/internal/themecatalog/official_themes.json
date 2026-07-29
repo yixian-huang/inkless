@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-07-29T06:52:31Z",
+  "updatedAt": "2026-07-29T06:57:56Z",
   "themes": [
     {
       "slug": "product-first",
@@ -24,18 +24,18 @@
       "minHostVersion": "0.1.0-alpha.2",
       "latest": {
         "version": "0.1.5",
-        "umdUrl": "https://inkless.run/marketplace/v1/themes/product-first/0.1.5/theme.umd.js",
-        "changelog": "v0.1.5: expand Features page into shipped capability catalog",
+        "umdUrl": "https://github.com/yixian-huang/inkless-theme-product-first/releases/download/v0.1.5/theme.umd.js",
         "sha256": "65e8d8b5f3e17225a2484a85dfb7a003c0c4f1800593ed5ba405b78c7f06bf74",
+        "changelog": "v0.1.5: expand Features page into shipped capability catalog",
         "publishedAt": "2026-07-20T12:20:31Z"
       },
       "versions": [
         {
           "version": "0.1.5",
-          "umdUrl": "https://inkless.run/marketplace/v1/themes/product-first/0.1.5/theme.umd.js",
-          "changelog": "v0.1.5: expand Features page into shipped capability catalog",
+          "umdUrl": "https://github.com/yixian-huang/inkless-theme-product-first/releases/download/v0.1.5/theme.umd.js",
           "sha256": "65e8d8b5f3e17225a2484a85dfb7a003c0c4f1800593ed5ba405b78c7f06bf74",
-          "publishedAt": "2026-07-20T12:20:31Z"
+          "changelog": "",
+          "publishedAt": "2026-07-29T06:57:56Z"
         }
       ],
       "defaultFeaturesHint": {
@@ -73,18 +73,18 @@
       "minHostVersion": "0.1.0-alpha.2",
       "latest": {
         "version": "1.0.0",
-        "umdUrl": "https://inkless.run/marketplace/v1/themes/blog-first/1.0.0/theme.umd.js",
-        "changelog": "Stable blog-first release",
+        "umdUrl": "https://github.com/yixian-huang/inkless-theme-blog-first/releases/download/v1.0.0/theme.umd.js",
         "sha256": "463c72342011b900ba084d0a25536cb0910d0a31c2be6a1cbc3d98b2752d5f0a",
+        "changelog": "Stable blog-first release",
         "publishedAt": "2026-07-01T00:00:00Z"
       },
       "versions": [
         {
           "version": "1.0.0",
-          "umdUrl": "https://inkless.run/marketplace/v1/themes/blog-first/1.0.0/theme.umd.js",
-          "changelog": "Stable blog-first release",
+          "umdUrl": "https://github.com/yixian-huang/inkless-theme-blog-first/releases/download/v1.0.0/theme.umd.js",
           "sha256": "463c72342011b900ba084d0a25536cb0910d0a31c2be6a1cbc3d98b2752d5f0a",
-          "publishedAt": "2026-07-01T00:00:00Z"
+          "changelog": "",
+          "publishedAt": "2026-07-29T06:57:56Z"
         }
       ],
       "defaultFeaturesHint": {
@@ -118,18 +118,18 @@
       "minHostVersion": "0.1.0-alpha.2",
       "latest": {
         "version": "0.1.0",
-        "umdUrl": "https://inkless.run/marketplace/v1/themes/editorial-firm/0.1.0/theme.umd.js",
-        "changelog": "Initial editorial-firm release",
+        "umdUrl": "https://github.com/yixian-huang/inkless-theme-editorial-firm/releases/download/v0.1.0/theme.umd.js",
         "sha256": "c9ec25f08d325bd3fe1c389155cda1d537fda094b411a053a0c9ef5adb9a4bd5",
+        "changelog": "Initial editorial-firm release",
         "publishedAt": "2026-07-15T00:00:00Z"
       },
       "versions": [
         {
           "version": "0.1.0",
-          "umdUrl": "https://inkless.run/marketplace/v1/themes/editorial-firm/0.1.0/theme.umd.js",
-          "changelog": "Initial editorial-firm release",
+          "umdUrl": "https://github.com/yixian-huang/inkless-theme-editorial-firm/releases/download/v0.1.0/theme.umd.js",
           "sha256": "c9ec25f08d325bd3fe1c389155cda1d537fda094b411a053a0c9ef5adb9a4bd5",
-          "publishedAt": "2026-07-15T00:00:00Z"
+          "changelog": "",
+          "publishedAt": "2026-07-29T06:57:56Z"
         }
       ],
       "defaultFeaturesHint": {
