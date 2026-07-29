@@ -23,7 +23,8 @@ required_lines=(
   "PrivateTmp=true"
   "ProtectSystem=strict"
   "ProtectHome=true"
-  "ReadWritePaths=/opt/inkless/data /opt/inkless/uploads /opt/inkless/backups /opt/inkless/plugins /opt/inkless/data/plugins"
+  # Includes backend/frontend/var for optional host self-update staging.
+  "ReadWritePaths=/opt/inkless/data /opt/inkless/uploads /opt/inkless/backups /opt/inkless/plugins /opt/inkless/data/plugins /opt/inkless/backend /opt/inkless/frontend /opt/inkless/var"
   "WantedBy=multi-user.target"
 )
 
