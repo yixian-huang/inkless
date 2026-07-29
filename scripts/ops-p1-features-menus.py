@@ -9,9 +9,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 DB = Path("/opt/inkless-ops/data/inkless.db")
-DOCS_URL = (
-    "https://github.com/yixian-huang/inkless/blob/main/docs-site/guide/getting-started.md"
-)
+DOCS_URL = "https://docs.inkless.run"
 GITHUB = "https://github.com/yixian-huang/inkless"
 
 
