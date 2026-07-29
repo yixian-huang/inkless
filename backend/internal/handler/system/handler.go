@@ -267,7 +267,7 @@ func (h *Handler) ApplyUpdate(c *gin.Context) {
 }
 
 // GetUpdateJob returns a persisted job.
-// @Router       /admin/system/update [get]/jobs/:id
+// @Router       /admin/system/update/jobs/{id} [get]
 func (h *Handler) GetUpdateJob(c *gin.Context) {
 	if h.selfUpdate == nil {
 		apierror.Message(c, http.StatusInternalServerError, "自更新服务未配置")

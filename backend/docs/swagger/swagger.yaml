@@ -2425,6 +2425,9 @@ paths:
   /admin/system/update/check:
     post:
       responses: {}
+  /admin/system/update/jobs/{id}:
+    get:
+      responses: {}
   /admin/system/update/rollback:
     post:
       responses: {}

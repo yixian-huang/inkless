@@ -3429,6 +3429,11 @@ const docTemplate = `{
                 "responses": {}
             }
         },
+        "/admin/system/update/jobs/{id}": {
+            "get": {
+                "responses": {}
+            }
+        },
         "/admin/system/update/rollback": {
             "post": {
                 "responses": {}
