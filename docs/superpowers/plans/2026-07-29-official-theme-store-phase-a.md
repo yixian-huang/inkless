@@ -2,7 +2,7 @@
 
 **Design:** [`docs/design-official-extension-store-phase-a.md`](../../design-official-extension-store-phase-a.md)  
 **Date:** 2026-07-29  
-**Status:** P0 implemented (A1–A14, A16); A15 is ops release of real UMD assets
+**Status:** Phase A complete including A15 public UMD + catalog on inkless.run
 
 ## Goal
 
@@ -33,7 +33,7 @@ Admin can browse an **official theme catalog** and **one-click install** (option
 
 ### Ops / release
 
-- [ ] **A15** Publish official `themes.json` + UMD release URLs for product-first / blog-first / editorial-firm  
+- [x] **A15** Publish official `themes.json` + UMD release URLs for product-first / blog-first / editorial-firm  
 - [x] **A16** Smoke script `scripts/smoke-theme-catalog.sh`  
 
 ## Out of scope

@@ -449,7 +449,7 @@ if ((source === "external" || source === "marketplace") && externalUrl) {
 |----|------|------|------|
 | A13 | 更新到 catalog latest | 复用 install | ✅ 市场页「更新」按钮 |
 | A14 | sha256 校验（若 catalog 提供） | `VerifyUMDSHA256` | ✅ 有 sha256 则下载校验 |
-| A15 | 官方 themes.json 仓或 inkless.run 静态发布 | ops | ⏳ 待发布真实 UMD release |
+| A15 | 官方 themes.json 仓或 inkless.run 静态发布 | `frontend/public/marketplace` + GH Releases | ✅ |
 | A16 | 冒烟脚本 | `scripts/smoke-theme-catalog.sh` | ✅ |
 
 ### P2 — 显式不做（登记）
