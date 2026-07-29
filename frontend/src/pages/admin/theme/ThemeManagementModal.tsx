@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import {
   listInstalledThemes,
   activateTheme,
@@ -7,6 +8,10 @@ import {
   type InstalledThemeDTO,
 } from "@/api/installedThemes";
 import { themeManager } from "@/plugins/ThemeManager";
+import {
+  isUninstallableThemeSource,
+  themeSourceBadgeLabel,
+} from "@/plugins/themeSource";
 import { useBootstrap } from "@/contexts/BootstrapContext";
 import {
   AdminButton,
@@ -149,7 +154,16 @@ export default function ThemeManagementModal({ onClose }: ThemeManagementModalPr
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex shrink-0 items-center justify-between border-b border-slate-100 px-5 py-4 sm:px-6">
-          <h3 className="text-base font-semibold tracking-tight text-slate-900">主题管理</h3>
+          <div className="flex items-center gap-3">
+            <h3 className="text-base font-semibold tracking-tight text-slate-900">主题管理</h3>
+            <Link
+              to="/admin/theme-market"
+              onClick={onClose}
+              className="rounded-full bg-teal-50 px-2.5 py-0.5 text-xs font-medium text-teal-800 hover:bg-teal-100"
+            >
+              浏览主题市场 →
+            </Link>
+          </div>
           <button
             type="button"
             onClick={onClose}
@@ -210,9 +224,13 @@ export default function ThemeManagementModal({ onClose }: ThemeManagementModalPr
                             当前主题
                           </span>
                         )}
-                        {theme.source === "external" && (
-                          <span className="absolute left-2 top-2 rounded-full bg-violet-500 px-2 py-0.5 text-xs font-medium text-white">
-                            外部
+                        {themeSourceBadgeLabel(theme.source) && (
+                          <span
+                            className={`absolute left-2 top-2 rounded-full px-2 py-0.5 text-xs font-medium text-white ${
+                              theme.source === "marketplace" ? "bg-teal-600" : "bg-violet-500"
+                            }`}
+                          >
+                            {themeSourceBadgeLabel(theme.source)}
                           </span>
                         )}
                       </div>
@@ -227,7 +245,7 @@ export default function ThemeManagementModal({ onClose }: ThemeManagementModalPr
                         <div className="flex items-center justify-between">
                           <span className="text-xs text-slate-400">{theme.author}</span>
                           <div className="flex gap-2">
-                            {theme.source === "external" && !theme.isActive && (
+                            {isUninstallableThemeSource(theme.source) && !theme.isActive && (
                               <AdminButton
                                 size="sm"
                                 variant="ghost"

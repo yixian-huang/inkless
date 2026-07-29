@@ -22,6 +22,7 @@ const AdminBackupsPage = lazy(adminRouteLoaders["/admin/backups"]);
 const AdminPagesPage = lazy(adminRouteLoaders["/admin/pages"]);
 const AdminPageEditorPage = lazy(adminRouteLoaders["/admin/pages/edit"]);
 const AdminThemePage = lazy(adminRouteLoaders["/admin/theme"]);
+const AdminThemeMarketPage = lazy(adminRouteLoaders["/admin/theme-market"]);
 const AdminDashboardPage = lazy(adminRouteLoaders["/admin"]);
 const AdminFormSubmissionsPage = lazy(adminRouteLoaders["/admin/form-submissions"]);
 const AdminMenusPage = lazy(adminRouteLoaders["/admin/menus"]);
@@ -162,6 +163,10 @@ export const staticRoutes: RouteObject[] = [
       {
         path: "theme",
         element: <AdminThemePage />,
+      },
+      {
+        path: "theme-market",
+        element: <AdminThemeMarketPage />,
       },
       {
         path: "form-submissions",

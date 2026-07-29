@@ -34,6 +34,7 @@ export const adminRouteLoaders: Record<string, AdminRouteLoader> = {
   "/admin/pages/new": () => import("./pages/editor/page"),
   "/admin/pages/edit": () => import("./pages/editor/page"),
   "/admin/theme": () => import("./theme/page"),
+  "/admin/theme-market": () => import("./theme-market/page"),
   "/admin/form-submissions": () => import("./form-submissions/page"),
   "/admin/menus": () => import("./menus/page"),
   "/admin/scheduled-publications": () => import("./scheduled-publications/page"),

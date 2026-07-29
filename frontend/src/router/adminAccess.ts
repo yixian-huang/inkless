@@ -22,6 +22,7 @@ export const adminRouteAccess: AdminRouteAccess[] = [
   { path: "/admin/scheduled-publications", permission: ["pages:publish", "articles:publish"], status: "production" },
   { path: "/admin/comments", permission: "comments:read", status: "production" },
   { path: "/admin/theme", permission: "themes:read", status: "production" },
+  { path: "/admin/theme-market", permission: "themes:read", status: "production" },
   { path: "/admin/site-config", permission: "settings:manage", status: "production" },
   { path: "/admin/features", permission: "settings:manage", status: "production" },
   { path: "/admin/analytics", permission: "analytics:read", status: "production" },

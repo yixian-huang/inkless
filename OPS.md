@@ -65,3 +65,41 @@ When using NoPanel from this monorepo’s agent workflow:
 # Example — project/env names are yours, not committed inventory
 npc deploy <project> <env> --ref main --wait
 ```
+
+### Host self-update (H0/H1)
+
+Admin **系统状态 → 关于与更新** can probe GitHub Releases and (when enabled)
+apply artifacts into **this instance’s** `INKLESS_RELEASE_ROOT` only.
+
+```bash
+# Per-unit .env (example: product site)
+INKLESS_SELF_UPDATE_ENABLED=true
+INKLESS_RELEASE_ROOT=/opt/inkless-ops
+INKLESS_SYSTEMD_UNIT=inkless-ops
+INKLESS_UPDATE_CHANNEL=stable
+# optional: INKLESS_UPDATE_REPO=yixian-huang/inkless
+```
+
+Requires: writable `backend`/`frontend`/`var` under the release root (see
+`ops/systemd/inkless.service` ReadWritePaths), and permission to
+`systemctl restart` the unit (passwordless sudo on gomami).
+
+`qb-artifact-activate` **merges** `.env` (does not wipe `INKLESS_*` / JWT).
+
+### Multi-instance deploy (strategy A)
+
+`npc deploy impress hk-artifact` activates `/opt/inkless`, then **propagates**
+the same `VERSION` into peer trees and restarts their units:
+
+| Peer unit | Root |
+|-----------|------|
+| `inkless-ops` | `/opt/inkless-ops` |
+| `inkless-imgli` | `/opt/inkless-imgli` |
+
+- Disable: `QB_PROPAGATE_PEERS=0`
+- Override map: `INKLESS_ARTIFACT_PEERS=unit:/path,unit:/path`
+
+Design: [`docs/design-host-self-update-mvp.md`](docs/design-host-self-update-mvp.md).  
+Isolation inventory: [`docs/internal/ops-isolation-inventory-gomami-2026-07-29.md`](docs/internal/ops-isolation-inventory-gomami-2026-07-29.md).
+
+Theme package auto-update (UMD/catalog) is a separate feature under the theme market.

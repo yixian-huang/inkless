@@ -34,6 +34,7 @@ type App struct {
 	database         *db.DB
 	router           *gin.Engine
 	schedulerService *service.SchedulerService
+	themeAutoUpdate  *service.ThemeAutoUpdateService
 	pageViewRecorder *service.PageViewRecorder
 	commentModule    *commentMod.Module
 	pluginManager    *pluginruntime.Manager
@@ -168,6 +169,7 @@ func New(loadResult *config.LoadResult, opts Options) (*App, error) {
 		database:         database,
 		router:           router,
 		schedulerService: rt.schedulerService,
+		themeAutoUpdate:  rt.themeAutoUpdate,
 		pageViewRecorder: rt.pageViewRecorder,
 		commentModule:    rt.commentModule,
 		pluginManager:    rt.pluginManager,
@@ -230,6 +232,9 @@ func (a *App) Run() error {
 func (a *App) shutdownWorkers() error {
 	if a.schedulerService != nil {
 		a.schedulerService.Stop()
+	}
+	if a.themeAutoUpdate != nil {
+		a.themeAutoUpdate.Stop()
 	}
 	if a.pageViewRecorder != nil {
 		a.pageViewRecorder.Stop(3 * time.Second)

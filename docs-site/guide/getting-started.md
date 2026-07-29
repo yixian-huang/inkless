@@ -119,5 +119,7 @@ inkless/
 ## Next Steps
 
 - [Architecture Overview](/guide/architecture) -- understand the system design
-- [Extension Points](/guide/extension-points) -- learn about Provider interfaces
+- [Theme Market](/guide/theme-market) -- official catalog one-click install
+- [Host Updates](/guide/host-updates) -- Release artifacts and optional in-admin update
+- [Extension Points](/guide/extension-points) -- Provider interfaces and trust boundaries
 - [Your First Plugin](/guide/first-plugin) -- build a simple plugin

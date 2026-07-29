@@ -16,10 +16,10 @@ hero:
 features:
   - title: Bilingual by Default
     details: Built-in Chinese/English content management with locale-aware rendering
+  - title: Official Theme Market
+    details: Browse the official catalog and one-click install theme packages
   - title: Extensible Architecture
     details: Provider interfaces for search, storage, notifications, and CAPTCHA
-  - title: Developer Friendly
-    details: CLI tooling, Swagger API docs, EventBus, and clear extension points
   - title: Self-Hosted
-    details: Single binary deployment with SQLite or PostgreSQL
+    details: Single binary + SPA; versioned Release artifacts for production installs
 ---
