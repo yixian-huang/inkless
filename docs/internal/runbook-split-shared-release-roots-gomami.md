@@ -497,10 +497,10 @@ DRY_RUN=0 SITE_ROOT=/opt/inkless-ops UNIT=inkless-ops PORT=8089 \
 
 | 时间 (UTC) | 阶段 | 操作者 | 结果 | 备注 |
 |------------|------|--------|------|------|
-| | dry-run | | | |
-| | ops split | | | |
-| | imgli split | | | |
-| | final verify | | | |
+| 2026-07-29T07:44:10Z | dry-run | agent | OK | VER=main-5566dbb9 |
+| 2026-07-29T07:44:17Z | ops split | agent | OK | backup `.split-backup-20260729T074417Z`；health 200；identity Inkless |
+| 2026-07-29T07:44:31Z | imgli split | agent | OK | backup `.split-backup-20260729T074431Z` |
+| 2026-07-29T07:44:35Z | final verify | agent | OK | 三 backend/frontend realpath 互异；8088/8089/8090=200 |
 
 ---
 

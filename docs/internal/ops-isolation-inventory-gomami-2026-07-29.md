@@ -12,11 +12,11 @@
 | 维度 | 结论 | 对 Host 自更新 |
 |------|------|----------------|
 | **数据 / 身份隔离** | ✅ 通过 | 可安全并行跑三站 |
-| **代码 `current` 隔离** | ❌ **未通过**（ops / imgli 共享 personal 的 artifact） | **禁止**开 H1 一键升级 |
+| **代码 `current` 隔离** | ✅ **已拆分**（2026-07-29 UTC，runbook 执行） | H1 前置已满足；deploy 须按站同步 |
 | **反代域名→端口** | ✅ 正确 | 与 unit 一致 |
-| **H0 只读探测** | ⚠️ 可做 | 三站会显示**同一** host 版本（因共享码） |
+| **H0 只读探测** | ✅ 可做 | 三站代码树独立，版本可分叉 |
 
-**一句话：** 三站是「三份数据 + 一份代码」；npc 部署 `hk-artifact` 切 `/opt/inkless/.../current` 时，**三站 host 一起变**。
+**更新（拆分后）：** 三站为「三份数据 + **三份代码树**」。`npc deploy hk-artifact` 默认仍只切 `/opt/inkless`；ops/imgli 需显式同步或独立激活（见拆树 runbook §9）。
 
 ---
 
@@ -186,12 +186,17 @@ Health：`8088` / `8089` / `8090` 均 `200`。
 
 ### 代码 / 自更新前置
 
-- [ ] ops `backend/current` 独立 realpath  
-- [ ] ops `frontend/current` 独立 realpath  
-- [ ] imgli 同上  
-- [ ] 各树 `versions/` + `previous`  
-- [ ] 各 unit `INKLESS_RELEASE_ROOT` = 本树  
+- [x] ops `backend/current` 独立 realpath（`/opt/inkless-ops/backend/versions/main-5566dbb9`）  
+- [x] ops `frontend/current` 独立 realpath  
+- [x] imgli 同上（`/opt/inkless-imgli/.../versions/main-5566dbb9`）  
+- [x] 各树 `versions/`（`previous` 仍可由后续 deploy 维护）  
+- [ ] 各 unit `INKLESS_RELEASE_ROOT` = 本树（Host 自更新实现时再配）  
 - [ ] 自更新写权限仅限本树  
+
+**拆分备份：**
+
+- `/opt/inkless-ops/.split-backup-20260729T074417Z`
+- `/opt/inkless-imgli/.split-backup-20260729T074431Z`
 
 ### 可选产品配置
 

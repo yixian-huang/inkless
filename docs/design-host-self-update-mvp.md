@@ -560,10 +560,10 @@ POST /admin/system/update/rollback # { "to": "previous" | "v0.1.9" } 仅本地 v
 
 摘要：
 
-| 站 | unit | port | data/JWT | `backend/current` realpath |
-|----|------|------|----------|----------------------------|
-| yx.ink | `inkless` | 8088 | 独立 | `/opt/inkless/backend/versions/main-…`（权威树） |
-| inkless.run | `inkless-ops` | 8089 | 独立 | **→ 同上（共享）** |
-| imgli.com | `inkless-imgli` | 8090 | 独立 | **→ 同上（共享）** |
+| 站 | unit | port | data/JWT | `backend/current` realpath（2026-07-29 拆后） |
+|----|------|------|----------|-----------------------------------------------|
+| yx.ink | `inkless` | 8088 | 独立 | `/opt/inkless/backend/versions/…` |
+| inkless.run | `inkless-ops` | 8089 | 独立 | `/opt/inkless-ops/backend/versions/…` |
+| imgli.com | `inkless-imgli` | 8090 | 独立 | `/opt/inkless-imgli/backend/versions/…` |
 
-**H1 阻断：** ops / imgli 的 current 是指向 personal 树的 symlink。须先拆树再开站内 Host 升级。
+**H1 前置：** 代码树已拆分（runbook 已执行）。deploy 策略见拆树 runbook §9（personal 部署不再自动升 ops/imgli）。
