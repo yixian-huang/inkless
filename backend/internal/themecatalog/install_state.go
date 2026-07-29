@@ -238,6 +238,11 @@ func hostMeetsMin(hostVersion, minVersion string) (ok bool, known bool) {
 	return semver.Compare(h, m) >= 0, true
 }
 
+// VersionIsNewer reports whether catalogVer is strictly newer than installedVer.
+func VersionIsNewer(catalogVer, installedVer string) bool {
+	return versionIsNewer(catalogVer, installedVer)
+}
+
 // versionIsNewer reports whether catalogVer is strictly newer than installedVer.
 func versionIsNewer(catalogVer, installedVer string) bool {
 	catalogVer = strings.TrimSpace(catalogVer)

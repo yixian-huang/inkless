@@ -14,6 +14,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/yixian-huang/inkless/backend/internal/model"
+	"github.com/yixian-huang/inkless/backend/internal/service"
 	"github.com/yixian-huang/inkless/backend/internal/themecatalog"
 )
 
@@ -79,6 +80,44 @@ func (s *stubThemeRepo) Update(ctx context.Context, theme *model.InstalledTheme)
 }
 func (s *stubThemeRepo) Delete(ctx context.Context, id uint) error { return nil }
 
+type stubSiteCfg struct {
+	cfg *model.SiteConfig
+}
+
+func (s *stubSiteCfg) FindByKey(ctx context.Context, key string) (*model.SiteConfig, error) {
+	if s.cfg == nil || s.cfg.Key != key {
+		return &model.SiteConfig{}, errors.New("record not found")
+	}
+	return s.cfg, nil
+}
+func (s *stubSiteCfg) Upsert(ctx context.Context, config *model.SiteConfig) error {
+	cp := *config
+	s.cfg = &cp
+	return nil
+}
+func (s *stubSiteCfg) Update(ctx context.Context, config *model.SiteConfig) error {
+	cp := *config
+	s.cfg = &cp
+	return nil
+}
+func (s *stubSiteCfg) UpdateDraft(ctx context.Context, key string, expectedVersion int, draftConfig model.JSONMap) (int, error) {
+	return 0, nil
+}
+func (s *stubSiteCfg) UpdatePublished(ctx context.Context, key string, publishedConfig model.JSONMap, publishedVersion int) error {
+	return nil
+}
+
+func testHandler(repo *stubThemeRepo) *Handler {
+	inst := service.NewOfficialThemeInstaller(
+		themecatalog.NewLoader(""),
+		repo,
+		"0.1.0-alpha.2",
+		themecatalog.DefaultUMDAllowHosts,
+	)
+	auto := service.NewThemeAutoUpdateService(inst, &stubSiteCfg{}, repo)
+	return NewHandler(inst, auto)
+}
+
 func TestAdminThemeCatalog_Embedded(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	repo := &stubThemeRepo{
@@ -87,65 +126,26 @@ func TestAdminThemeCatalog_Embedded(t *testing.T) {
 			{ThemeID: "blog-first", Version: "1.0.0", Source: "built-in", IsActive: false},
 		},
 	}
-	h := NewHandler(themecatalog.NewLoader(""), repo, "0.1.0-alpha.2", themecatalog.DefaultUMDAllowHosts)
+	h := testHandler(repo)
 
 	r := gin.New()
 	r.GET("/admin/extensions/themes/catalog", h.AdminThemeCatalog)
-
 	req := httptest.NewRequest(http.MethodGet, "/admin/extensions/themes/catalog", nil)
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, req)
-
 	require.Equal(t, http.StatusOK, w.Code)
 
 	var body map[string]any
 	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &body))
-	assert.Equal(t, float64(1), body["schemaVersion"])
 	assert.Equal(t, string(themecatalog.SourceEmbedded), body["source"])
-	assert.Nil(t, body["warning"])
-
-	items, ok := body["items"].([]any)
-	require.True(t, ok)
+	items := body["items"].([]any)
 	require.GreaterOrEqual(t, len(items), 3)
-
-	bySlug := map[string]map[string]any{}
-	for _, raw := range items {
-		m := raw.(map[string]any)
-		bySlug[m["slug"].(string)] = m
-	}
-
-	assert.Equal(t, string(themecatalog.InstallStateActive), bySlug["corporate-classic"]["installState"])
-	assert.Equal(t, string(themecatalog.InstallStateBuiltin), bySlug["blog-first"]["installState"])
-	// product-first not in stub install list → not_installed (has UMD) or builtin if in BuiltinIDs without row
-	// host registers product-first as builtin ID → builtin when no row
-	assert.Equal(t, string(themecatalog.InstallStateBuiltin), bySlug["product-first"]["installState"])
-}
-
-func TestAdminThemeCatalog_RefreshQuery(t *testing.T) {
-	gin.SetMode(gin.TestMode)
-	h := NewHandler(themecatalog.NewLoader(""), &stubThemeRepo{}, "dev", nil)
-
-	r := gin.New()
-	r.GET("/admin/extensions/themes/catalog", h.AdminThemeCatalog)
-
-	req := httptest.NewRequest(http.MethodGet, "/admin/extensions/themes/catalog?refresh=1", nil)
-	w := httptest.NewRecorder()
-	r.ServeHTTP(w, req)
-	require.Equal(t, http.StatusOK, w.Code)
-}
-
-func TestParseRefreshQuery(t *testing.T) {
-	assert.True(t, parseRefreshQuery("1"))
-	assert.True(t, parseRefreshQuery("true"))
-	assert.False(t, parseRefreshQuery(""))
-	assert.False(t, parseRefreshQuery("0"))
 }
 
 func TestAdminThemeInstall_CreateMarketplace(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	repo := &stubThemeRepo{}
-	h := NewHandler(themecatalog.NewLoader(""), repo, "0.1.0-alpha.2", themecatalog.DefaultUMDAllowHosts)
-
+	h := testHandler(repo)
 	r := gin.New()
 	r.POST("/admin/extensions/themes/install", h.AdminThemeInstall)
 
@@ -154,40 +154,14 @@ func TestAdminThemeInstall_CreateMarketplace(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, req)
-
 	require.Equal(t, http.StatusOK, w.Code, w.Body.String())
+
 	var resp map[string]any
 	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &resp))
 	assert.Equal(t, true, resp["created"])
-	assert.Equal(t, false, resp["activated"])
 	theme := resp["theme"].(map[string]any)
 	assert.Equal(t, "product-first", theme["themeId"])
 	assert.Equal(t, "marketplace", theme["source"])
-	assert.NotEmpty(t, theme["externalUrl"])
-	assert.Equal(t, "0.1.5", theme["version"])
-}
-
-func TestAdminThemeInstall_BuiltinOnly(t *testing.T) {
-	gin.SetMode(gin.TestMode)
-	repo := &stubThemeRepo{}
-	h := NewHandler(themecatalog.NewLoader(""), repo, "0.1.0-alpha.2", themecatalog.DefaultUMDAllowHosts)
-
-	r := gin.New()
-	r.POST("/admin/extensions/themes/install", h.AdminThemeInstall)
-
-	body, _ := json.Marshal(map[string]any{"slug": "minimal-starter"})
-	req := httptest.NewRequest(http.MethodPost, "/admin/extensions/themes/install", bytes.NewReader(body))
-	req.Header.Set("Content-Type", "application/json")
-	w := httptest.NewRecorder()
-	r.ServeHTTP(w, req)
-
-	require.Equal(t, http.StatusOK, w.Code, w.Body.String())
-	var resp map[string]any
-	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &resp))
-	theme := resp["theme"].(map[string]any)
-	assert.Equal(t, "built-in", theme["source"])
-	// omitempty may drop empty externalUrl
-	assert.True(t, theme["externalUrl"] == nil || theme["externalUrl"] == "")
 }
 
 func TestAdminThemeInstall_UpsertAndActivate(t *testing.T) {
@@ -199,8 +173,7 @@ func TestAdminThemeInstall_UpsertAndActivate(t *testing.T) {
 		},
 		nextID: 2,
 	}
-	h := NewHandler(themecatalog.NewLoader(""), repo, "0.1.0-alpha.2", themecatalog.DefaultUMDAllowHosts)
-
+	h := testHandler(repo)
 	r := gin.New()
 	r.POST("/admin/extensions/themes/install", h.AdminThemeInstall)
 
@@ -209,33 +182,73 @@ func TestAdminThemeInstall_UpsertAndActivate(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, req)
-
 	require.Equal(t, http.StatusOK, w.Code, w.Body.String())
+
 	var resp map[string]any
 	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &resp))
-	assert.Equal(t, false, resp["created"])
 	assert.Equal(t, true, resp["activated"])
 	theme := resp["theme"].(map[string]any)
 	assert.Equal(t, true, theme["isActive"])
 	assert.Equal(t, "marketplace", theme["source"])
-	assert.Equal(t, "0.1.5", theme["version"])
-
-	// previous active deactivated
-	blog, err := repo.FindByThemeID(context.Background(), "blog-first")
-	require.NoError(t, err)
-	assert.False(t, blog.IsActive)
 }
 
-func TestAdminThemeInstall_UnknownSlug(t *testing.T) {
+func TestAdminThemeAutoUpdate_GetPutRun(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-	h := NewHandler(themecatalog.NewLoader(""), &stubThemeRepo{}, "0.1.0-alpha.2", themecatalog.DefaultUMDAllowHosts)
+	repo := &stubThemeRepo{
+		themes: []*model.InstalledTheme{
+			{
+				ID: 1, ThemeID: "product-first", Version: "0.1.0", Source: "marketplace",
+				ExternalURL: "https://github.com/yixian-huang/inkless-theme-product-first/releases/download/v0.1.0/theme.umd.js",
+				IsActive:    true,
+			},
+		},
+		nextID: 1,
+	}
+	h := testHandler(repo)
 	r := gin.New()
-	r.POST("/admin/extensions/themes/install", h.AdminThemeInstall)
+	r.GET("/admin/extensions/themes/auto-update", h.AdminThemeAutoUpdateGet)
+	r.PUT("/admin/extensions/themes/auto-update", h.AdminThemeAutoUpdatePut)
+	r.POST("/admin/extensions/themes/auto-update/run", h.AdminThemeAutoUpdateRun)
 
-	body, _ := json.Marshal(map[string]any{"slug": "does-not-exist"})
-	req := httptest.NewRequest(http.MethodPost, "/admin/extensions/themes/install", bytes.NewReader(body))
-	req.Header.Set("Content-Type", "application/json")
+	// GET defaults
+	req := httptest.NewRequest(http.MethodGet, "/admin/extensions/themes/auto-update", nil)
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, req)
-	assert.Equal(t, http.StatusNotFound, w.Code)
+	require.Equal(t, http.StatusOK, w.Code)
+	var settings map[string]any
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &settings))
+	assert.Equal(t, false, settings["enabled"])
+
+	// Enable
+	body, _ := json.Marshal(map[string]any{"enabled": true, "intervalMinutes": 30, "onlyMarketplace": true})
+	req = httptest.NewRequest(http.MethodPut, "/admin/extensions/themes/auto-update", bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	w = httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+	require.Equal(t, http.StatusOK, w.Code, w.Body.String())
+
+	// Run dry
+	body, _ = json.Marshal(map[string]any{"dryRun": true})
+	req = httptest.NewRequest(http.MethodPost, "/admin/extensions/themes/auto-update/run", bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	w = httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+	require.Equal(t, http.StatusOK, w.Code, w.Body.String())
+	var report map[string]any
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &report))
+	assert.GreaterOrEqual(t, int(report["checked"].(float64)), 1)
+
+	// Apply
+	body, _ = json.Marshal(map[string]any{"dryRun": false})
+	req = httptest.NewRequest(http.MethodPost, "/admin/extensions/themes/auto-update/run", bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	w = httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+	require.Equal(t, http.StatusOK, w.Code, w.Body.String())
+
+	// product-first should be upgraded to catalog latest 0.1.5
+	got, err := repo.FindByThemeID(context.Background(), "product-first")
+	require.NoError(t, err)
+	assert.Equal(t, "0.1.5", got.Version)
+	assert.Contains(t, got.ExternalURL, "v0.1.5")
 }

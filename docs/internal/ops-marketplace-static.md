@@ -35,8 +35,25 @@ INKLESS_THEME_CATALOG_URL=https://inkless.run/marketplace/v1/themes.json
 
 Personal `/opt/inkless` may omit this (embedded fallback still works).
 
+## Optional theme auto-update
+
+After deploy of a binary that includes `ThemeAutoUpdateService`:
+
+| API | Purpose |
+|-----|---------|
+| `GET /admin/extensions/themes/auto-update` | Settings + last report |
+| `PUT /admin/extensions/themes/auto-update` | Enable / interval / scope |
+| `POST /admin/extensions/themes/auto-update/run` | `{ "dryRun": true\|false }` manual check or apply |
+
+Admin UI: **主题市场** → 顶部「可选自动更新」面板。
+
+- Default **off**. When on, host polls catalog on an interval (min 15m) and upgrades installed marketplace UMD pointers without redeploying the site process for theme package bumps.
+- Set `INKLESS_THEME_CATALOG_URL` so polls hit the live index (not only embedded fallback).
+- Major theme redesigns: keep auto-update off or use dry-run; apply major bumps manually from the market cards.
+
 ## Isolation reminder
 
 - Product: `inkless-ops` :8089 → inkless.run
 - Personal: `inkless` :8088
 - Code symlink shared; **data and .env must stay separate**
+

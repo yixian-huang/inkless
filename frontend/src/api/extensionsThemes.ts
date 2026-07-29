@@ -105,3 +105,78 @@ export async function installOrUpdateThemeFromCatalog(
     activate: opts?.activate ?? false,
   });
 }
+
+// ── Optional theme auto-update (catalog poll without host redeploy) ──
+
+export interface ThemeAutoUpdateItem {
+  themeId: string;
+  slug?: string;
+  from?: string;
+  to?: string;
+  reason?: string;
+}
+
+export interface ThemeAutoUpdateReport {
+  checkedAt: string;
+  catalogSource?: string;
+  checked: number;
+  updated: ThemeAutoUpdateItem[];
+  skipped: ThemeAutoUpdateItem[];
+  errors: ThemeAutoUpdateItem[];
+}
+
+export interface ThemeAutoUpdateSettings {
+  enabled: boolean;
+  intervalMinutes: number;
+  /** Only marketplace/external rows with externalUrl (default true). */
+  onlyMarketplace: boolean;
+  /** Allow updating the active theme's package pointer (default true). */
+  includeActive: boolean;
+  /** Only check the active theme. */
+  onlyActive: boolean;
+  lastCheckAt?: string;
+  lastApplyAt?: string;
+  lastError?: string;
+  lastReport?: ThemeAutoUpdateReport | null;
+}
+
+export interface ThemeAutoUpdatePutInput {
+  enabled?: boolean;
+  intervalMinutes?: number;
+  onlyMarketplace?: boolean;
+  includeActive?: boolean;
+  onlyActive?: boolean;
+}
+
+/** GET /admin/extensions/themes/auto-update */
+export async function fetchThemeAutoUpdateSettings(): Promise<ThemeAutoUpdateSettings> {
+  const res = await http.get<ThemeAutoUpdateSettings>(
+    "/admin/extensions/themes/auto-update",
+  );
+  return res.data;
+}
+
+/** PUT /admin/extensions/themes/auto-update */
+export async function updateThemeAutoUpdateSettings(
+  body: ThemeAutoUpdatePutInput,
+): Promise<ThemeAutoUpdateSettings> {
+  const res = await http.put<ThemeAutoUpdateSettings>(
+    "/admin/extensions/themes/auto-update",
+    body,
+  );
+  return res.data;
+}
+
+/**
+ * POST /admin/extensions/themes/auto-update/run
+ * dryRun=true: report only; dryRun=false: apply catalog updates (even if auto-update is disabled).
+ */
+export async function runThemeAutoUpdate(opts?: {
+  dryRun?: boolean;
+}): Promise<ThemeAutoUpdateReport> {
+  const res = await http.post<ThemeAutoUpdateReport>(
+    "/admin/extensions/themes/auto-update/run",
+    { dryRun: opts?.dryRun ?? false },
+  );
+  return res.data;
+}

@@ -230,6 +230,20 @@ Phase A 最小实现：
 - 若当前激活：提示刷新前台；可选自动 `loadExternal` 新 URL。  
 - **不做**自动 DB 内容迁移。
 
+### 4.3.1 可选自动更新（不重部署 host）
+
+目标：主题仓库发补丁/小版本后，实例在**不重部署站点**的前提下从官方 catalog 感知并升级已装 UMD 指针。
+
+| 项 | 约定 |
+|----|------|
+| 默认 | **关闭**（`enabled: false`） |
+| 配置存储 | `site_configs.system.publishedConfig.themeAutoUpdate` |
+| 范围 | 默认仅 `source=marketplace\|external` 且有 `externalUrl`；可选只检查 active |
+| 激活主题 | `includeActive` 默认 true：升级 **包指针**，**不**切换当前 active 主题 |
+| 大版本 | 产品定位为补丁/小版本同步；大版本换皮走市场页人工确认 |
+| 后台 loop | 启动后约 45s 首次检查，之后按 `intervalMinutes`（15–1440，默认 60） |
+| 手动 | `POST …/auto-update/run` 在关闭时也可 dry-run / 立即应用 |
+
 ### 4.4 卸载
 
 - 沿用现规则：不可卸 built-in、不可卸 active。  
@@ -309,9 +323,23 @@ Errors：
 - 新 UI **只**调 `/admin/extensions/themes/*`。  
 - Phase B 再让 marketplace install 转发到真实 plugin/theme installer。
 
+### 5.3.1 可选自动更新 API
+
+```http
+GET  /admin/extensions/themes/auto-update
+PUT  /admin/extensions/themes/auto-update
+POST /admin/extensions/themes/auto-update/run
+```
+
+| 方法 | 权限 | 说明 |
+|------|------|------|
+| GET | `themes:read` | 返回 settings + `lastReport` |
+| PUT | `themes:manage` | 部分字段更新：`enabled`, `intervalMinutes`, `onlyMarketplace`, `includeActive`, `onlyActive` |
+| POST | `themes:manage` | body `{ "dryRun": true\|false }`；`dryRun` 只报告；否则 force 应用（即使未开启开关） |
+
 ### 5.4 权限
 
-与主题管理一致：`themes` + `manage`（或现有等价 RBAC）。仅登录管理员。
+与主题管理一致：`themes` + `manage`（或现有等价 RBAC）。仅登录管理员。`auto-update` GET 用 `read`，改配置/运行用 `manage`。
 
 ---
 
@@ -451,6 +479,7 @@ if ((source === "external" || source === "marketplace") && externalUrl) {
 | A14 | sha256 校验（若 catalog 提供） | `VerifyUMDSHA256` | ✅ 有 sha256 则下载校验 |
 | A15 | 官方 themes.json 仓或 inkless.run 静态发布 | `frontend/public/marketplace` + GH Releases | ✅ |
 | A16 | 冒烟脚本 | `scripts/smoke-theme-catalog.sh` | ✅ |
+| A17 | 可选自动更新（config + ticker + API + 市场页） | `ThemeAutoUpdateService` + extensions API + theme-market UI | ✅ 默认关；catalog 刷新；dry-run / 立即应用 |
 
 ### P2 — 显式不做（登记）
 

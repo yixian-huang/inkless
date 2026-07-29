@@ -67,15 +67,16 @@ import (
 
 // wiredRuntime is the HTTP + background side of the process after repos/seed.
 type wiredRuntime struct {
-	handlers         *Handlers
-	routeDeps        *RouteDeps
-	setupHandler     *setupHandler.Handler
-	schedulerService *service.SchedulerService
-	pageViewRecorder *service.PageViewRecorder
-	commentModule    *commentMod.Module
-	pluginManager    *pluginruntime.Manager
-	publicCache      *cache.Cache
-	rbacCache        *cache.Cache
+	handlers           *Handlers
+	routeDeps          *RouteDeps
+	setupHandler       *setupHandler.Handler
+	schedulerService   *service.SchedulerService
+	themeAutoUpdate    *service.ThemeAutoUpdateService
+	pageViewRecorder   *service.PageViewRecorder
+	commentModule      *commentMod.Module
+	pluginManager      *pluginruntime.Manager
+	publicCache        *cache.Cache
+	rbacCache          *cache.Cache
 }
 
 // wireHandlers builds services, modules, HTTP handlers, and background workers.
@@ -222,6 +223,14 @@ func wireHandlers(
 	wizardSvc := service.NewWizardServiceWithRegistry(registry, r.unifiedPage)
 	themeExportSvc := service.NewThemeExportService(r.pageTemplate, r.siteConfig)
 	themeCatalogLoader := themecatalog.NewLoader(cfg.ThemeCatalogURL)
+	themeInstaller := service.NewOfficialThemeInstaller(
+		themeCatalogLoader,
+		r.installedTheme,
+		build.Version,
+		cfg.ThemeUMDAllowHosts,
+	).WithActivation(themePageService, publicCache)
+	themeAutoUpdate := service.NewThemeAutoUpdateService(themeInstaller, r.siteConfig, r.installedTheme)
+	themeAutoUpdate.Start()
 
 	apiKeySvc := service.NewAPIKeyService(database.DB)
 
@@ -253,13 +262,8 @@ func wireHandlers(
 		Search:         searchhandler.NewHandler(searchService),
 		Role:           roleHandler.NewHandler(r.role, r.user).WithRBACCache(rbacCache),
 		Marketplace: marketplaceHandler.NewHandler(marketplaceSvc),
-		Extensions: extensionsHandler.NewHandler(
-			themeCatalogLoader,
-			r.installedTheme,
-			build.Version,
-			cfg.ThemeUMDAllowHosts,
-		).WithActivation(themePageService, publicCache),
-		Plugin: pluginHandler.NewHandler(pluginManager, registry, cfg.ExternalPlugins),
+		Extensions:  extensionsHandler.NewHandler(themeInstaller, themeAutoUpdate),
+		Plugin:      pluginHandler.NewHandler(pluginManager, registry, cfg.ExternalPlugins),
 		Wizard:         wizardHandler.NewHandler(wizardSvc),
 		AI:             aiHandler.NewHandler(registry, aiConfigSvc),
 		ChunkedUpload:  chunkedUploadHandler.NewHandler(chunkedUploadSvc),
@@ -292,6 +296,7 @@ func wireHandlers(
 		routeDeps:        routeDeps,
 		setupHandler:     setupHandler.NewHandler(setupSvc),
 		schedulerService: schedulerService,
+		themeAutoUpdate:  themeAutoUpdate,
 		pageViewRecorder: pageViewRecorder,
 		commentModule:    commentModule,
 		pluginManager:    pluginManager,

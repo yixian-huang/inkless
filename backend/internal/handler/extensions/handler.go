@@ -1,48 +1,29 @@
 package extensions
 
 import (
-	"errors"
-	"log"
 	"net/http"
 	"strings"
 
 	"github.com/gin-gonic/gin"
 
 	"github.com/yixian-huang/inkless/backend/internal/builtinthemes"
-	"github.com/yixian-huang/inkless/backend/internal/cache"
-	"github.com/yixian-huang/inkless/backend/internal/model"
-	"github.com/yixian-huang/inkless/backend/internal/repository"
 	"github.com/yixian-huang/inkless/backend/internal/service"
 	"github.com/yixian-huang/inkless/backend/internal/themecatalog"
 	"github.com/yixian-huang/inkless/backend/pkg/apierror"
 )
 
-// Handler serves Phase A official extension-store endpoints (theme catalog first).
+// Handler serves Phase A official extension-store endpoints.
 type Handler struct {
-	loader           *themecatalog.Loader
-	themeRepo        repository.InstalledThemeRepository
-	themePageService *service.ThemePageService
-	publicCache      *cache.Cache
-	hostVersion      string
-	allowHosts       []string
-	builtinIDs       map[string]struct{}
+	installer  *service.OfficialThemeInstaller
+	autoUpdate *service.ThemeAutoUpdateService
+	builtinIDs map[string]struct{}
 }
 
-// NewHandler wires catalog loader + installed themes for the admin market API.
-func NewHandler(
-	loader *themecatalog.Loader,
-	themeRepo repository.InstalledThemeRepository,
-	hostVersion string,
-	allowHosts []string,
-) *Handler {
-	if loader == nil {
-		loader = themecatalog.NewLoader("")
-	}
+// NewHandler wires catalog installer (+ optional auto-update).
+func NewHandler(installer *service.OfficialThemeInstaller, autoUpdate *service.ThemeAutoUpdateService) *Handler {
 	return &Handler{
-		loader:      loader,
-		themeRepo:   themeRepo,
-		hostVersion: strings.TrimSpace(hostVersion),
-		allowHosts:  allowHosts,
+		installer:  installer,
+		autoUpdate: autoUpdate,
 		builtinIDs: themecatalog.BuiltinIDSet(
 			builtinthemes.CorporateClassic,
 			builtinthemes.BlogFirst,
@@ -51,16 +32,6 @@ func NewHandler(
 			builtinthemes.EditorialFirm,
 		),
 	}
-}
-
-// WithActivation enables install-and-activate (SetActive + SeedThemePages + bootstrap invalidate).
-func (h *Handler) WithActivation(themePageService *service.ThemePageService, publicCache *cache.Cache) *Handler {
-	if h == nil {
-		return nil
-	}
-	h.themePageService = themePageService
-	h.publicCache = publicCache
-	return h
 }
 
 // AdminThemeCatalog godoc
@@ -73,72 +44,58 @@ func (h *Handler) WithActivation(themePageService *service.ThemePageService, pub
 // @Success      200 {object} object
 // @Router       /admin/extensions/themes/catalog [get]
 func (h *Handler) AdminThemeCatalog(c *gin.Context) {
+	if h.installer == nil {
+		apierror.Message(c, http.StatusInternalServerError, "主题安装器未配置")
+		return
+	}
 	refresh := parseRefreshQuery(c.Query("refresh"))
-
-	loadRes, err := h.loader.Load(c.Request.Context(), refresh)
+	loadRes, err := h.installer.Loader().Load(c.Request.Context(), refresh)
 	if err != nil {
 		apierror.Message(c, http.StatusInternalServerError, "加载主题目录失败")
 		return
 	}
 
-	var installedRefs []themecatalog.InstalledRef
-	if h.themeRepo != nil {
-		themes, listErr := h.themeRepo.List(c.Request.Context())
-		if listErr != nil {
-			apierror.Message(c, http.StatusInternalServerError, "查询已安装主题失败")
-			return
-		}
-		installedRefs = make([]themecatalog.InstalledRef, 0, len(themes))
-		for _, t := range themes {
-			if t == nil {
-				continue
-			}
-			installedRefs = append(installedRefs, themecatalog.InstalledRef{
-				ThemeID:     t.ThemeID,
-				Version:     t.Version,
-				Source:      t.Source,
-				ExternalURL: t.ExternalURL,
-				IsActive:    t.IsActive,
-			})
-		}
+	installedRefs, listErr := h.installer.ListInstalledRefs(c.Request.Context())
+	if listErr != nil {
+		apierror.Message(c, http.StatusInternalServerError, "查询已安装主题失败")
+		return
 	}
 
 	items := themecatalog.MergeCatalogStatuses(loadRes.Catalog, installedRefs, themecatalog.MergeOptions{
 		BuiltinIDs:         h.builtinIDs,
 		SupportedContracts: themecatalog.HostSupportedContracts,
-		HostVersion:        h.hostVersion,
-		AllowHosts:         h.allowHosts,
+		HostVersion:        h.installer.HostVersion(),
+		AllowHosts:         h.installer.AllowHosts(),
 	})
 
-	// Flatten entry fields for admin UI convenience while keeping status fields.
 	flat := make([]gin.H, 0, len(items))
 	for _, it := range items {
 		e := it.Entry
 		flat = append(flat, gin.H{
-			"slug":               e.Slug,
-			"themeId":            e.ThemeID,
-			"name":               e.Name,
-			"nameZh":             e.NameZh,
-			"description":        e.Description,
-			"descriptionZh":      e.DescriptionZh,
-			"author":             e.Author,
-			"category":           e.Category,
-			"tags":               e.Tags,
-			"iconUrl":            e.IconURL,
-			"previewUrl":         e.PreviewURL,
-			"repoUrl":            e.RepoURL,
-			"contractVersion":    e.ContractVersion,
-			"minHostVersion":     e.MinHostVersion,
-			"latest":             e.Latest,
-			"versions":           e.Versions,
+			"slug":                e.Slug,
+			"themeId":             e.ThemeID,
+			"name":                e.Name,
+			"nameZh":              e.NameZh,
+			"description":         e.Description,
+			"descriptionZh":       e.DescriptionZh,
+			"author":              e.Author,
+			"category":            e.Category,
+			"tags":                e.Tags,
+			"iconUrl":             e.IconURL,
+			"previewUrl":          e.PreviewURL,
+			"repoUrl":             e.RepoURL,
+			"contractVersion":     e.ContractVersion,
+			"minHostVersion":      e.MinHostVersion,
+			"latest":              e.Latest,
+			"versions":            e.Versions,
 			"defaultFeaturesHint": e.DefaultFeaturesHint,
-			"builtinOnly":        e.BuiltinOnly,
-			"official":           e.Official,
-			"installState":       it.InstallState,
-			"installedVersion":   it.InstalledVersion,
-			"installedSource":    it.InstalledSource,
-			"incompatibleReason": emptyToNil(it.IncompatibleReason),
-			"updateAvailable":    it.UpdateAvailable,
+			"builtinOnly":         e.BuiltinOnly,
+			"official":            e.Official,
+			"installState":        it.InstallState,
+			"installedVersion":    it.InstalledVersion,
+			"installedSource":     it.InstalledSource,
+			"incompatibleReason":  emptyToNil(it.IncompatibleReason),
+			"updateAvailable":     it.UpdateAvailable,
 		})
 	}
 
@@ -160,228 +117,147 @@ func (h *Handler) AdminThemeCatalog(c *gin.Context) {
 
 type installThemeInput struct {
 	Slug     string `json:"slug"`
-	Version  string `json:"version"`  // optional; empty / "latest" → catalog latest
-	Activate bool   `json:"activate"` // optional; requires activation deps when true
+	Version  string `json:"version"`
+	Activate bool   `json:"activate"`
 }
 
 // AdminThemeInstall godoc
 // @Summary      Install official theme from catalog
-// @Description  Validates catalog entry and upserts installed_themes (source=marketplace for UMD themes)
 // @Tags         Extensions
 // @Accept       json
 // @Produce      json
 // @Security     BearerAuth
-// @Param        body body installThemeInput true "Install request"
-// @Success      200 {object} object
-// @Failure      400 {object} object{error=string}
-// @Failure      404 {object} object{error=string}
 // @Router       /admin/extensions/themes/install [post]
 func (h *Handler) AdminThemeInstall(c *gin.Context) {
+	if h.installer == nil {
+		apierror.Message(c, http.StatusInternalServerError, "主题安装器未配置")
+		return
+	}
 	var input installThemeInput
 	if err := c.ShouldBindJSON(&input); err != nil {
 		apierror.Message(c, http.StatusBadRequest, "无效的请求数据")
 		return
 	}
-	slug := strings.TrimSpace(input.Slug)
-	if slug == "" {
-		apierror.Message(c, http.StatusBadRequest, "slug 不能为空")
+	res, err := h.installer.Install(c.Request.Context(), service.ThemeInstallRequest{
+		Slug:     input.Slug,
+		Version:  input.Version,
+		Activate: input.Activate,
+	})
+	if err != nil {
+		if service.IsNotInCatalog(err) {
+			apierror.Message(c, http.StatusNotFound, err.Error())
+			return
+		}
+		// validation-ish errors → 400
+		msg := err.Error()
+		if strings.Contains(msg, "失败") && !strings.Contains(msg, "校验") && !strings.Contains(msg, "不兼容") && !strings.Contains(msg, "不能为空") && !strings.Contains(msg, "仅支持") && !strings.Contains(msg, "requires") && !strings.Contains(msg, "allowlist") && !strings.Contains(msg, "contract") {
+			apierror.Message(c, http.StatusInternalServerError, "安装主题失败: "+msg)
+			return
+		}
+		apierror.Message(c, http.StatusBadRequest, msg)
 		return
 	}
-	if h.themeRepo == nil {
-		apierror.Message(c, http.StatusInternalServerError, "主题仓库未配置")
-		return
-	}
+	c.JSON(http.StatusOK, gin.H{
+		"theme":     res.Theme,
+		"created":   res.Created,
+		"activated": res.Activated,
+		"warning":   emptyToNil(res.Warning),
+	})
+}
 
-	loadRes, err := h.loader.Load(c.Request.Context(), false)
-	if err != nil || loadRes == nil || loadRes.Catalog == nil {
-		apierror.Message(c, http.StatusInternalServerError, "加载主题目录失败")
+// AdminThemeAutoUpdateGet returns auto-update settings + last report.
+// @Router GET /admin/extensions/themes/auto-update
+func (h *Handler) AdminThemeAutoUpdateGet(c *gin.Context) {
+	if h.autoUpdate == nil {
+		apierror.Message(c, http.StatusInternalServerError, "自动更新服务未配置")
 		return
 	}
-
-	entry, ok := loadRes.Catalog.FindBySlug(slug)
-	if !ok {
-		apierror.Message(c, http.StatusNotFound, "主题不在官方目录中")
+	settings, err := h.autoUpdate.GetSettings(c.Request.Context())
+	if err != nil {
+		apierror.Message(c, http.StatusInternalServerError, "读取自动更新配置失败")
 		return
 	}
+	c.JSON(http.StatusOK, settings)
+}
 
-	ver, err := entry.ResolveVersion(input.Version)
+type autoUpdatePutInput struct {
+	Enabled         *bool `json:"enabled"`
+	IntervalMinutes *int  `json:"intervalMinutes"`
+	OnlyMarketplace *bool `json:"onlyMarketplace"`
+	IncludeActive   *bool `json:"includeActive"`
+	OnlyActive      *bool `json:"onlyActive"`
+}
+
+// AdminThemeAutoUpdatePut updates auto-update settings.
+// @Router PUT /admin/extensions/themes/auto-update
+func (h *Handler) AdminThemeAutoUpdatePut(c *gin.Context) {
+	if h.autoUpdate == nil {
+		apierror.Message(c, http.StatusInternalServerError, "自动更新服务未配置")
+		return
+	}
+	var input autoUpdatePutInput
+	if err := c.ShouldBindJSON(&input); err != nil {
+		apierror.Message(c, http.StatusBadRequest, "无效的请求数据")
+		return
+	}
+	cur, err := h.autoUpdate.GetSettings(c.Request.Context())
+	if err != nil {
+		apierror.Message(c, http.StatusInternalServerError, "读取自动更新配置失败")
+		return
+	}
+	if input.Enabled != nil {
+		cur.Enabled = *input.Enabled
+	}
+	if input.IntervalMinutes != nil {
+		cur.IntervalMinutes = *input.IntervalMinutes
+	}
+	if input.OnlyMarketplace != nil {
+		cur.OnlyMarketplace = *input.OnlyMarketplace
+	}
+	if input.IncludeActive != nil {
+		cur.IncludeActive = *input.IncludeActive
+	}
+	if input.OnlyActive != nil {
+		cur.OnlyActive = *input.OnlyActive
+	}
+	saved, err := h.autoUpdate.SaveSettings(c.Request.Context(), cur)
+	if err != nil {
+		apierror.Message(c, http.StatusInternalServerError, "保存自动更新配置失败: "+err.Error())
+		return
+	}
+	c.JSON(http.StatusOK, saved)
+}
+
+type autoUpdateRunInput struct {
+	// DryRun only reports available updates without writing.
+	DryRun bool `json:"dryRun"`
+}
+
+// AdminThemeAutoUpdateRun checks catalog (and applies updates unless dryRun).
+// Runs even when auto-update is disabled (manual trigger).
+// @Router POST /admin/extensions/themes/auto-update/run
+func (h *Handler) AdminThemeAutoUpdateRun(c *gin.Context) {
+	if h.autoUpdate == nil {
+		apierror.Message(c, http.StatusInternalServerError, "自动更新服务未配置")
+		return
+	}
+	var input autoUpdateRunInput
+	_ = c.ShouldBindJSON(&input)
+
+	var (
+		report *service.ThemeAutoUpdateReport
+		err    error
+	)
+	if input.DryRun {
+		report, err = h.autoUpdate.Check(c.Request.Context())
+	} else {
+		report, err = h.autoUpdate.Run(c.Request.Context(), true)
+	}
 	if err != nil {
 		apierror.Message(c, http.StatusBadRequest, err.Error())
 		return
 	}
-
-	// Full installability: official + contract + minHost + allowlist (UMD when needed).
-	if reason := installBlockReason(entry, ver, h.hostVersion, h.allowHosts); reason != "" {
-		apierror.Message(c, http.StatusBadRequest, reason)
-		return
-	}
-
-	// Optional integrity check when catalog provides sha256 (A14).
-	if strings.TrimSpace(ver.SHA256) != "" && strings.TrimSpace(ver.UMDURL) != "" {
-		if vErr := themecatalog.VerifyUMDSHA256(c.Request.Context(), ver.UMDURL, ver.SHA256, h.allowHosts); vErr != nil {
-			apierror.Message(c, http.StatusBadRequest, "主题包校验失败: "+vErr.Error())
-			return
-		}
-	}
-
-	theme, created, err := h.upsertInstalledFromCatalog(c, entry, ver)
-	if err != nil {
-		apierror.Message(c, http.StatusInternalServerError, "安装主题失败: "+err.Error())
-		return
-	}
-
-	activated := false
-	var activateWarning string
-	if input.Activate {
-		if actErr := h.activateInstalled(c, theme.ThemeID); actErr != nil {
-			activateWarning = actErr.Error()
-		} else {
-			activated = true
-			// Refresh after activate
-			if refreshed, findErr := h.themeRepo.FindByThemeID(c.Request.Context(), theme.ThemeID); findErr == nil && refreshed != nil {
-				theme = refreshed
-			}
-		}
-	}
-
-	c.JSON(http.StatusOK, gin.H{
-		"theme":     theme,
-		"created":   created,
-		"activated": activated,
-		"warning":   emptyToNil(activateWarning),
-	})
-}
-
-func (h *Handler) upsertInstalledFromCatalog(
-	c *gin.Context,
-	entry *themecatalog.ThemeEntry,
-	ver *themecatalog.ThemeVersion,
-) (*model.InstalledTheme, bool, error) {
-	ctx := c.Request.Context()
-	existing, err := h.themeRepo.FindByThemeID(ctx, entry.ThemeID)
-	notFound := err != nil && strings.Contains(err.Error(), "not found")
-	if err != nil && !notFound {
-		return nil, false, err
-	}
-	if notFound {
-		existing = nil
-	}
-
-	source, externalURL := installSourceAndURL(entry, ver, existing)
-
-	if existing == nil {
-		theme := &model.InstalledTheme{
-			ThemeID:     entry.ThemeID,
-			Name:        entry.Name,
-			NameZh:      entry.NameZh,
-			Description: pickDescription(entry),
-			Author:      entry.Author,
-			Version:     ver.Version,
-			Source:      source,
-			ExternalURL: externalURL,
-			Preview:     entry.PreviewURL,
-			IsActive:    false,
-			Config:      model.JSONMap{},
-		}
-		if err := h.themeRepo.Create(ctx, theme); err != nil {
-			return nil, false, err
-		}
-		return theme, true, nil
-	}
-
-	// Update metadata / package pointer; preserve user Config and IsActive.
-	existing.Name = entry.Name
-	if strings.TrimSpace(entry.NameZh) != "" {
-		existing.NameZh = entry.NameZh
-	}
-	existing.Description = pickDescription(entry)
-	if strings.TrimSpace(entry.Author) != "" {
-		existing.Author = entry.Author
-	}
-	existing.Version = ver.Version
-	existing.Source = source
-	existing.ExternalURL = externalURL
-	if strings.TrimSpace(entry.PreviewURL) != "" {
-		existing.Preview = entry.PreviewURL
-	}
-	if err := h.themeRepo.Update(ctx, existing); err != nil {
-		return nil, false, err
-	}
-	return existing, false, nil
-}
-
-func (h *Handler) activateInstalled(c *gin.Context, themeID string) error {
-	if err := h.themeRepo.SetActive(c.Request.Context(), themeID); err != nil {
-		return err
-	}
-	cache.InvalidateThemeOrSiteConfig(h.publicCache)
-	if h.themePageService != nil {
-		if err := h.themePageService.SeedThemePages(c.Request.Context(), themeID); err != nil {
-			// Match AdminActivate: activation succeeds with page seed warning.
-			log.Printf("Warning: seed theme pages after marketplace install: %v", err)
-			return errors.New("主题已激活，但页面同步失败: " + err.Error())
-		}
-	}
-	return nil
-}
-
-func installSourceAndURL(
-	entry *themecatalog.ThemeEntry,
-	ver *themecatalog.ThemeVersion,
-	existing *model.InstalledTheme,
-) (source, externalURL string) {
-	if entry.BuiltinOnly || strings.TrimSpace(ver.UMDURL) == "" {
-		// Keep built-in rows as built-in; new rows default built-in.
-		if existing != nil && (existing.Source == "built-in" || existing.Source == "builtin") {
-			return existing.Source, ""
-		}
-		return "built-in", ""
-	}
-	return "marketplace", strings.TrimSpace(ver.UMDURL)
-}
-
-func pickDescription(entry *themecatalog.ThemeEntry) string {
-	if entry == nil {
-		return ""
-	}
-	if strings.TrimSpace(entry.Description) != "" {
-		return entry.Description
-	}
-	return entry.DescriptionZh
-}
-
-// installBlockReason returns a user-facing error if the catalog version cannot be installed.
-func installBlockReason(
-	entry *themecatalog.ThemeEntry,
-	ver *themecatalog.ThemeVersion,
-	hostVersion string,
-	allowHosts []string,
-) string {
-	if entry == nil || ver == nil {
-		return "无效的主题条目"
-	}
-	if !entry.Official {
-		return "仅支持安装官方主题"
-	}
-	// Reuse merge incompatible checks against the entry's catalog metadata,
-	// then ValidateEntryInstallable for the resolved version UMD.
-	st := themecatalog.MergeInstallState(*entry, nil, themecatalog.MergeOptions{
-		SupportedContracts: themecatalog.HostSupportedContracts,
-		HostVersion:        hostVersion,
-		AllowHosts:         allowHosts,
-	})
-	if st.InstallState == themecatalog.InstallStateIncompatible {
-		// Allow install when only reason was "not installed" path — incompatible is hard block.
-		// For builtinOnly, MergeInstallState won't flag UMD; good.
-		if st.IncompatibleReason != "" {
-			return st.IncompatibleReason
-		}
-		return "主题与当前实例不兼容"
-	}
-	if err := themecatalog.ValidateEntryInstallable(entry, ver, allowHosts); err != nil {
-		return err.Error()
-	}
-	return ""
+	c.JSON(http.StatusOK, report)
 }
 
 func parseRefreshQuery(raw string) bool {
