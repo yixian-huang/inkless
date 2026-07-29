@@ -207,19 +207,9 @@ Health：`8088` / `8089` / `8090` 均 `200`。
 
 目标：ops、imgli **各有一份** `backend/versions` + `frontend/versions`，`current` 指本树，**不再** → `/opt/inkless/...`。
 
-示意（需另开变更窗口 + 备份；**本文仅盘点，未执行**）：
-
-```text
-# 概念步骤（每站一次，先 ops 再 imgli）
-1. 从当前 /opt/inkless/backend|frontend/versions/main-5566dbb9
-   复制（或硬链+随后独立）到 /opt/inkless-ops/.../versions/<same>
-2. 将 /opt/inkless-ops/backend/current → 本树 versions/...
-   frontend 同理
-3. systemctl restart inkless-ops
-4. 验证 8089 bootstrap 仍为 inkless.run / product-first
-5. 对 inkless-imgli / 8090 重复
-6. 确认 readlink -f 三站 realpath 互不相同
-```
+**执行 runbook（默认不自动改生产）：**  
+[`runbook-split-shared-release-roots-gomami.md`](runbook-split-shared-release-roots-gomami.md)  
+脚本（默认 `DRY_RUN=1`）：[`scripts/ops-split-shared-current.sh`](../../scripts/ops-split-shared-current.sh)
 
 之后：
 
