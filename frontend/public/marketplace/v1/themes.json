@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-07-29T06:51:58Z",
+  "updatedAt": "2026-07-29T06:52:31Z",
   "themes": [
     {
       "slug": "product-first",
@@ -73,17 +73,17 @@
       "minHostVersion": "0.1.0-alpha.2",
       "latest": {
         "version": "1.0.0",
-        "umdUrl": "https://github.com/yixian-huang/inkless-theme-blog-first/releases/download/v1.0.0/theme.umd.js",
+        "umdUrl": "https://inkless.run/marketplace/v1/themes/blog-first/1.0.0/theme.umd.js",
         "changelog": "Stable blog-first release",
-        "sha256": "",
+        "sha256": "463c72342011b900ba084d0a25536cb0910d0a31c2be6a1cbc3d98b2752d5f0a",
         "publishedAt": "2026-07-01T00:00:00Z"
       },
       "versions": [
         {
           "version": "1.0.0",
-          "umdUrl": "https://github.com/yixian-huang/inkless-theme-blog-first/releases/download/v1.0.0/theme.umd.js",
+          "umdUrl": "https://inkless.run/marketplace/v1/themes/blog-first/1.0.0/theme.umd.js",
           "changelog": "Stable blog-first release",
-          "sha256": "",
+          "sha256": "463c72342011b900ba084d0a25536cb0910d0a31c2be6a1cbc3d98b2752d5f0a",
           "publishedAt": "2026-07-01T00:00:00Z"
         }
       ],
@@ -118,17 +118,17 @@
       "minHostVersion": "0.1.0-alpha.2",
       "latest": {
         "version": "0.1.0",
-        "umdUrl": "https://github.com/yixian-huang/inkless-theme-editorial-firm/releases/download/v0.1.0/theme.umd.js",
+        "umdUrl": "https://inkless.run/marketplace/v1/themes/editorial-firm/0.1.0/theme.umd.js",
         "changelog": "Initial editorial-firm release",
-        "sha256": "",
+        "sha256": "c9ec25f08d325bd3fe1c389155cda1d537fda094b411a053a0c9ef5adb9a4bd5",
         "publishedAt": "2026-07-15T00:00:00Z"
       },
       "versions": [
         {
           "version": "0.1.0",
-          "umdUrl": "https://github.com/yixian-huang/inkless-theme-editorial-firm/releases/download/v0.1.0/theme.umd.js",
+          "umdUrl": "https://inkless.run/marketplace/v1/themes/editorial-firm/0.1.0/theme.umd.js",
           "changelog": "Initial editorial-firm release",
-          "sha256": "",
+          "sha256": "c9ec25f08d325bd3fe1c389155cda1d537fda094b411a053a0c9ef5adb9a4bd5",
           "publishedAt": "2026-07-15T00:00:00Z"
         }
       ],
