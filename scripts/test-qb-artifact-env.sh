@@ -65,6 +65,26 @@ qb_load_env_file_defaults "${custom_env}"
 mode="$(stat -c '%a' "${custom_env}" 2>/dev/null || stat -f '%Lp' "${custom_env}")"
 [[ "${mode}" == "600" ]] || fail "env file mode must be 600, got ${mode}"
 
+# Merge must preserve extra keys (self-update / catalog) across rewrite
+preserve_root="${TEST_ROOT}/preserve"
+preserve_env="${preserve_root}/backend/.env"
+mkdir -p "$(dirname "${preserve_env}")"
+cat >"${preserve_env}" <<EOF
+PORT=8088
+BASE_URL=https://yx.ink
+JWT_SECRET=keep-me-secret
+INKLESS_SELF_UPDATE_ENABLED=true
+INKLESS_RELEASE_ROOT=/opt/inkless
+INKLESS_THEME_CATALOG_URL=https://inkless.run/marketplace/v1/themes.json
+EOF
+PORT=8088 BASE_URL=https://yx.ink JWT_SECRET=keep-me-secret \
+  qb_write_env_file "${preserve_env}" "${preserve_root}"
+assert_line "JWT_SECRET=keep-me-secret" "${preserve_env}"
+assert_line "INKLESS_SELF_UPDATE_ENABLED=true" "${preserve_env}"
+assert_line "INKLESS_RELEASE_ROOT=/opt/inkless" "${preserve_env}"
+assert_line "INKLESS_THEME_CATALOG_URL=https://inkless.run/marketplace/v1/themes.json" "${preserve_env}"
+assert_line "BASE_URL=https://yx.ink" "${preserve_env}"
+
 rollback_root="${TEST_ROOT}/rollback"
 mkdir -p "${rollback_root}/frontend/versions/current-version" \
   "${rollback_root}/frontend/versions/previous-version" \
@@ -79,4 +99,4 @@ fi
 [[ "$(readlink "${rollback_root}/frontend/current")" == "${rollback_root}/frontend/versions/current-version" ]] || \
   fail "failed all rollback partially switched the frontend"
 
-echo "[qb-env-test][PASS] env precedence, instance paths, file mode, and atomic rollback preflight"
+echo "[qb-env-test][PASS] env precedence, merge preserve, instance paths, file mode, and atomic rollback preflight"

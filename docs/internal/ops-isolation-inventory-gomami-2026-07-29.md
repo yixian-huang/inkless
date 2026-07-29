@@ -16,7 +16,10 @@
 | **反代域名→端口** | ✅ 正确 | 与 unit 一致 |
 | **H0 只读探测** | ✅ 可做 | 三站代码树独立，版本可分叉 |
 
-**更新（拆分后）：** 三站为「三份数据 + **三份代码树**」。`npc deploy hk-artifact` 默认仍只切 `/opt/inkless`；ops/imgli 需显式同步或独立激活（见拆树 runbook §9）。
+**更新（拆分后 + 策略 A）：** 三站为「三份数据 + **三份代码树**」。  
+`npc deploy impress hk-artifact` 激活 `/opt/inkless` 后
+`qb_propagate_artifact_to_peers` 会 rsync 同 VERSION → ops/imgli 并 restart
+（`QB_PROPAGATE_PEERS=0` 可关）。activate **merge** `.env`，保留 `INKLESS_*`/JWT。
 
 ---
 

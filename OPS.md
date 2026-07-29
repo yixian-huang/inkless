@@ -82,8 +82,24 @@ INKLESS_UPDATE_CHANNEL=stable
 
 Requires: writable `backend`/`frontend`/`var` under the release root (see
 `ops/systemd/inkless.service` ReadWritePaths), and permission to
-`systemctl restart` the unit. Default remains **off**.
+`systemctl restart` the unit (passwordless sudo on gomami).
 
-Design + isolation: [`docs/design-host-self-update-mvp.md`](docs/design-host-self-update-mvp.md).
+`qb-artifact-activate` **merges** `.env` (does not wipe `INKLESS_*` / JWT).
+
+### Multi-instance deploy (strategy A)
+
+`npc deploy impress hk-artifact` activates `/opt/inkless`, then **propagates**
+the same `VERSION` into peer trees and restarts their units:
+
+| Peer unit | Root |
+|-----------|------|
+| `inkless-ops` | `/opt/inkless-ops` |
+| `inkless-imgli` | `/opt/inkless-imgli` |
+
+- Disable: `QB_PROPAGATE_PEERS=0`
+- Override map: `INKLESS_ARTIFACT_PEERS=unit:/path,unit:/path`
+
+Design: [`docs/design-host-self-update-mvp.md`](docs/design-host-self-update-mvp.md).  
+Isolation inventory: [`docs/internal/ops-isolation-inventory-gomami-2026-07-29.md`](docs/internal/ops-isolation-inventory-gomami-2026-07-29.md).
 
 Theme package auto-update (UMD/catalog) is a separate feature under the theme market.
