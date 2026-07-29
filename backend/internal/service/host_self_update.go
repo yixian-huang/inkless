@@ -1211,12 +1211,24 @@ func (s *HostSelfUpdateService) restartUnit(ctx context.Context) error {
 	if strings.ContainsAny(unit, "/\\ \t\n") || strings.Contains(unit, "..") {
 		return fmt.Errorf("invalid unit name")
 	}
+	// 1) direct systemctl (works if process has rights)
 	cmd := exec.CommandContext(ctx, "systemctl", "restart", unit)
 	out, err := cmd.CombinedOutput()
-	if err != nil {
-		return fmt.Errorf("%w: %s", err, truncate(string(out), 300))
+	if err == nil {
+		return nil
 	}
-	return nil
+	directErr := fmt.Errorf("systemctl: %w: %s", err, truncate(string(out), 200))
+
+	// 2) passwordless sudo (requires sudoers + NoNewPrivileges=false)
+	if _, lookErr := exec.LookPath("sudo"); lookErr == nil {
+		cmd = exec.CommandContext(ctx, "sudo", "-n", "systemctl", "restart", unit)
+		out, err = cmd.CombinedOutput()
+		if err == nil {
+			return nil
+		}
+		return fmt.Errorf("%v; sudo -n systemctl: %w: %s", directErr, err, truncate(string(out), 200))
+	}
+	return directErr
 }
 
 func (s *HostSelfUpdateService) waitHealth(ctx context.Context) error {
