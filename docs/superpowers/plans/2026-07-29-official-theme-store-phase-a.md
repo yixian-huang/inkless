@@ -16,7 +16,8 @@ Admin can browse an **official theme catalog** and **one-click install** (option
 
 - [x] **A2** Catalog fetch service (TTL cache, refresh flag, fallback on error)  
 
-- [ ] **A3** `installState` merge (builtin / installed / active / incompatible) + unit tests  
+- [x] **A3** `installState` merge (builtin / installed / active / incompatible) + unit tests  
+
 - [ ] **A4** `GET /admin/extensions/themes/catalog`  
 - [ ] **A5** `POST /admin/extensions/themes/install` (validate official, contract, allowlist, upsert)  
 - [ ] **A6** `activate=true` → existing SetActive + SeedThemePages + cache invalidate  
