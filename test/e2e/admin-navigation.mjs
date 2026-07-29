@@ -618,7 +618,9 @@ async function run() {
     await page.getByRole("link", { name: "系统状态" }).click();
     await page.waitForURL(`${baseURL}/admin/system-status`);
     await page.getByRole("heading", { name: "系统状态" }).waitFor();
-    await page.getByText("e2e", { exact: true }).waitFor();
+    // System status shows version in multiple places (应用版本 + 关于与更新).
+    await page.getByText("应用版本", { exact: true }).waitFor();
+    await page.locator("text=应用版本").locator("..").getByText("e2e", { exact: true }).first().waitFor();
     await page.getByText("sqlite", { exact: true }).waitFor();
     await page.getByRole("link", { name: "数据迁移" }).click();
     await page.waitForURL(`${baseURL}/admin/migration`);
