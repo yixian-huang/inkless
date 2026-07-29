@@ -66,14 +66,24 @@ When using NoPanel from this monorepo’s agent workflow:
 npc deploy <project> <env> --ref main --wait
 ```
 
-### Host self-update (planned)
+### Host self-update (H0/H1)
 
-Day-to-day **host** version bumps across multiple isolated instances can eventually
-use in-admin “check release + one-click apply” instead of always calling npc.
-That path is **not** a substitute for control-plane install, proxy/env changes, or
-shared-tree surgery. Design (probe source, artifacts, security, npc boundary,
-site-isolation checklist):
+Admin **系统状态 → 关于与更新** can probe GitHub Releases and (when enabled)
+apply artifacts into **this instance’s** `INKLESS_RELEASE_ROOT` only.
 
-→ [`docs/design-host-self-update-mvp.md`](docs/design-host-self-update-mvp.md)
+```bash
+# Per-unit .env (example: product site)
+INKLESS_SELF_UPDATE_ENABLED=true
+INKLESS_RELEASE_ROOT=/opt/inkless-ops
+INKLESS_SYSTEMD_UNIT=inkless-ops
+INKLESS_UPDATE_CHANNEL=stable
+# optional: INKLESS_UPDATE_REPO=yixian-huang/inkless
+```
+
+Requires: writable `backend`/`frontend`/`var` under the release root (see
+`ops/systemd/inkless.service` ReadWritePaths), and permission to
+`systemctl restart` the unit. Default remains **off**.
+
+Design + isolation: [`docs/design-host-self-update-mvp.md`](docs/design-host-self-update-mvp.md).
 
 Theme package auto-update (UMD/catalog) is a separate feature under the theme market.

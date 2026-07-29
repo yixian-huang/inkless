@@ -2,7 +2,7 @@
 
 | 字段 | 值 |
 |------|-----|
-| 状态 | Draft → 待评审实现 |
+| 状态 | Implemented (H0+H1 MVP, 2026-07-29) |
 | 日期 | 2026-07-29 |
 | 范围 | **Inkless 本体**（Go API + SPA），**不是**主题 UMD / catalog |
 | 相关 | [ADR-0001 单实例单站点](adr/0001-single-instance-single-site.md)、[站点隔离教训](internal/ops-lessons-site-isolation.md)、[OPS 公开摘要](../OPS.md)、[artifact 激活](quick-box-artifact-deploy-method.md)、[release.yml](../.github/workflows/release.yml)、主题侧 [Phase A 可选自动更新](design-official-extension-store-phase-a.md) §4.3.1 |

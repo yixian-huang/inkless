@@ -34,6 +34,21 @@ type Config struct {
 	// theme UMD URLs (INKLESS_THEME_UMD_ALLOW_HOSTS, comma-separated).
 	// Empty env → themecatalog.DefaultUMDAllowHosts.
 	ThemeUMDAllowHosts []string
+
+	// Host self-update (see docs/design-host-self-update-mvp.md).
+	// Default disabled. RELEASE_ROOT must be this instance's tree only.
+	SelfUpdateEnabled       bool
+	SelfUpdateReleaseRoot   string
+	SelfUpdateSystemdUnit   string
+	SelfUpdateRepo          string // owner/repo, default yixian-huang/inkless
+	SelfUpdateChannel       string // stable | latest
+	SelfUpdateManifestURL   string // optional channel JSON mirror
+	SelfUpdateAPIBase       string // default https://api.github.com
+	SelfUpdateCheckTTLSec   int    // default 900
+	SelfUpdateAllowHosts    []string
+	SelfUpdateGitHubToken   string
+	SelfUpdateHealthURL     string // default http://127.0.0.1:{PORT}/health
+	SelfUpdateHealthTimeout int    // seconds, default 60
 }
 
 const defaultSQLiteDSN = "file:./data/inkless.db?cache=shared&mode=rwc"

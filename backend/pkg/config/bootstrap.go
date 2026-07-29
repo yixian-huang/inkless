@@ -140,7 +140,59 @@ func loadBase() (*Config, error) {
 	cfg.ThemeCatalogURL = strings.TrimSpace(os.Getenv("INKLESS_THEME_CATALOG_URL"))
 	cfg.ThemeUMDAllowHosts = themecatalog.ParseAllowHosts(os.Getenv("INKLESS_THEME_UMD_ALLOW_HOSTS"))
 
+	// Host self-update (H0/H1). See docs/design-host-self-update-mvp.md
+	cfg.SelfUpdateEnabled = parseBoolDefaultFalse(os.Getenv("INKLESS_SELF_UPDATE_ENABLED"))
+	cfg.SelfUpdateReleaseRoot = strings.TrimSpace(os.Getenv("INKLESS_RELEASE_ROOT"))
+	cfg.SelfUpdateSystemdUnit = strings.TrimSpace(os.Getenv("INKLESS_SYSTEMD_UNIT"))
+	cfg.SelfUpdateRepo = strings.TrimSpace(os.Getenv("INKLESS_UPDATE_REPO"))
+	if cfg.SelfUpdateRepo == "" {
+		cfg.SelfUpdateRepo = "yixian-huang/inkless"
+	}
+	cfg.SelfUpdateChannel = strings.ToLower(strings.TrimSpace(os.Getenv("INKLESS_UPDATE_CHANNEL")))
+	if cfg.SelfUpdateChannel == "" {
+		cfg.SelfUpdateChannel = "stable"
+	}
+	cfg.SelfUpdateManifestURL = strings.TrimSpace(os.Getenv("INKLESS_UPDATE_MANIFEST_URL"))
+	cfg.SelfUpdateAPIBase = strings.TrimSpace(os.Getenv("INKLESS_UPDATE_API_BASE"))
+	if cfg.SelfUpdateAPIBase == "" {
+		cfg.SelfUpdateAPIBase = "https://api.github.com"
+	}
+	cfg.SelfUpdateCheckTTLSec = parsePositiveInt(os.Getenv("INKLESS_UPDATE_CHECK_TTL_SEC"), 900)
+	if hosts := strings.TrimSpace(os.Getenv("INKLESS_UPDATE_ALLOW_HOSTS")); hosts != "" {
+		cfg.SelfUpdateAllowHosts = splitAndTrim(hosts)
+	}
+	cfg.SelfUpdateGitHubToken = strings.TrimSpace(os.Getenv("INKLESS_GITHUB_TOKEN"))
+	cfg.SelfUpdateHealthURL = strings.TrimSpace(os.Getenv("INKLESS_UPDATE_HEALTH_URL"))
+	cfg.SelfUpdateHealthTimeout = parsePositiveInt(os.Getenv("INKLESS_UPDATE_HEALTH_TIMEOUT_SEC"), 60)
+
 	return cfg, nil
+}
+
+func parseBoolDefaultFalse(raw string) bool {
+	switch strings.ToLower(strings.TrimSpace(raw)) {
+	case "1", "true", "yes", "on":
+		return true
+	default:
+		return false
+	}
+}
+
+func parsePositiveInt(raw string, def int) int {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return def
+	}
+	var n int
+	for _, ch := range raw {
+		if ch < '0' || ch > '9' {
+			return def
+		}
+		n = n*10 + int(ch-'0')
+	}
+	if n <= 0 {
+		return def
+	}
+	return n
 }
 
 // parseBoolDefaultTrue treats empty as true; 0/false/off/no as false.

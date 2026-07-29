@@ -270,7 +270,8 @@ func wireHandlers(
 		MediaFolder:    mediaFolderHandler.NewHandler(r.mediaFolder, r.media),
 		Migration:      migrationHandler.NewHandler(migrationSvc),
 		Storage:        storageHandler.NewHandlerWithRuntime(storageRuntime),
-		System:         systemHandler.NewHandler(database.DB, cfg.UploadDir, build.Version),
+		System: systemHandler.NewHandler(database.DB, cfg.UploadDir, build.Version).
+			WithSelfUpdate(service.NewHostSelfUpdateService(cfg, build.Version)),
 		Translation:    translationHandler.NewHandlerWithRegistry(registry, r.glossary, r.article),
 		UnifiedPage:    unifiedPageHandler.NewHandler(r.unifiedPage, r.pageVersion, unifiedPageSvc, publicCache, bus),
 		Scheduler:      schedulerHandler.NewHandler(schedulerService),

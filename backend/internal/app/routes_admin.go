@@ -271,6 +271,13 @@ func registerAdminAI(admin *gin.RouterGroup, h *Handlers, require requireFn) {
 func registerAdminSystem(admin *gin.RouterGroup, h *Handlers, require requireFn) {
 	admin.GET("/system/status", require("system", "manage"), h.System.GetStatus)
 
+	// Host self-update (H0 probe + H1 apply). See docs/design-host-self-update-mvp.md
+	admin.GET("/system/update", require("system", "manage"), h.System.GetUpdate)
+	admin.POST("/system/update/check", require("system", "manage"), h.System.CheckUpdate)
+	admin.POST("/system/update/apply", require("system", "manage"), h.System.ApplyUpdate)
+	admin.GET("/system/update/jobs/:id", require("system", "manage"), h.System.GetUpdateJob)
+	admin.POST("/system/update/rollback", require("system", "manage"), h.System.RollbackUpdate)
+
 	admin.POST("/migration/import", require("system", "manage"), h.Migration.Import)
 	admin.GET("/migration/jobs", require("system", "manage"), h.Migration.ListJobs)
 	admin.GET("/migration/jobs/:jobId", require("system", "manage"), h.Migration.GetJob)
