@@ -36,7 +36,7 @@ const ThemePagesContext = createContext<ThemePagesContextValue>({
   isLoading: true,
 });
 
-// eslint-disable-next-line react-refresh/only-export-components
+ 
 export function useThemePages() {
   return useContext(ThemePagesContext);
 }

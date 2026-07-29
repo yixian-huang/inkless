@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { Link } from "react-router-dom";
 import { getThemeSettings, updateThemeSettings } from "@/api/theme";
 import { listInstalledThemes, updateThemeConfig } from "@/api/installedThemes";
 import { exportTheme, importTheme } from "@/api/themeExport";
@@ -205,6 +206,12 @@ export default function AdminThemePage() {
             <AdminButton variant="secondary" size="sm" onClick={() => setShowThemeModal(true)}>
               主题管理
             </AdminButton>
+            <Link
+              to="/admin/theme-market"
+              className="inline-flex items-center rounded-lg border border-teal-200 bg-teal-50 px-3 py-1.5 text-sm font-medium text-teal-800 shadow-sm hover:bg-teal-100"
+            >
+              主题市场
+            </Link>
           </>
         }
       />

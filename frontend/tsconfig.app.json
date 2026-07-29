@@ -32,6 +32,8 @@
     "noUncheckedSideEffectImports": false,
     "paths": {
       "@/*": ["./src/*"],
+      "@inkless/editor": ["../packages/editor/src/index.ts"],
+      "@inkless/editor/*": ["../packages/editor/src/*"],
       "@inkless/theme-host": ["./src/theme-host/index.ts"],
       "@inkless/theme-host/*": ["./src/theme-host/*"]
     }

@@ -129,13 +129,13 @@ TipTap 扩展是有状态的——初始化时绑定 `this.editor`、`this.stora
 
 ```ts
 // ❌ 两个编辑器共享同一组扩展
-const extensions = useMemo(() => getEditorExtensions(), []);
+const extensions = useMemo(() => createEditorKit("full", ports).extensions, [ports]);
 const editorA = useEditor({ extensions });
 const editorB = useEditor({ extensions });
 
-// ✅ 每个编辑器独立实例
-const extA = useMemo(() => getEditorExtensions(), []);
-const extB = useMemo(() => getEditorExtensions(), []);
+// ✅ 每个编辑器独立实例（各自 createEditorKit / 各自 ports）
+const extA = useMemo(() => createEditorKit("full", portsA).extensions, [portsA]);
+const extB = useMemo(() => createEditorKit("full", portsB).extensions, [portsB]);
 const editorA = useEditor({ extensions: extA });
 const editorB = useEditor({ extensions: extB });
 ```
@@ -159,10 +159,10 @@ const editorB = useEditor({ extensions: extB });
 
 本项目中应用了上述规则的文件：
 
-- `frontend/src/components/admin/tiptap-extensions/resizable-media.ts` — 图片/视频缩放 handle + 替换按钮
-- `frontend/src/components/admin/tiptap-extensions/block-toolbar.ts` — 块级节点选中高亮 + 工具栏
-- `frontend/src/components/admin/tiptap-extensions/block-handle.ts` — 块级节点拖拽 handle（已在 `view.dom` 外部，无需 stop/start）
-- `frontend/src/pages/admin/articles/editor/page.tsx` — 文章编辑器，双编辑器独立扩展实例
+- `packages/editor/src/extensions/resizable-media.ts` — 图片/视频缩放 handle + 替换按钮
+- `packages/editor/src/extensions/block-toolbar.ts` — 块级节点选中高亮 + 工具栏
+- `packages/editor/src/extensions/block-handle.ts` — 块级节点拖拽 handle（已在 `view.dom` 外部，无需 stop/start）
+- `frontend/src/pages/admin/articles/editor/page.tsx` — 文章编辑器，双编辑器独立扩展实例（kit 来自 `@inkless/editor`）
 
 ---
 

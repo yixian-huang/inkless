@@ -3,6 +3,7 @@ import { PluginKey } from "@tiptap/pm/state";
 import Suggestion from "@tiptap/suggestion";
 import type { Editor, Range } from "@tiptap/core";
 import tippy, { type Instance as TippyInstance } from "tippy.js";
+import type { MediaPickerPort } from "../ports/types";
 
 export interface SlashCommandItem {
   title: string;
@@ -12,7 +13,8 @@ export interface SlashCommandItem {
   keywords?: string[];
 }
 
-const SLASH_ITEMS: SlashCommandItem[] = [
+function buildSlashItems(picker?: MediaPickerPort): SlashCommandItem[] {
+  return [
   {
     title: "文本",
     description: "普通文本段落",
@@ -195,11 +197,10 @@ const SLASH_ITEMS: SlashCommandItem[] = [
     keywords: ["image", "picture", "photo", "tupian"],
     command: ({ editor, range }) => {
       editor.chain().focus().deleteRange(range).run();
-      document.dispatchEvent(
-        new CustomEvent("slash-command-media", {
-          detail: { type: "image" },
-        })
-      );
+      picker?.openImage((ref) => {
+        if (editor.isDestroyed || !ref.url) return;
+        editor.chain().focus().setImage({ src: ref.url, alt: ref.filename }).run();
+      });
     },
   },
   {
@@ -209,11 +210,10 @@ const SLASH_ITEMS: SlashCommandItem[] = [
     keywords: ["video", "shipin"],
     command: ({ editor, range }) => {
       editor.chain().focus().deleteRange(range).run();
-      document.dispatchEvent(
-        new CustomEvent("slash-command-media", {
-          detail: { type: "video" },
-        })
-      );
+      picker?.openVideo((ref) => {
+        if (editor.isDestroyed || !ref.url) return;
+        (editor.commands as any).setVideo({ src: ref.url });
+      });
     },
   },
   {
@@ -223,11 +223,10 @@ const SLASH_ITEMS: SlashCommandItem[] = [
     keywords: ["audio", "music", "yinpin"],
     command: ({ editor, range }) => {
       editor.chain().focus().deleteRange(range).run();
-      document.dispatchEvent(
-        new CustomEvent("slash-command-media", {
-          detail: { type: "audio" },
-        })
-      );
+      picker?.openAudio((ref) => {
+        if (editor.isDestroyed || !ref.url) return;
+        (editor.commands as any).setAudio({ src: ref.url });
+      });
     },
   },
   {
@@ -237,11 +236,14 @@ const SLASH_ITEMS: SlashCommandItem[] = [
     keywords: ["embed", "iframe", "youtube", "qianru"],
     command: ({ editor, range }) => {
       editor.chain().focus().deleteRange(range).run();
-      document.dispatchEvent(
-        new CustomEvent("slash-command-media", {
-          detail: { type: "embed" },
-        })
-      );
+      picker?.openEmbed((pick) => {
+        if (editor.isDestroyed) return;
+        if (pick.type === "youtube") {
+          editor.commands.setYoutubeVideo({ src: pick.url });
+        } else {
+          (editor.commands as any).setIframe({ src: pick.url });
+        }
+      });
     },
   },
   {
@@ -251,11 +253,13 @@ const SLASH_ITEMS: SlashCommandItem[] = [
     keywords: ["gallery", "tuji"],
     command: ({ editor, range }) => {
       editor.chain().focus().deleteRange(range).run();
-      document.dispatchEvent(
-        new CustomEvent("slash-command-media", {
-          detail: { type: "gallery" },
-        })
-      );
+      picker?.openGallery((pick) => {
+        if (editor.isDestroyed) return;
+        (editor.commands as any).setImageGallery({
+          images: pick.images.map((i) => ({ src: i.url, alt: i.filename })),
+          columns: pick.columns ?? Math.min(pick.images.length, 3),
+        });
+      });
     },
   },
   {
@@ -278,12 +282,13 @@ const SLASH_ITEMS: SlashCommandItem[] = [
       (editor.commands as any).setColumns(3);
     },
   },
-];
+  ];
+}
 
-function filterItems(query: string): SlashCommandItem[] {
-  if (!query) return SLASH_ITEMS;
+function filterItems(items: SlashCommandItem[], query: string): SlashCommandItem[] {
+  if (!query) return items;
   const lower = query.toLowerCase();
-  return SLASH_ITEMS.filter((item) => {
+  return items.filter((item) => {
     return (
       item.title.toLowerCase().includes(lower) ||
       item.description.toLowerCase().includes(lower) ||
@@ -294,10 +299,23 @@ function filterItems(query: string): SlashCommandItem[] {
 
 const slashPluginKey = new PluginKey("slashCommands");
 
-export const SlashCommands = Extension.create({
+export interface SlashCommandsOptions {
+  picker?: MediaPickerPort;
+}
+
+export const SlashCommands = Extension.create<SlashCommandsOptions>({
   name: "slashCommands",
 
+  addOptions() {
+    return {
+      picker: undefined,
+    };
+  },
+
   addProseMirrorPlugins() {
+    const picker = this.options.picker;
+    const slashItems = buildSlashItems(picker);
+
     return [
       Suggestion({
         editor: this.editor,
@@ -305,7 +323,7 @@ export const SlashCommands = Extension.create({
         pluginKey: slashPluginKey,
         allowSpaces: false,
         startOfLine: false,
-        items: ({ query }) => filterItems(query),
+        items: ({ query }) => filterItems(slashItems, query),
         command: ({ editor, range, props }: any) => {
           props.command({ editor, range });
         },

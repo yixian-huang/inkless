@@ -8,6 +8,7 @@ import { minimalStarterTheme } from "./themes/minimal-starter";
 import { editorialFirmTheme } from "./themes/editorial-firm";
 import { useBootstrap } from "@/contexts/BootstrapContext";
 import { DEFAULT_FALLBACK_THEME_ID } from "@/plugins/builtinThemes";
+import { isRemoteThemeSource } from "@/plugins/themeSource";
 import "@/plugins/externals";
 
 export type { ThemeManagerContextValue } from "./ThemeManagerContextDef";
@@ -50,12 +51,12 @@ export function ThemeManagerProvider({ children }: ThemeManagerProviderProps) {
           return;
         }
 
-        // If external theme, load bundle first
-        if (source === "external" && externalUrl) {
+        // Remote themes (URL install or official marketplace) load UMD before activate.
+        if (isRemoteThemeSource(source) && externalUrl) {
           try {
             await themeManager.loadExternal(externalUrl);
           } catch {
-            // Fallback to corporate-classic if external load fails
+            // Fall through to activate(); may still hit built-in same themeId, else default fallback.
           }
         }
 

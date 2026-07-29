@@ -1,11 +1,21 @@
 import { useCallback, useEffect, useState } from "react";
 import type { ReactNode } from "react";
-import { getSystemStatus, type SystemStatusResponse } from "@/api/systemStatus";
+import {
+  applyHostUpdate,
+  checkHostUpdate,
+  getHostUpdateStatus,
+  getSystemStatus,
+  rollbackHostUpdate,
+  type HostUpdateJob,
+  type HostUpdateStatus,
+  type SystemStatusResponse,
+} from "@/api/systemStatus";
 import {
   AdminButton,
   AdminErrorBanner,
   AdminLoading,
   AdminPageHeader,
+  AdminSuccessBanner,
 } from "@/components/admin/ui";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 
@@ -38,12 +48,22 @@ function formatUptime(seconds: number): string {
   return `${minutes} 分钟`;
 }
 
-function errorMessage(error: unknown): string {
+function errorMessage(error: unknown, fallback = "系统状态加载失败"): string {
   if (typeof error === "object" && error && "response" in error) {
-    const response = (error as { response?: { data?: { error?: { message?: string } } } }).response;
-    return response?.data?.error?.message || "系统状态加载失败";
+    const data = (error as { response?: { data?: { error?: string | { message?: string } } } })
+      .response?.data;
+    if (typeof data?.error === "string") return data.error;
+    if (data?.error && typeof data.error === "object" && data.error.message) {
+      return data.error.message;
+    }
+    // apply may return job body on error
+    const job = data as HostUpdateJob | undefined;
+    if (job && typeof job === "object" && "error" in job && (job as HostUpdateJob).error) {
+      return String((job as HostUpdateJob).error);
+    }
   }
-  return "系统状态加载失败";
+  if (error instanceof Error && error.message) return error.message;
+  return fallback;
 }
 
 function StatusBadge({ healthy, status }: { healthy: boolean; status: string }) {
@@ -99,9 +119,15 @@ function HealthMessage({ message }: { message?: string }) {
 export default function AdminSystemStatusPage() {
   useDocumentTitle("系统状态");
   const [status, setStatus] = useState<SystemStatusResponse | null>(null);
+  const [update, setUpdate] = useState<HostUpdateStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+  const [checking, setChecking] = useState(false);
+  const [applying, setApplying] = useState(false);
+  const [rollingBack, setRollingBack] = useState(false);
+  const [lastJob, setLastJob] = useState<HostUpdateJob | null>(null);
 
   const fetchStatus = useCallback(async (manual = false) => {
     if (manual) {
@@ -111,7 +137,13 @@ export default function AdminSystemStatusPage() {
     }
     setError("");
     try {
-      setStatus(await getSystemStatus());
+      const [st, up] = await Promise.all([
+        getSystemStatus(),
+        getHostUpdateStatus().catch(() => null),
+      ]);
+      setStatus(st);
+      setUpdate(up);
+      if (up?.lastJob) setLastJob(up.lastJob);
     } catch (err) {
       setError(errorMessage(err));
     } finally {
@@ -124,11 +156,87 @@ export default function AdminSystemStatusPage() {
     fetchStatus();
   }, [fetchStatus]);
 
+  async function handleCheck() {
+    setChecking(true);
+    setError("");
+    setSuccess("");
+    try {
+      const res = await checkHostUpdate();
+      if (res.error) {
+        setError(res.error);
+      } else if (res.latest) {
+        setSuccess(
+          res.latest.newer
+            ? `发现新版本 ${res.latest.version}`
+            : `已是最新（远端 ${res.latest.version}）`,
+        );
+      } else {
+        setSuccess("检查完成，未解析到远端版本");
+      }
+      const up = await getHostUpdateStatus();
+      setUpdate(up);
+    } catch (err) {
+      setError(errorMessage(err, "检查更新失败"));
+    } finally {
+      setChecking(false);
+    }
+  }
+
+  async function handleApply() {
+    if (!update?.latest?.version) return;
+    const ver = update.latest.version;
+    if (!window.confirm(`将本实例升级到 ${ver}？仅影响当前站点进程，不会改其他域名的数据。`)) {
+      return;
+    }
+    setApplying(true);
+    setError("");
+    setSuccess("");
+    try {
+      const job = await applyHostUpdate(ver);
+      setLastJob(job);
+      if (job.status === "success") {
+        setSuccess(job.message || `已升级到 ${job.toVersion}`);
+      } else if (job.status === "pending_restart") {
+        setSuccess(job.message || "代码已切换，需手动 systemctl restart");
+      } else if (job.error) {
+        setError(job.error);
+      }
+      await fetchStatus(true);
+    } catch (err) {
+      setError(errorMessage(err, "应用更新失败"));
+    } finally {
+      setApplying(false);
+    }
+  }
+
+  async function handleRollback() {
+    if (!window.confirm("回滚到 previous 版本？仅本实例。")) return;
+    setRollingBack(true);
+    setError("");
+    setSuccess("");
+    try {
+      const job = await rollbackHostUpdate("previous");
+      setLastJob(job);
+      if (job.status === "success") {
+        setSuccess(`已回滚到 ${job.toVersion || "previous"}`);
+      } else if (job.error) {
+        setError(job.error);
+      } else if (job.message) {
+        setSuccess(job.message);
+      }
+      await fetchStatus(true);
+    } catch (err) {
+      setError(errorMessage(err, "回滚失败"));
+    } finally {
+      setRollingBack(false);
+    }
+  }
+
   return (
     <div className="space-y-6">
       <AdminPageHeader
         title="系统状态"
-        description="查看应用版本、数据库、存储、运行时和内容统计。"
+        description="查看应用版本、数据库、存储、运行时和内容统计；可选检查 Host Release 并一键升级本实例。"
         actions={
           <AdminButton
             size="sm"
@@ -141,6 +249,7 @@ export default function AdminSystemStatusPage() {
       />
 
       {error && <AdminErrorBanner message={error} onDismiss={() => setError("")} />}
+      {success && <AdminSuccessBanner message={success} />}
 
       {loading ? (
         <AdminLoading />
@@ -153,6 +262,105 @@ export default function AdminSystemStatusPage() {
                 { label: "Go 版本", value: status.runtime.goVersion },
               ]}
             />
+          </InfoCard>
+
+          <InfoCard title="关于与更新">
+            {update ? (
+              <div className="space-y-3 text-sm text-gray-700">
+                <MetricGrid
+                  metrics={[
+                    { label: "当前版本", value: update.currentVersion || status.application.version || "—" },
+                    {
+                      label: "远端最新",
+                      value: update.latest?.version
+                        ? `${update.latest.version}${update.latest.newer ? "（可更新）" : ""}`
+                        : "尚未检查",
+                    },
+                    { label: "通道", value: update.channel || "stable" },
+                    {
+                      label: "自更新",
+                      value: update.enabled
+                        ? update.capable
+                          ? "已开启且可用"
+                          : "已开启但不可用"
+                        : "关闭",
+                    },
+                  ]}
+                />
+                {update.blockedReason ? (
+                  <p className="rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                    {update.blockedReason}
+                  </p>
+                ) : null}
+                {update.latest?.notesUrl ? (
+                  <p className="text-xs">
+                    <a
+                      href={update.latest.notesUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-600 hover:underline"
+                    >
+                      Release 说明
+                    </a>
+                    {update.lastCheckAt ? ` · 上次检查 ${update.lastCheckAt}` : null}
+                  </p>
+                ) : update.lastCheckAt ? (
+                  <p className="text-xs text-gray-500">上次检查 {update.lastCheckAt}</p>
+                ) : null}
+                <div className="flex flex-wrap gap-2 pt-1">
+                  <AdminButton size="sm" variant="secondary" disabled={checking || applying} onClick={handleCheck}>
+                    {checking ? "检查中…" : "检查更新"}
+                  </AdminButton>
+                  <AdminButton
+                    size="sm"
+                    variant="primary"
+                    disabled={
+                      applying ||
+                      checking ||
+                      !update.capable ||
+                      !update.latest?.newer
+                    }
+                    onClick={handleApply}
+                  >
+                    {applying
+                      ? "升级中…"
+                      : update.latest?.newer
+                        ? `升级到 ${update.latest.version}`
+                        : "已是最新"}
+                  </AdminButton>
+                  <AdminButton
+                    size="sm"
+                    variant="secondary"
+                    disabled={rollingBack || !update.capable || !update.hasPrevious}
+                    onClick={handleRollback}
+                  >
+                    {rollingBack ? "回滚中…" : "回滚 previous"}
+                  </AdminButton>
+                </div>
+                {!update.enabled ? (
+                  <p className="text-xs text-gray-500">
+                    默认关闭。在本实例 .env 设置 INKLESS_SELF_UPDATE_ENABLED=true、
+                    INKLESS_RELEASE_ROOT、INKLESS_SYSTEMD_UNIT 后重启进程；仅升级本站代码树。
+                  </p>
+                ) : null}
+                {(lastJob || update.lastJob) && (
+                  <p className="font-mono text-[11px] text-gray-500">
+                    最近任务：{(lastJob || update.lastJob)?.status}
+                    {(lastJob || update.lastJob)?.toVersion
+                      ? ` → ${(lastJob || update.lastJob)?.toVersion}`
+                      : ""}
+                    {(lastJob || update.lastJob)?.phase
+                      ? ` · ${(lastJob || update.lastJob)?.phase}`
+                      : ""}
+                    {(lastJob || update.lastJob)?.error
+                      ? ` · ${(lastJob || update.lastJob)?.error}`
+                      : ""}
+                  </p>
+                )}
+              </div>
+            ) : (
+              <p className="text-sm text-gray-500">无法加载更新状态（后端未部署或权限不足）。</p>
+            )}
           </InfoCard>
 
           <InfoCard title="数据库" action={<StatusBadge healthy={status.database.healthy} status={status.database.status} />}>

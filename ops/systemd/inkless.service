@@ -17,7 +17,9 @@ NoNewPrivileges=true
 PrivateTmp=true
 ProtectSystem=strict
 ProtectHome=true
-ReadWritePaths=/opt/inkless/data /opt/inkless/uploads /opt/inkless/backups /opt/inkless/plugins /opt/inkless/data/plugins
+# Include backend/frontend/var when enabling host self-update (H1) so the
+# process can stage artifacts and switch current/previous under RELEASE_ROOT.
+ReadWritePaths=/opt/inkless/data /opt/inkless/uploads /opt/inkless/backups /opt/inkless/plugins /opt/inkless/data/plugins /opt/inkless/backend /opt/inkless/frontend /opt/inkless/var
 
 [Install]
 WantedBy=multi-user.target

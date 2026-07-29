@@ -1,8 +1,14 @@
 import { EditorContent, type Editor } from "@tiptap/react";
-import EditorBubbleMenu from "@/components/admin/editor/EditorBubbleMenu";
-import TableBubbleMenu from "@/components/admin/editor/TableBubbleMenu";
-import EditorFloatingMenu from "@/components/admin/editor/EditorFloatingMenu";
+import {
+  EditorBubbleMenu,
+  TableBubbleMenu,
+  EditorFloatingMenu,
+  getEditorSurface,
+  type EditorPresetName,
+} from "@inkless/editor";
 import ArticleTypographyRoot from "@/components/blog/ArticleTypographyRoot";
+
+const DEFAULT_SURFACE = getEditorSurface("full");
 
 /**
  * TipTap canvas + bubble/floating menus.
@@ -12,18 +18,25 @@ export function RichTextSurface({
   editor,
   showMenus,
   metadata,
+  preset = "full",
 }: {
   editor: Editor;
   showMenus: boolean;
   metadata: Record<string, unknown>;
+  /** Must match the preset used when mounting the editor (default: full). */
+  preset?: EditorPresetName;
 }) {
+  const surface = preset === "full" ? DEFAULT_SURFACE : getEditorSurface(preset);
+
   return (
     <div className="h-full overflow-y-auto">
       {showMenus && (
         <>
-          <EditorBubbleMenu editor={editor} />
-          <TableBubbleMenu editor={editor} />
-          <EditorFloatingMenu editor={editor} />
+          {surface.bubbleMenu && (
+            <EditorBubbleMenu editor={editor} config={surface.bubbleMenu} />
+          )}
+          {surface.bubbleMenu && <TableBubbleMenu editor={editor} />}
+          {surface.floatingMenu && <EditorFloatingMenu editor={editor} />}
         </>
       )}
       <ArticleTypographyRoot

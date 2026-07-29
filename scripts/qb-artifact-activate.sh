@@ -194,6 +194,16 @@ main() {
   fi
   [[ -f "${INCOMING}/backend-${VERSION}.tar.gz" ]] && deployed_backend=true
 
+  # Self-update needs inkless-writable versions/ + var/
+  if id inkless >/dev/null 2>&1; then
+    chown -R inkless:inkless \
+      "${RELEASE_ROOT}/backend" \
+      "${RELEASE_ROOT}/frontend" 2>/dev/null || true
+    mkdir -p "${RELEASE_ROOT}/var/updates"
+    chown -R inkless:inkless "${RELEASE_ROOT}/var" 2>/dev/null || true
+    [[ -f "${env_file}" ]] && chown inkless:inkless "${env_file}" && chmod 600 "${env_file}" || true
+  fi
+
   install_systemd_unit
 
   if ! qb_restart_runtime "${RELEASE_ROOT}"; then
@@ -218,6 +228,10 @@ main() {
     fi
     exit 1
   fi
+
+  # Strategy A: copy this VERSION into peer release roots (ops/imgli) and restart.
+  export QB_VERSION="${VERSION}"
+  qb_propagate_artifact_to_peers "${RELEASE_ROOT}" "${VERSION}"
 
   qb_log_info "activate complete version=${VERSION}"
 }

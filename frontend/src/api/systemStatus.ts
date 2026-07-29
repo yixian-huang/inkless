@@ -2,6 +2,9 @@ import { http } from "@/api/http";
 
 export interface SystemApplicationInfo {
   version: string;
+  updateCapable?: boolean;
+  updateBlockedReason?: string;
+  selfUpdateEnabled?: boolean;
 }
 
 export interface SystemRuntimeInfo {
@@ -60,4 +63,84 @@ export interface SystemStatusResponse {
 export async function getSystemStatus(): Promise<SystemStatusResponse> {
   const response = await http.get<SystemStatusResponse>("/admin/system/status");
   return response.data;
+}
+
+// ── Host self-update (H0/H1) ──
+
+export interface HostReleaseAsset {
+  name: string;
+  url: string;
+  sha256?: string;
+  size?: number;
+}
+
+export interface HostReleaseInfo {
+  version: string;
+  publishedAt?: string;
+  notesUrl?: string;
+  newer?: boolean;
+  assets?: HostReleaseAsset[];
+  prerelease?: boolean;
+}
+
+export interface HostUpdateJob {
+  id: string;
+  kind: string;
+  status: string;
+  fromVersion?: string;
+  toVersion?: string;
+  startedAt: string;
+  finishedAt?: string;
+  error?: string;
+  phase?: string;
+  message?: string;
+}
+
+export interface HostUpdateStatus {
+  enabled: boolean;
+  capable: boolean;
+  blockedReason?: string;
+  currentVersion: string;
+  channel: string;
+  releaseRoot?: string;
+  systemdUnit?: string;
+  repo?: string;
+  latest?: HostReleaseInfo | null;
+  lastCheckAt?: string;
+  lastJob?: HostUpdateJob | null;
+  localVersions?: string[];
+  hasPrevious?: boolean;
+  checks?: Record<string, boolean>;
+}
+
+export interface HostUpdateProbeResult {
+  checkedAt: string;
+  channel: string;
+  source?: string;
+  latest?: HostReleaseInfo | null;
+  error?: string;
+}
+
+export async function getHostUpdateStatus(): Promise<HostUpdateStatus> {
+  const res = await http.get<HostUpdateStatus>("/admin/system/update");
+  return res.data;
+}
+
+export async function checkHostUpdate(): Promise<HostUpdateProbeResult> {
+  const res = await http.post<HostUpdateProbeResult>("/admin/system/update/check");
+  return res.data;
+}
+
+export async function applyHostUpdate(version?: string): Promise<HostUpdateJob> {
+  const res = await http.post<HostUpdateJob>("/admin/system/update/apply", {
+    version: version || undefined,
+  });
+  return res.data;
+}
+
+export async function rollbackHostUpdate(to?: string): Promise<HostUpdateJob> {
+  const res = await http.post<HostUpdateJob>("/admin/system/update/rollback", {
+    to: to || "previous",
+  });
+  return res.data;
 }

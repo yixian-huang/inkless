@@ -1,5 +1,6 @@
 import { lazy, Suspense } from "react";
 import type { Editor } from "@tiptap/react";
+import type { EditorPorts } from "@inkless/editor";
 
 const LangEditorMountInner = lazy(() => import("./LangEditorMountInner"));
 
@@ -10,6 +11,7 @@ type Props = {
   onDirty: () => void;
   onEditor: (editor: Editor | null) => void;
   onFlushBody?: (html: string) => void;
+  ports: EditorPorts;
 };
 
 /**
@@ -23,6 +25,7 @@ export function LangEditorMount({
   onDirty,
   onEditor,
   onFlushBody,
+  ports,
 }: Props) {
   if (!enabled) return null;
   return (
@@ -33,6 +36,7 @@ export function LangEditorMount({
         onDirty={onDirty}
         onEditor={onEditor}
         onFlushBody={onFlushBody}
+        ports={ports}
       />
     </Suspense>
   );

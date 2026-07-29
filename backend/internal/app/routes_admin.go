@@ -174,6 +174,15 @@ func registerAdminThemes(admin *gin.RouterGroup, h *Handlers, require requireFn)
 	admin.POST("/theme-packages/import", require("themes", "manage"), h.ThemeExport.Import)
 	admin.GET("/theme-packages", require("themes", "manage"), h.ThemeExport.List)
 	admin.PUT("/theme-packages/:id/apply", require("themes", "manage"), h.ThemeExport.Apply)
+
+	// Official theme catalog / install / auto-update (Phase A extension store)
+	if h.Extensions != nil {
+		admin.GET("/extensions/themes/catalog", require("themes", "read"), h.Extensions.AdminThemeCatalog)
+		admin.POST("/extensions/themes/install", require("themes", "manage"), h.Extensions.AdminThemeInstall)
+		admin.GET("/extensions/themes/auto-update", require("themes", "read"), h.Extensions.AdminThemeAutoUpdateGet)
+		admin.PUT("/extensions/themes/auto-update", require("themes", "manage"), h.Extensions.AdminThemeAutoUpdatePut)
+		admin.POST("/extensions/themes/auto-update/run", require("themes", "manage"), h.Extensions.AdminThemeAutoUpdateRun)
+	}
 }
 
 func registerAdminSettings(admin *gin.RouterGroup, h *Handlers, require requireFn) {
@@ -261,6 +270,13 @@ func registerAdminAI(admin *gin.RouterGroup, h *Handlers, require requireFn) {
 
 func registerAdminSystem(admin *gin.RouterGroup, h *Handlers, require requireFn) {
 	admin.GET("/system/status", require("system", "manage"), h.System.GetStatus)
+
+	// Host self-update (H0 probe + H1 apply). See docs/design-host-self-update-mvp.md
+	admin.GET("/system/update", require("system", "manage"), h.System.GetUpdate)
+	admin.POST("/system/update/check", require("system", "manage"), h.System.CheckUpdate)
+	admin.POST("/system/update/apply", require("system", "manage"), h.System.ApplyUpdate)
+	admin.GET("/system/update/jobs/:id", require("system", "manage"), h.System.GetUpdateJob)
+	admin.POST("/system/update/rollback", require("system", "manage"), h.System.RollbackUpdate)
 
 	admin.POST("/migration/import", require("system", "manage"), h.Migration.Import)
 	admin.GET("/migration/jobs", require("system", "manage"), h.Migration.ListJobs)

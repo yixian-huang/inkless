@@ -1,8 +1,8 @@
 import { Suspense, type RefObject } from "react";
 import type { ScheduledPublication } from "@/api/scheduledPublications";
 import type { Editor } from "@tiptap/react";
-import type { ModalControls } from "@/components/admin/editor/types-internal";
-import type { MarkdownSelectionApi } from "@/components/admin/editor/MarkdownToolbar";
+import type { ModalControls } from "@inkless/editor";
+import type { MarkdownSelectionApi } from "@inkless/editor";
 import type { EditorSavePhase } from "../saveStatusUtils";
 import type { EditorMetaPanel } from "../hooks/useEditorShell";
 import { EditorActionBar } from "./EditorActionBar";

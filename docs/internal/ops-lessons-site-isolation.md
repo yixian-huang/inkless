@@ -71,3 +71,5 @@ bash scripts/ops-bootstrap-inkless-run.sh
 
 - Brand migration notes: `docs/inkless-brand-migration.md`
 - Site config example: `ops/inkless-site-config.example.json`
+- Host self-update MVP (per-instance release apply; **requires non-shared
+  `RELEASE_ROOT` / `current`**): [`../design-host-self-update-mvp.md`](../design-host-self-update-mvp.md) §6

@@ -24,7 +24,7 @@ import { useArticleEditors } from "./hooks/useArticleEditors";
 import { useBilingualActions } from "./hooks/useBilingualActions";
 import { useEditorShortcuts } from "./hooks/useEditorShortcuts";
 import { useOutsideClick } from "./hooks/useOutsideClick";
-import { useSlashMediaBridge } from "./hooks/useSlashMediaBridge";
+
 import { useArticleSchedule } from "./hooks/useArticleSchedule";
 import { useWordStats } from "./hooks/useWordStats";
 import { useLocalDraft } from "./hooks/useLocalDraft";
@@ -78,7 +78,6 @@ export default function ArticleEditorPage() {
   const langMenuRef = useRef<HTMLDivElement>(null);
 
   useOutsideClick(langMenuRef, shell.showLangMenu, () => shell.setShowLangMenu(false));
-  useSlashMediaBridge(editors.activeEntry?.state);
 
   useEffect(() => {
     void (async () => {
@@ -571,6 +570,7 @@ export default function ArticleEditorPage() {
         onDirty={dirty.touch}
         onEditor={editors.onZhEditorReady}
         onFlushBody={editors.onZhFlushBody}
+        ports={editors.zhPorts}
       />
       <LangEditorMount
         enabled={editors.needEnEditor}
@@ -579,6 +579,7 @@ export default function ArticleEditorPage() {
         onDirty={dirty.touch}
         onEditor={editors.onEnEditorReady}
         onFlushBody={editors.onEnFlushBody}
+        ports={editors.enPorts}
       />
 
       <EditorDialogs

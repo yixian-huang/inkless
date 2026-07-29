@@ -1,11 +1,11 @@
 import { Extension } from "@tiptap/core";
 import { Plugin, PluginKey } from "@tiptap/pm/state";
-import {
-  DEFAULT_IMAGE_MAX_BYTES,
-  uploadAndInsertImage,
-} from "@/lib/mediaUploadTracked";
+import type { MediaUploadPort } from "../ports/types";
+import { DEFAULT_EDITOR_IMAGE_MAX_BYTES } from "../ports/types";
 
 export interface ImagePasteOptions {
+  /** Host upload adapter. Without this, paste/drop images are ignored. */
+  upload?: MediaUploadPort;
   /** Max file size in bytes (default: 20MB) */
   maxSize?: number;
 }
@@ -29,28 +29,34 @@ function dataUrlToFile(dataUrl: string, filename: string): File | null {
 }
 
 /**
- * Paste / drop images into TipTap with progress tray + retry
- * (via mediaUploadTracked bus).
+ * Paste / drop images into TipTap via injected MediaUploadPort.
+ * Progress + retry stay on the host bus (MediaUploadTray).
  */
 export const ImagePaste = Extension.create<ImagePasteOptions>({
   name: "imagePaste",
 
   addOptions() {
     return {
-      maxSize: DEFAULT_IMAGE_MAX_BYTES,
+      upload: undefined,
+      maxSize: DEFAULT_EDITOR_IMAGE_MAX_BYTES,
     };
   },
 
   addProseMirrorPlugins() {
-    const maxSize = this.options.maxSize ?? DEFAULT_IMAGE_MAX_BYTES;
+    const maxSize = this.options.maxSize ?? DEFAULT_EDITOR_IMAGE_MAX_BYTES;
+    const upload = this.options.upload;
     const editor = this.editor;
 
+    if (!upload) {
+      return [];
+    }
+
     const doUpload = (file: File) => {
-      uploadAndInsertImage(
+      upload.uploadImage(
         file,
-        (url, filename) => {
-          if (!url || editor.isDestroyed) return;
-          editor.chain().focus().setImage({ src: url, alt: filename }).run();
+        (ref) => {
+          if (!ref.url || editor.isDestroyed) return;
+          editor.chain().focus().setImage({ src: ref.url, alt: ref.filename }).run();
         },
         { maxSize },
       );

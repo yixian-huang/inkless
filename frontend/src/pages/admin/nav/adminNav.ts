@@ -22,6 +22,7 @@ import {
   Shield,
   SlidersHorizontal,
   Sparkles,
+  Store,
   Timer,
   ToggleLeft,
   Users,
@@ -161,6 +162,14 @@ export const adminNavGroups: AdminNavGroup[] = [
         group: "appearance",
         icon: Palette,
         description: "主题包与视觉样式",
+      },
+      {
+        id: "theme-market",
+        path: "/admin/theme-market",
+        label: "主题市场",
+        group: "appearance",
+        icon: Store,
+        description: "官方主题一键安装",
       },
       {
         id: "site-config",

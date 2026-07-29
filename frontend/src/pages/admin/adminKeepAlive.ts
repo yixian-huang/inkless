@@ -32,6 +32,7 @@ export const ADMIN_KEEP_ALIVE_PATHS = new Set<string>([
   "/admin/comments",
   "/admin/audit-logs",
   "/admin/theme",
+  "/admin/theme-market",
   "/admin/site-config",
   "/admin/features",
   "/admin/backups",

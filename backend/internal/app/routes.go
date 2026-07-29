@@ -20,6 +20,7 @@ import (
 	chunkedUploadHandler "github.com/yixian-huang/inkless/backend/internal/handler/chunked_upload"
 	dashboardHandler "github.com/yixian-huang/inkless/backend/internal/handler/dashboard"
 	emailSettingsHandler "github.com/yixian-huang/inkless/backend/internal/handler/email_settings"
+	extensionsHandler "github.com/yixian-huang/inkless/backend/internal/handler/extensions"
 	featuresHandler "github.com/yixian-huang/inkless/backend/internal/handler/features"
 	feedHandler "github.com/yixian-huang/inkless/backend/internal/handler/feed"
 	globalConfigHandler "github.com/yixian-huang/inkless/backend/internal/handler/global_config"
@@ -91,6 +92,7 @@ type Handlers struct {
 	Search         *searchhandler.Handler
 	Role           *roleHandler.Handler
 	Marketplace    *marketplaceHandler.Handler
+	Extensions     *extensionsHandler.Handler
 	Plugin         *pluginHandler.Handler
 	Wizard         *wizardHandler.Handler
 	AI             *aiHandler.Handler
@@ -338,6 +340,8 @@ func registerRoutes(router *gin.Engine, handlers *Handlers, deps *RouteDeps) {
 		router.Static("/images", filepath.Join(cfg.FrontendDir, "images"))
 		// Brand kit (favicon, logos, OG) from Vite public/brand — not SPA-routed
 		router.Static("/brand", filepath.Join(cfg.FrontendDir, "brand"))
+		// Official theme marketplace index + UMD mirrors (Vite public/marketplace)
+		router.Static("/marketplace", filepath.Join(cfg.FrontendDir, "marketplace"))
 		router.StaticFile("/favicon.ico", filepath.Join(cfg.FrontendDir, "favicon.ico"))
 
 		// SPA fallback: non-API GET requests return index.html with SEO meta

@@ -9,6 +9,28 @@ those will be called out under **BREAKING**.
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-07-29
+
+### Added
+
+- Official **theme market** (Phase A): catalog browse, one-click install/update,
+  optional theme package auto-update from remote catalog (default off).
+- Public catalog sample: `https://inkless.run/marketplace/v1/themes.json`.
+- **Host self-update** (H0/H1): admin “About & updates” probes GitHub Releases
+  and can apply `backend`/`frontend` artifacts to this instance’s release root
+  (optional, env-gated).
+- Artifact activate: merge `.env` (preserve secrets / `INKLESS_*`); optional peer
+  propagate to sibling instance trees after `/opt/inkless` activate.
+
+### Changed
+
+- Product docs: README points at v0.1.1; OPS notes multi-instance + self-update.
+
+### Assets
+
+- `frontend-v0.1.1.tar.gz` (+ `.sha256`)
+- `backend-v0.1.1.tar.gz` (+ `.sha256`)
+
 ## [0.1.0-alpha.2] - 2026-07-25
 
 First tag-driven GitHub Release with build artifacts from

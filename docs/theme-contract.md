@@ -2,7 +2,8 @@
 
 **Status**: Locked (v1)  
 **Audience**: Theme authors + Inkless core maintainers  
-**Related**: `frontend/src/theme-host/`, `frontend/src/plugins/types.ts`, `ThemeManager`, `externals.ts`
+**Related**: `frontend/src/theme-host/`, `frontend/src/plugins/types.ts`, `ThemeManager`, `externals.ts`  
+**Boundary ADR**: [`docs/adr/0002-theme-host-boundary.md`](adr/0002-theme-host-boundary.md) — Host / Theme / Config / Features ownership (Accepted 2026-07-29)
 
 ## 1. Purpose
 
@@ -11,6 +12,8 @@ Inkless is the **host**: CMS data, auth, admin, public APIs, and a stable theme 
 Themes (e.g. **blog-first**) own **presentation**: tokens, chrome, home information architecture, and optional page components.
 
 Themes must not fork CMS business logic. Host must not hardcode personal-site hero copy.
+
+Product layering (full decision record): **Host = capabilities**, **Theme = site shape**, **Site config = instance data**, **Features = capability toggles**. See ADR-0002.
 
 ## 2. Contract version lock
 
@@ -118,6 +121,8 @@ window.InklessThemeHost = host; // same as host
 
 ## 5. Ownership matrix
 
+Canonical narrative and switch-theme rules: **[ADR-0002](adr/0002-theme-host-boundary.md)**. Summary:
+
 | Concern | Inkless (host) | Theme |
 |---------|----------------|--------|
 | Articles / media / comments APIs | ✓ | — |
@@ -128,20 +133,33 @@ window.InklessThemeHost = host; // same as host
 | Site name / tagline / logo URLs | site config | reads via hooks |
 | Tokens (color, type, max-width) | merge/publish | defaults + presets |
 | Admin install theme from URL | ✓ | ships UMD |
+| Site-type IA (blog vs product vs corporate) | — | ✓ (`pages[]` + seed) |
+| Features toggles (blog on/off, …) | instance config | theme *responds* only |
 
 ### 5.1 Routes
 
 | Route | Owner |
 |-------|--------|
 | `/` (theme home) | Theme `pages[]` |
-| `/author` (blog-first) | Theme `pages[]` |
+| Theme-declared slugs (`/features`, `/author`, …) | Theme `pages[]` |
 | `/blog`, `/blog/:slug` | Host |
 | `/categories/*`, `/tags/*` | Host |
-| Dynamic CMS pages | Host + sections |
+| `/admin/*`, `/setup`, `/auth` | Host |
+| Dynamic CMS pages (`/p/*`, unified pages) | Host + sections |
 
 ### 5.2 Built-in themes (examples)
 
-- **editorial-firm** — built-in magazine / firm theme; four dynamic CMS pages via `ef-*` sections (`packages/theme-editorial-firm`). Coexists with `corporate-classic`; not the system fallback.
+Official themes are **vertical templates** (site shape), not skins. Profiles:
+
+| Theme | Shape | Notes |
+|-------|--------|--------|
+| blog-first | Personal / author | Blank-site default |
+| product-first | Software product ops | Landing + features; docs external |
+| corporate-classic | Consulting / firm | Legacy enterprise page matrix |
+| editorial-firm | Magazine / firm | `ef-*` sections; not system fallback |
+| minimal-starter | Extension demo | Third-party path sample |
+
+Each official theme README should document: audience, routes/pages, default Features, content schema (if any).
 
 ## 6. Tokens
 

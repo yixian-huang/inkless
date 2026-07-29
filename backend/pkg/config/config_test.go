@@ -63,6 +63,31 @@ func TestLoad_WithDefaults(t *testing.T) {
 	if cfg.BackupDir != "./backups" {
 		t.Errorf("expected default BackupDir='./backups', got '%s'", cfg.BackupDir)
 	}
+	if cfg.ThemeCatalogURL != "" {
+		t.Errorf("expected empty ThemeCatalogURL by default, got %q", cfg.ThemeCatalogURL)
+	}
+	if len(cfg.ThemeUMDAllowHosts) == 0 {
+		t.Fatal("expected default ThemeUMDAllowHosts to be populated")
+	}
+}
+
+func TestLoad_ThemeCatalogEnv(t *testing.T) {
+	os.Setenv("JWT_SECRET", "test-secret")
+	os.Setenv("JWT_REFRESH_SECRET", "test-refresh-secret")
+	os.Setenv("INKLESS_THEME_CATALOG_URL", "https://inkless.run/marketplace/v1/themes.json")
+	os.Setenv("INKLESS_THEME_UMD_ALLOW_HOSTS", "cdn.example.com,github.com")
+	defer cleanupEnv()
+
+	cfg, err := Load()
+	if err != nil {
+		t.Fatalf("expected no error, got: %v", err)
+	}
+	if cfg.ThemeCatalogURL != "https://inkless.run/marketplace/v1/themes.json" {
+		t.Fatalf("ThemeCatalogURL: got %q", cfg.ThemeCatalogURL)
+	}
+	if len(cfg.ThemeUMDAllowHosts) != 2 || cfg.ThemeUMDAllowHosts[0] != "cdn.example.com" {
+		t.Fatalf("ThemeUMDAllowHosts: got %#v", cfg.ThemeUMDAllowHosts)
+	}
 }
 
 func TestLoad_UsesDefaultSQLiteDSNWhenMissing(t *testing.T) {
@@ -163,4 +188,6 @@ func cleanupEnv() {
 	os.Unsetenv("JWT_REFRESH_SECRET")
 	os.Unsetenv("ENV")
 	os.Unsetenv("BACKUP_DIR")
+	os.Unsetenv("INKLESS_THEME_CATALOG_URL")
+	os.Unsetenv("INKLESS_THEME_UMD_ALLOW_HOSTS")
 }

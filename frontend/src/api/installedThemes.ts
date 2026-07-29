@@ -8,7 +8,7 @@ export interface InstalledThemeDTO {
   description: string;
   author: string;
   version: string;
-  source: "built-in" | "external";
+  source: "built-in" | "external" | "marketplace";
   externalUrl?: string;
   isActive: boolean;
   preview: string;
@@ -49,7 +49,7 @@ export async function installTheme(data: {
   description?: string;
   author?: string;
   version?: string;
-  source: "external";
+  source: "external" | "marketplace";
   externalUrl: string;
   preview?: string;
 }): Promise<InstalledThemeDTO> {

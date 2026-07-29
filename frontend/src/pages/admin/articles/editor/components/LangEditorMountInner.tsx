@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef } from "react";
 import { useEditor, type Editor } from "@tiptap/react";
-import { getEditorExtensions } from "@/components/admin/RichTextEditor";
+import { createEditorKit } from "@inkless/editor";
+import type { EditorPorts } from "@inkless/editor";
+import type { EditorPresetName } from "@inkless/editor";
 import { sanitizePastedHtml } from "../utils/sanitizePastedHtml";
 
 export type LangEditorMountInnerProps = {
@@ -9,6 +11,9 @@ export type LangEditorMountInnerProps = {
   onDirty: () => void;
   onEditor: (editor: Editor | null) => void;
   onFlushBody?: (html: string) => void;
+  /** Host ports (upload + picker). Must be stable for the editor lifetime. */
+  ports: EditorPorts;
+  preset?: EditorPresetName;
 };
 
 /**
@@ -21,8 +26,13 @@ export function LangEditorMountInner({
   onDirty,
   onEditor,
   onFlushBody,
+  ports,
+  preset = "full",
 }: LangEditorMountInnerProps) {
-  const extensions = useMemo(() => getEditorExtensions(), []);
+  const extensions = useMemo(
+    () => createEditorKit(preset, ports).extensions,
+    [preset, ports],
+  );
   const onDirtyRef = useRef(onDirty);
   onDirtyRef.current = onDirty;
   const onFlushBodyRef = useRef(onFlushBody);

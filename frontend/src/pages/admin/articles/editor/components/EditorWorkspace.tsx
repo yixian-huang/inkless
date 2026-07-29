@@ -1,6 +1,7 @@
-import { Suspense } from "react";
+import { Suspense, useMemo } from "react";
 import type { Editor } from "@tiptap/react";
-import type { MarkdownSelectionApi } from "@/components/admin/editor/MarkdownToolbar";
+import type { MarkdownSelectionApi } from "@inkless/editor";
+import { createInklessUploadPort } from "@/components/admin/editor-host/createUploadPort";
 import EditorSidebar from "../EditorSidebar";
 import { EditorChunkFallback } from "./EditorChunkFallback";
 import { LazyMarkdownMode, LazyRichTextSurface } from "./lazyEditorSurfaces";
@@ -60,6 +61,7 @@ export function EditorWorkspace({
 }) {
   const activeEntry = langEditors[activeLang];
   const outlineVisible = showOutline !== false && viewLayout === "focus";
+  const upload = useMemo(() => createInklessUploadPort(), []);
 
   return (
     <div className="flex-1 flex min-h-0">
@@ -116,6 +118,7 @@ export function EditorWorkspace({
                               value={markdownContent[lang] ?? ""}
                               onChange={(val) => onMarkdownChange(lang, val)}
                               onApiReady={lang === activeLang ? onMarkdownApiReady : undefined}
+                              upload={upload}
                             />
                           </Suspense>
                         </div>
@@ -144,6 +147,7 @@ export function EditorWorkspace({
                   value={markdownContent[activeLang] ?? ""}
                   onChange={(val) => onMarkdownChange(activeLang, val)}
                   onApiReady={onMarkdownApiReady}
+                  upload={upload}
                 />
               </Suspense>
             </div>
