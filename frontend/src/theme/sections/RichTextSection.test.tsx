@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen } from "@/test/test-utils";
 import RichTextSection from "./RichTextSection";
 
 describe("RichTextSection", () => {
@@ -31,12 +31,15 @@ describe("RichTextSection", () => {
     expect(container.querySelector("strong")?.textContent).toBe("Inkless");
     // Must not show literal tag strings as text-only content
     expect(container.textContent).not.toContain("<h1>");
+    // Article typography root for real prose styles
+    expect(container.querySelector(".article-typography")).not.toBeNull();
+    expect(container.querySelector(".article-public-view")).not.toBeNull();
   });
 
   it("strips script tags from HTML", () => {
     const { container } = render(
       <RichTextSection
-        data={{ content: '<p>safe</p><script>alert(1)</script>' }}
+        data={{ content: "<p>safe</p><script>alert(1)</script>" }}
         settings={{}}
         variant="default"
       />,

@@ -1,3 +1,6 @@
+/** Host DynamicPage presentation hint (not theme IA). */
+export type DynamicPageLayout = "auto" | "reading" | "landing";
+
 export interface SectionData {
   id: string;
   type: string;
@@ -10,7 +13,8 @@ export interface SectionData {
 export interface SectionSettings {
   background?: "surface" | "surface-alt" | "primary" | string;
   padding?: "none" | "sm" | "md" | "lg";
-  maxWidth?: "layout" | "full" | string;
+  /** layout = site max-w-layout; reading = content column; full = edge-to-edge */
+  maxWidth?: "layout" | "reading" | "full" | string;
   hidden?: boolean;
 }
 
@@ -18,6 +22,8 @@ export interface SectionProps<T = Record<string, unknown>> {
   data: T;
   settings?: SectionSettings;
   variant?: string;
+  /** Set by SectionRenderer when rendering under DynamicPage */
+  pageLayout?: DynamicPageLayout | string;
 }
 
 export interface SectionMeta {
@@ -28,7 +34,14 @@ export interface SectionMeta {
 }
 
 export interface PageConfig {
-  layout?: string;
+  /**
+   * auto: infer from sections (hero → landing, rich-text-only → reading)
+   * reading: doc-style page header + content column
+   * landing: full-bleed section stack, no host page header
+   */
+  layout?: DynamicPageLayout | string;
+  /** When true, always show host title header (default: true for reading). */
+  showPageHeader?: boolean;
   sections: SectionData[];
 }
 

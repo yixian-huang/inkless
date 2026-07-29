@@ -408,6 +408,9 @@ go build -o inkless ./cmd/inkless/
 | `inkless articles get <id> --site <id>` | 拉全文 JSON |
 | `inkless articles apply <id> --from-file patch.json --site <id> [--dry-run]` | GET→merge→PUT |
 | `inkless pages list\|get\|get-draft\|put-draft\|publish` | 页面维护（publish 尊重 policy） |
+| `inkless pages presets` | 列出 Host 页面配方（doc-simple / doc-guide / landing-use-cases） |
+| `inkless pages create --slug … [--preset doc-guide]` | 新建 composable 页（可带配方多区块） |
+| `inkless pages apply-preset <id> --preset doc-guide` | 用配方覆盖草稿（需再 publish） |
 
 公共 flags：`--fleet`、`--site`、`--base-url`、`--api-key`、`--json`、`--no-verify`、`--timeout`。
 

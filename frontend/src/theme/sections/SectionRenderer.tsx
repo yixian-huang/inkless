@@ -1,15 +1,24 @@
 import { useMemo, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import type { SectionData, SectionSettings } from "../types";
-import { useSectionRegistry } from "@/plugins/hooks";
+import type { DynamicPageLayout, SectionData, SectionSettings } from "../types";
+import { useSectionRegistry, useContentMaxWidth } from "@/plugins/hooks";
 import { resolveLocale } from "@/utils/locale";
 
 interface SectionWrapperProps {
   settings?: SectionSettings;
+  pageLayout?: DynamicPageLayout;
+  sectionType?: string;
   children: ReactNode;
 }
 
-function SectionWrapper({ settings, children }: SectionWrapperProps) {
+function SectionWrapper({
+  settings,
+  pageLayout,
+  sectionType,
+  children,
+}: SectionWrapperProps) {
+  const contentMaxWidth = useContentMaxWidth();
+
   if (settings?.hidden) return null;
 
   const bgClass =
@@ -19,20 +28,49 @@ function SectionWrapper({ settings, children }: SectionWrapperProps) {
         ? "bg-surface-alt"
         : "bg-surface";
 
+  // Document-ish sections default to tighter vertical rhythm
+  const defaultPad =
+    sectionType === "rich-text" || sectionType === "checklist" ? "sm" : "md";
+  const pad = settings?.padding ?? defaultPad;
+
   const padClass =
-    settings?.padding === "lg"
+    pad === "lg"
       ? "py-section-lg"
-      : settings?.padding === "sm"
+      : pad === "sm"
         ? "py-section-sm"
-        : settings?.padding === "none"
+        : pad === "none"
           ? ""
           : "py-section";
 
-  return (
-    <section className={`${bgClass} ${padClass}`}>
-      {children}
-    </section>
-  );
+  // maxWidth: full = edge; reading = content column; layout = leave to section inner shells
+  // When page is already in reading column, avoid double-wrapping
+  const maxWidth = settings?.maxWidth;
+  const applyReadingShell =
+    maxWidth === "reading" && pageLayout !== "reading";
+  const isFullBleed = maxWidth === "full";
+
+  const outerClass = [
+    bgClass,
+    padClass,
+    isFullBleed ? "w-full" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+
+  if (applyReadingShell) {
+    return (
+      <section className={outerClass}>
+        <div
+          className="mx-auto px-4 md:px-content xl:px-8 w-full"
+          style={{ maxWidth: contentMaxWidth }}
+        >
+          {children}
+        </div>
+      </section>
+    );
+  }
+
+  return <section className={outerClass}>{children}</section>;
 }
 
 /**
@@ -77,9 +115,14 @@ function resolveBilingualValue(value: unknown, locale: string): unknown {
 
 interface SectionRendererProps {
   section: SectionData;
+  /** Parent DynamicPage layout — adjusts width shells */
+  pageLayout?: DynamicPageLayout;
 }
 
-export default function SectionRenderer({ section }: SectionRendererProps) {
+export default function SectionRenderer({
+  section,
+  pageLayout,
+}: SectionRendererProps) {
   const { registry } = useSectionRegistry();
   const { i18n } = useTranslation("common");
   const locale = resolveLocale(i18n.language);
@@ -102,8 +145,17 @@ export default function SectionRenderer({ section }: SectionRendererProps) {
   }
 
   return (
-    <SectionWrapper settings={section.settings}>
-      <Component data={resolvedData} settings={section.settings} variant={section.variant} />
+    <SectionWrapper
+      settings={section.settings}
+      pageLayout={pageLayout}
+      sectionType={section.type}
+    >
+      <Component
+        data={resolvedData}
+        settings={section.settings}
+        variant={section.variant}
+        pageLayout={pageLayout}
+      />
     </SectionWrapper>
   );
 }

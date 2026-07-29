@@ -54,6 +54,11 @@ type WhoamiUser struct {
 
 // DoJSON performs an authenticated JSON request.
 func (c *Client) DoJSON(ctx context.Context, method, path string, body any, out any) error {
+	return c.DoJSONWithHeaders(ctx, method, path, body, nil, out)
+}
+
+// DoJSONWithHeaders is DoJSON plus extra request headers (e.g. If-Match).
+func (c *Client) DoJSONWithHeaders(ctx context.Context, method, path string, body any, extraHeaders map[string]string, out any) error {
 	if c == nil || c.BaseURL == "" {
 		return fmt.Errorf("client base URL is empty")
 	}
@@ -80,6 +85,11 @@ func (c *Client) DoJSON(ctx context.Context, method, path string, body any, out 
 	}
 	if c.UserAgent != "" {
 		req.Header.Set("User-Agent", c.UserAgent)
+	}
+	for k, v := range extraHeaders {
+		if k != "" && v != "" {
+			req.Header.Set(k, v)
+		}
 	}
 
 	httpClient := c.HTTPClient
@@ -193,6 +203,15 @@ func (c *Client) PutArticle(ctx context.Context, id uint, body map[string]any) (
 	return out, nil
 }
 
+// CreatePage POST /admin/pages
+func (c *Client) CreatePage(ctx context.Context, body map[string]any) (map[string]any, error) {
+	var out map[string]any
+	if err := c.DoJSON(ctx, http.MethodPost, "/admin/pages", body, &out); err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ListPages GET /admin/pages
 func (c *Client) ListPages(ctx context.Context) (json.RawMessage, error) {
 	var out map[string]json.RawMessage
@@ -225,10 +244,36 @@ func (c *Client) GetPageDraft(ctx context.Context, id uint) (map[string]any, err
 	return out, nil
 }
 
-// PutPageDraft PUT /admin/pages/:id/draft
+// PutPageDraft PUT /admin/pages/:id/draft with If-Match from current draft version.
+// body may be the draft config map, or already wrapped as {"draftConfig": ...}.
 func (c *Client) PutPageDraft(ctx context.Context, id uint, body map[string]any) (map[string]any, error) {
+	draft, err := c.GetPageDraft(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	ver := 0
+	switch v := draft["draftVersion"].(type) {
+	case float64:
+		ver = int(v)
+	case int:
+		ver = v
+	case json.Number:
+		n, _ := v.Int64()
+		ver = int(n)
+	}
+	if ver <= 0 {
+		return nil, fmt.Errorf("page %d: missing draftVersion for If-Match", id)
+	}
+
+	payload := body
+	if _, ok := body["draftConfig"]; !ok {
+		payload = map[string]any{"draftConfig": body}
+	}
+
 	var out map[string]any
-	if err := c.DoJSON(ctx, http.MethodPut, fmt.Sprintf("/admin/pages/%d/draft", id), body, &out); err != nil {
+	if err := c.DoJSONWithHeaders(ctx, http.MethodPut, fmt.Sprintf("/admin/pages/%d/draft", id), payload, map[string]string{
+		"If-Match": strconv.Itoa(ver),
+	}, &out); err != nil {
 		return nil, err
 	}
 	return out, nil

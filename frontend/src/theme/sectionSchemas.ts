@@ -106,6 +106,7 @@ export const settingsSchema: FieldSchema[] = [
   ]},
   { key: "maxWidth", type: "select", label: "最大宽度", options: [
     { label: "标准", value: "layout" },
+    { label: "阅读栏", value: "reading" },
     { label: "全宽", value: "full" },
   ]},
   { key: "hidden", type: "boolean", label: "隐藏" },

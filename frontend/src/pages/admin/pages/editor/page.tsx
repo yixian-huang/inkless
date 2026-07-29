@@ -3,6 +3,12 @@ import { useParams, useNavigate } from "react-router-dom";
 import { SectionRenderer } from "@/theme/sections";
 import { useSectionRegistry } from "@/plugins/hooks";
 import type { SectionData, SectionSettings } from "@/theme/types";
+import {
+  HOST_PAGE_PRESET_METAS,
+  buildHostPagePreset,
+  isHostPagePresetId,
+  type HostPagePresetId,
+} from "@/theme/pagePresets";
 import PropertiesPanel from "./components/PropertiesPanel";
 import { useDragSort } from "./hooks/useDragSort";
 import {
@@ -58,6 +64,11 @@ export default function PageEditorPage() {
   const [sortOrder, setSortOrder] = useState(0);
   const [status, setStatus] = useState("draft");
   const [metadataDirty, setMetadataDirty] = useState(false);
+  /** Host composable preset for new pages */
+  const [presetId, setPresetId] = useState<HostPagePresetId | "">("");
+  /** Page-level config fields stored alongside sections in draftConfig */
+  const [pageLayout, setPageLayout] = useState<string | undefined>(undefined);
+  const [showPageHeader, setShowPageHeader] = useState<boolean | undefined>(undefined);
 
   // -- section editor state --
   const [sections, setSections] = useState<SectionData[]>([]);
@@ -101,7 +112,11 @@ export default function PageEditorPage() {
       setDraftVersion(draft.draftVersion);
       setMetadataDirty(false);
 
-      const config = draft.draftConfig as { sections?: any[] } | null;
+      const config = draft.draftConfig as {
+        sections?: any[];
+        layout?: string;
+        showPageHeader?: boolean;
+      } | null;
       // Backend stores content in "props"; frontend SectionData uses "data" — normalize.
       // Note: plain `s.data || s.props` is broken because `{}` is truthy in JS, so an
       // empty data object won't fall back to props. Check for meaningful content.
@@ -113,6 +128,10 @@ export default function PageEditorPage() {
       }));
       setSections(loadedSections);
       setSectionJson(JSON.stringify(loadedSections, null, 2));
+      setPageLayout(typeof config?.layout === "string" ? config.layout : undefined);
+      setShowPageHeader(
+        typeof config?.showPageHeader === "boolean" ? config.showPageHeader : undefined,
+      );
     } catch {
       setError("加载页面失败");
     } finally {
@@ -226,6 +245,34 @@ export default function PageEditorPage() {
   // -- clear messages --
   const clearMessages = () => { setError(""); setSuccessMsg(""); };
 
+  const buildDraftConfig = useCallback(
+    (sectionsToSave: SectionData[]) => {
+      const cfg: Record<string, unknown> = { sections: sectionsToSave };
+      if (pageLayout) cfg.layout = pageLayout;
+      if (showPageHeader !== undefined) cfg.showPageHeader = showPageHeader;
+      return cfg;
+    },
+    [pageLayout, showPageHeader],
+  );
+
+  const applyPreset = useCallback(
+    (id: HostPagePresetId) => {
+      const built = buildHostPagePreset(id, {
+        zhTitle: zhTitle || slug || "未命名页面",
+        enTitle: enTitle || slug || "Untitled page",
+      });
+      setSections(built.sections);
+      setSectionJson(JSON.stringify(built.sections, null, 2));
+      setSelectedIndex(built.sections.length ? 0 : null);
+      setPageLayout(built.layout);
+      setShowPageHeader(built.showPageHeader);
+      setPresetId(id);
+      setSuccessMsg(`已套用配方：${HOST_PAGE_PRESET_METAS.find((m) => m.id === id)?.labelZh ?? id}`);
+      setTimeout(() => setSuccessMsg(""), 2500);
+    },
+    [zhTitle, enTitle, slug],
+  );
+
   // -- create new page --
   const handleCreate = async () => {
     if (!canCreate) return;
@@ -234,10 +281,24 @@ export default function PageEditorPage() {
     setSaving(true);
     try {
       let sectionsToCreate = sections;
+      let layoutForCreate = pageLayout;
+      let headerForCreate = showPageHeader;
       if (editorMode === "json") {
         const parsed = JSON.parse(sectionJson);
         sectionsToCreate = Array.isArray(parsed) ? parsed : [];
       }
+      if (sectionsToCreate.length === 0 && presetId && isHostPagePresetId(presetId)) {
+        const built = buildHostPagePreset(presetId, {
+          zhTitle: zhTitle || slug,
+          enTitle: enTitle || slug,
+        });
+        sectionsToCreate = built.sections;
+        layoutForCreate = built.layout;
+        headerForCreate = built.showPageHeader;
+      }
+      const draftConfig: Record<string, unknown> = { sections: sectionsToCreate };
+      if (layoutForCreate) draftConfig.layout = layoutForCreate;
+      if (headerForCreate !== undefined) draftConfig.showPageHeader = headerForCreate;
       const result = await createUnifiedPage({
         slug,
         zhTitle,
@@ -245,7 +306,7 @@ export default function PageEditorPage() {
         mode,
         showInNav,
         sortOrder,
-        draftConfig: { sections: sectionsToCreate },
+        draftConfig,
       });
       navigate(`/admin/pages/edit/${result.id}`, { replace: true });
     } catch (err: any) {
@@ -272,9 +333,11 @@ export default function PageEditorPage() {
           return;
         }
       }
-      const result: any = await updateUnifiedPageDraft(pageId, draftVersion, {
-        sections: sectionsToSave,
-      });
+      const result: any = await updateUnifiedPageDraft(
+        pageId,
+        draftVersion,
+        buildDraftConfig(sectionsToSave),
+      );
       setDraftVersion(result.draftVersion ?? draftVersion + 1);
       setSuccessMsg("草稿已保存");
       setTimeout(() => setSuccessMsg(""), 3000);
@@ -604,6 +667,11 @@ export default function PageEditorPage() {
                     : "页面发布前不会出现在公开路由；页面信息与内容草稿分别保存。"}
                 </p>
               )}
+              {isNew && (
+                <p className="text-xs text-slate-500 mt-1">
+                  可选用 Host 页面配方预填多区块结构（文档 / 指南 / 落地页）。
+                </p>
+              )}
             </div>
             {!isNew && canUpdate && (
               <button
@@ -660,6 +728,41 @@ export default function PageEditorPage() {
               />
             </div>
           </div>
+          {isNew && (
+            <div className="mt-3 flex flex-col sm:flex-row sm:items-end gap-3 p-3 rounded-lg bg-slate-50 border border-slate-100">
+              <div className="flex-1 min-w-0">
+                <label htmlFor="page-preset" className="block text-xs font-medium text-slate-600 mb-1">
+                  页面配方（Host preset）
+                </label>
+                <select
+                  id="page-preset"
+                  value={presetId}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    setPresetId(v && isHostPagePresetId(v) ? v : "");
+                  }}
+                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                >
+                  <option value="">空白（自行添加区块）</option>
+                  {HOST_PAGE_PRESET_METAS.map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.labelZh} — {m.descriptionZh}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <button
+                type="button"
+                disabled={!presetId}
+                onClick={() => {
+                  if (presetId && isHostPagePresetId(presetId)) applyPreset(presetId);
+                }}
+                className="inline-flex h-9 items-center justify-center rounded-lg border border-slate-200 bg-white px-3 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+              >
+                套用到编辑器
+              </button>
+            </div>
+          )}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-3">
             <div>
               <label htmlFor="page-mode" className="block text-xs font-medium text-slate-600 mb-1">页面模式</label>
