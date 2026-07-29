@@ -50,7 +50,7 @@ inkless mcp serve
 }
 ```
 
-## Tools（M1）
+## Tools
 
 | Tool | 说明 |
 |------|------|
@@ -60,12 +60,51 @@ inkless mcp serve
 | `list_articles` | 列文章；`missing_seo` 过滤 |
 | `get_article` | 拉文章 JSON |
 | `apply_article_patch` | 合并补丁；**默认 dry_run**；返回 `preview_handle` |
+| `list_pages` | 列页面 |
+| `get_page` / `get_page_draft` | 页面元数据 / 草稿 |
+| `put_page_draft` | 写草稿；**默认 dry_run** + `preview_handle` |
+| `publish_page` | 发布；**MRTR 确认**（见下） |
 
-### apply 工作流
+### apply / draft 工作流
 
-1. `apply_article_patch` + `patch` + `dry_run=true` → 得到 `previewHandle`  
-2. 人工/模型审阅 `mergedBody`  
-3. 同 `site_id`/`id` + `dry_run=false` + `preview_handle` → 真正 PUT  
+1. `apply_article_patch` 或 `put_page_draft` + `dry_run=true` → `previewHandle`  
+2. 审阅返回的 body  
+3. `dry_run=false` + `preview_handle` → 真正写入  
+
+### publish_page + MRTR（MCP 2026-07-28）
+
+Fleet `publish_policy`：
+
+| policy | 行为 |
+|--------|------|
+| `never` | 始终拒绝（即使 `force`） |
+| `manual` / `allow` | 首次调用返回 **`resultType: input_required`**（elicitation `confirm`）；宿主/SDK 用 `inputResponses` 重试 |
+| 参数 `force=true` | 跳过 MRTR（仅在你明确授权时用） |
+
+第一次响应（示意）：
+
+```json
+{
+  "resultType": "input_required",
+  "requestState": "…opaque…",
+  "inputRequests": {
+    "confirm": {
+      "method": "elicitation/create",
+      "params": {
+        "message": "Confirm publish of page 3 on site \"ops\" …",
+        "requestedSchema": { "type": "object", "properties": { "confirm": { "type": "boolean" } }, "required": ["confirm"] }
+      }
+    }
+  }
+}
+```
+
+客户端（go-sdk / 宿主）自动 elicitation 后重试同一 `tools/call`，带上：
+
+- `requestState`（原样回传）  
+- `inputResponses.confirm`：`{ "action": "accept", "content": { "confirm": true } }`  
+
+服务端再执行 `POST /admin/pages/:id/publish`。
 
 ## 与无状态 MCP 的关系
 

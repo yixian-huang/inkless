@@ -57,14 +57,16 @@ func (s *Server) MCP() *mcp.Server {
 Rules:
 - Prefer list_sites then pass site_id on every call (or use default_site / single-site env).
 - Never invent base_url; resolve from fleet or INKLESS_BASE_URL.
-- apply_article_patch defaults to dry_run=true; commit with dry_run=false and preview_handle or patch.
-- Do not publish unless the user explicitly asks; honor publish_policy.
+- apply_article_patch / put_page_draft default dry_run=true; commit with preview_handle.
+- publish_page uses MRTR confirmation (input_required) unless force=true; publish_policy=never always blocks.
+- Do not publish unless the user explicitly asks.
 - Prefer Admin API semantics; never suggest writing the database directly.`,
 		// Empty capabilities disables the historical default logging capability
 		// (deprecated in MCP 2026-07-28). tools/* are inferred when registered.
 		Capabilities: &mcp.ServerCapabilities{},
 	})
 	s.registerTools(srv)
+	s.registerPageTools(srv)
 	return srv
 }
 

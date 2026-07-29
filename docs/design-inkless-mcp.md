@@ -1,6 +1,6 @@
 # Design: Inkless MCP Server (local agent)
 
-> Status: **M1 implemented** (stdio MVP)  
+> Status: **M1 + M2 partial** (stdio + pages + publish MRTR)  
 > Spec target: **MCP `2026-07-28`** (stateless core)  
 > Related: [`agent-access.md`](agent-access.md), [`agent-fleet.schema.json`](agent-fleet.schema.json), CLI `inkless site|articles|pages`
 
@@ -12,11 +12,10 @@ Expose Inkless multi-site content operations to host agents (Cursor / Claude Cod
 - Protocol-level sessions
 - Direct DB access
 
-## Non-goals (M1)
+## Non-goals (current)
 
 - Remote/hosted MCP + OAuth/CIMD  
 - Tasks extension batch jobs  
-- MRTR publish confirmation  
 - MCP Apps UI  
 
 ## Architecture
@@ -36,7 +35,7 @@ Inkless Admin API (per instance)
 - **State at app layer:** optional short-TTL `preview_handle` for dry-run apply (in-process map).  
 - **Multi-site:** `site_id` on tools + fleet registry (same as CLI).
 
-## Tools (M1)
+## Tools
 
 | Tool | R/W | Notes |
 |------|-----|--------|
@@ -46,6 +45,9 @@ Inkless Admin API (per instance)
 | `list_articles` | R | optional `missing_seo` |
 | `get_article` | R | full JSON |
 | `apply_article_patch` | W | default `dry_run=true`; preview handle |
+| `list_pages` / `get_page` / `get_page_draft` | R | Pages |
+| `put_page_draft` | W | default dry_run + preview handle |
+| `publish_page` | W | `publish_policy` + **MRTR** `input_required` |
 
 ## Security
 
@@ -62,6 +64,6 @@ Inkless Admin API (per instance)
 
 ## Later
 
-- M2: pages tools, MRTR publish, preview store persistence  
 - M3: Tasks extension for fleet-wide SEO scan  
 - M4: Streamable HTTP bind + remote auth  
+- Optional: `update_page` SEO fields (non-draft) tool 
