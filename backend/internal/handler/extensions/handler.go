@@ -166,7 +166,7 @@ func (h *Handler) AdminThemeInstall(c *gin.Context) {
 }
 
 // AdminThemeAutoUpdateGet returns auto-update settings + last report.
-// @Router GET /admin/extensions/themes/auto-update
+// @Router       /admin/extensions/themes/auto-update [get]
 func (h *Handler) AdminThemeAutoUpdateGet(c *gin.Context) {
 	if h.autoUpdate == nil {
 		apierror.Message(c, http.StatusInternalServerError, "自动更新服务未配置")
@@ -189,7 +189,7 @@ type autoUpdatePutInput struct {
 }
 
 // AdminThemeAutoUpdatePut updates auto-update settings.
-// @Router PUT /admin/extensions/themes/auto-update
+// @Router       /admin/extensions/themes/auto-update [put]
 func (h *Handler) AdminThemeAutoUpdatePut(c *gin.Context) {
 	if h.autoUpdate == nil {
 		apierror.Message(c, http.StatusInternalServerError, "自动更新服务未配置")
@@ -235,7 +235,7 @@ type autoUpdateRunInput struct {
 
 // AdminThemeAutoUpdateRun checks catalog (and applies updates unless dryRun).
 // Runs even when auto-update is disabled (manual trigger).
-// @Router POST /admin/extensions/themes/auto-update/run
+// @Router       /admin/extensions/themes/auto-update/run [post]
 func (h *Handler) AdminThemeAutoUpdateRun(c *gin.Context) {
 	if h.autoUpdate == nil {
 		apierror.Message(c, http.StatusInternalServerError, "自动更新服务未配置")

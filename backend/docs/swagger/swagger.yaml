@@ -1146,6 +1146,46 @@ paths:
       summary: Send test email
       tags:
       - Email Settings (Admin)
+  /admin/extensions/themes/auto-update:
+    get:
+      responses: {}
+    put:
+      responses: {}
+  /admin/extensions/themes/auto-update/run:
+    post:
+      responses: {}
+  /admin/extensions/themes/catalog:
+    get:
+      description: Lists official themes with installState merged from this instance
+      parameters:
+      - description: Bypass catalog cache and re-fetch remote index
+        in: query
+        name: refresh
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Official theme catalog
+      tags:
+      - Extensions
+  /admin/extensions/themes/install:
+    post:
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - BearerAuth: []
+      summary: Install official theme from catalog
+      tags:
+      - Extensions
   /admin/form-submissions:
     get:
       description: Returns paginated form submissions with optional filters
@@ -2376,6 +2416,18 @@ paths:
       summary: Update robots.txt
       tags:
       - SEO
+  /admin/system/update:
+    get:
+      responses: {}
+  /admin/system/update/apply:
+    post:
+      responses: {}
+  /admin/system/update/check:
+    post:
+      responses: {}
+  /admin/system/update/rollback:
+    post:
+      responses: {}
   /admin/tags:
     get:
       description: Returns all tags for admin management

@@ -1387,6 +1387,72 @@ const docTemplate = `{
                 }
             }
         },
+        "/admin/extensions/themes/auto-update": {
+            "get": {
+                "responses": {}
+            },
+            "put": {
+                "responses": {}
+            }
+        },
+        "/admin/extensions/themes/auto-update/run": {
+            "post": {
+                "responses": {}
+            }
+        },
+        "/admin/extensions/themes/catalog": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Lists official themes with installState merged from this instance",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Extensions"
+                ],
+                "summary": "Official theme catalog",
+                "parameters": [
+                    {
+                        "type": "boolean",
+                        "description": "Bypass catalog cache and re-fetch remote index",
+                        "name": "refresh",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/extensions/themes/install": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Extensions"
+                ],
+                "summary": "Install official theme from catalog",
+                "responses": {}
+            }
+        },
         "/admin/form-submissions": {
             "get": {
                 "security": [
@@ -3346,6 +3412,26 @@ const docTemplate = `{
                         }
                     }
                 }
+            }
+        },
+        "/admin/system/update": {
+            "get": {
+                "responses": {}
+            }
+        },
+        "/admin/system/update/apply": {
+            "post": {
+                "responses": {}
+            }
+        },
+        "/admin/system/update/check": {
+            "post": {
+                "responses": {}
+            }
+        },
+        "/admin/system/update/rollback": {
+            "post": {
+                "responses": {}
             }
         },
         "/admin/tags": {

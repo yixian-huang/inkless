@@ -211,7 +211,7 @@ func (h *Handler) GetStatus(c *gin.Context) {
 }
 
 // GetUpdate returns host self-update status (H0).
-// @Router GET /admin/system/update
+// @Router       /admin/system/update [get]
 func (h *Handler) GetUpdate(c *gin.Context) {
 	if h.selfUpdate == nil {
 		apierror.Message(c, http.StatusInternalServerError, "自更新服务未配置")
@@ -221,7 +221,7 @@ func (h *Handler) GetUpdate(c *gin.Context) {
 }
 
 // CheckUpdate forces a remote release probe (H0).
-// @Router POST /admin/system/update/check
+// @Router       /admin/system/update/check [post]
 func (h *Handler) CheckUpdate(c *gin.Context) {
 	if h.selfUpdate == nil {
 		apierror.Message(c, http.StatusInternalServerError, "自更新服务未配置")
@@ -245,7 +245,7 @@ type applyUpdateInput struct {
 }
 
 // ApplyUpdate applies a host release to this instance (H1).
-// @Router POST /admin/system/update/apply
+// @Router       /admin/system/update/apply [post]
 func (h *Handler) ApplyUpdate(c *gin.Context) {
 	if h.selfUpdate == nil {
 		apierror.Message(c, http.StatusInternalServerError, "自更新服务未配置")
@@ -267,7 +267,7 @@ func (h *Handler) ApplyUpdate(c *gin.Context) {
 }
 
 // GetUpdateJob returns a persisted job.
-// @Router GET /admin/system/update/jobs/:id
+// @Router       /admin/system/update [get]/jobs/:id
 func (h *Handler) GetUpdateJob(c *gin.Context) {
 	if h.selfUpdate == nil {
 		apierror.Message(c, http.StatusInternalServerError, "自更新服务未配置")
@@ -291,7 +291,7 @@ type rollbackInput struct {
 }
 
 // RollbackUpdate rolls back to previous or a local versions/* tree.
-// @Router POST /admin/system/update/rollback
+// @Router       /admin/system/update/rollback [post]
 func (h *Handler) RollbackUpdate(c *gin.Context) {
 	if h.selfUpdate == nil {
 		apierror.Message(c, http.StatusInternalServerError, "自更新服务未配置")
