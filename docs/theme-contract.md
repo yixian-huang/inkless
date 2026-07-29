@@ -147,6 +147,10 @@ Canonical narrative and switch-theme rules: **[ADR-0002](adr/0002-theme-host-bou
 | `/admin/*`, `/setup`, `/auth` | Host |
 | Dynamic CMS pages (`/p/*`, unified pages) | Host + sections |
 
+**Primary IA (C vs D):** first-class nav narrative pages belong in theme `pages[]` (class C) or D with theme-prefixed sections — not Host-only generic blocks if brand parity with home is required. See ADR-0002 **附录 A–B**.
+
+**Route / slug conflicts (highest wins):** Host system → Host blog/taxonomy → theme `pages[]` → `/p/:slug` → external links. See ADR-0002 **附录 D**.
+
 ### 5.2 Built-in themes (examples)
 
 Official themes are **vertical templates** (site shape), not skins. Profiles:
@@ -154,12 +158,28 @@ Official themes are **vertical templates** (site shape), not skins. Profiles:
 | Theme | Shape | Notes |
 |-------|--------|--------|
 | blog-first | Personal / author | Blank-site default |
-| product-first | Software product ops | Landing + features; docs external |
+| product-first | Software product ops | Landing + features; first-class product guides may be theme pages or `pf-*` sections; long-form docs may still be external `docsUrl` |
 | corporate-classic | Consulting / firm | Legacy enterprise page matrix |
 | editorial-firm | Magazine / firm | `ef-*` sections; not system fallback |
 | minimal-starter | Extension demo | Third-party path sample |
 
-Each official theme README should document: audience, routes/pages, default Features, content schema (if any).
+Each official theme README should document: audience, routes/pages (**class C primary IA**), default Features, content schema (if any), and that `/p/*` is an extension surface without brand-parity guarantees.
+
+### 5.3 Theme-provided sections (on Host `/p/*`)
+
+Themes may register builder blocks via `sections` / `sectionMetas`. **Lifecycle stays Host** (draft / publish / permissions); **look-and-feel follows the active theme**.
+
+| Rule | Detail |
+|------|--------|
+| **Namespace** | Prefix section `type` with a short theme id: `ef-*` (editorial-firm), `pf-*` (product-first), `bf-*` (blog-first). Do **not** override Host built-in types (`hero`, `rich-text`, `card-grid`, …) unless explicitly coordinated in a contract major bump. |
+| **Fallback** | If the active theme does not provide the type (switched theme / UMD failed): Host renders a safe placeholder or skips the block — **never** wipe draft/published config. |
+| **Schema** | Prefer stable `type` + documented props; multi-shape content should plan `schemaId` / version (ADR known debt / Open question). Empty/missing props must degrade. |
+| **Data** | Props are instance data in `unified_pages` config — not a second DB. No theme-private write APIs. |
+| **Admin** | Picker may group theme sections under the theme name; Host presets only use Host built-in types. |
+
+### 5.4 D-class Host baseline (summary)
+
+Full text: ADR-0002 **附录 B**. Host must ship: reading/landing shell, article-grade public HTML typography, built-in sections without any theme, unknown-section fallback, and Host page presets for D only (not a substitute for theme IA).
 
 ## 6. Tokens
 

@@ -2,8 +2,15 @@
 
 - 状态：Accepted
 - 日期：2026-07-29
+- 修订：2026-07-30（附录 A–E：C/D 裁决、D 基线、主题 section、铁律 3 可检查化、路由冲突）
 - 作用范围：主题契约、官方主题族、路由与内容归属、`@inkless/theme-host` 演进
-- 相关：[`docs/theme-contract.md`](../theme-contract.md)、[`docs/design-product-first-theme.md`](../design-product-first-theme.md)、ADR-0001
+- 相关：
+  - [`docs/theme-contract.md`](../theme-contract.md)（工程契约与 section 细则）
+  - [`docs/design-product-first-theme.md`](../design-product-first-theme.md)
+  - ADR-0001（单实例单站点）
+  - omni KB：`decisions/inkless/adr-0002-theme-host-boundary`（与本文同步）
+  - omni KB：`arch/inkless/content-type-decision-tree`（主题页 / 动态页 / 文章选型）
+  - omni KB：`arch/inkless/theme-development-guide`
 
 ## 背景
 
@@ -31,7 +38,7 @@ Inkless 定位为**多方向、多主题的综合建站工具**（对标 Halo）
 
 1. 主题不得拥有「写入 DB 的业务模型」（文章、用户、权限、迁移…）。
 2. Host 不得拥有「某一种站点类型的叙事长文 / 固定 IA」作为平台默认。
-3. 实例数据不得写死在主题源码（禁止主题包内官方营销长文）。
+3. 实例数据不得写死在主题源码（禁止主题包内**定稿营销长文**当唯一数据源）。可检查细则见 **附录 C**。
 
 ### 判定树（任何页面 / 字段 / 组件 / 路由）
 
@@ -161,3 +168,108 @@ Inkless 定位为**多方向、多主题的综合建站工具**（对标 Halo）
 对内：
 
 > 能力正交、形态可插拔、实例可配置。
+
+---
+
+## 附录 A — 一级 IA：主题页（C）vs 动态页（D）
+
+**问题：** 「主题可声明 slug」与「`/p/*` 可承载任意常青页」同时成立时，运营/Agent 易把**产品主叙事**塞进 D，导致观感次等公民（Host 通用 section ≠ 主题 hardcode 页）。
+
+**裁决（命中即停）：**
+
+| 信号 | 归属 | 路由形态 |
+|------|------|----------|
+| 换主题后**形态应一起变**；与首页同一叙事层级；进主导航核心 | **C 主题页** | 主题 `pages[]` 声明 slug（如 `/features`） |
+| 主题用专用 section 拼装、但生命周期仍是 unified page | **D + 主题 section** | `/p/*`，section type 带主题前缀（见附录 B / contract） |
+| 换主题后**内容仍在**、结构随用户、非该站点类型标配 | **D 动态页** | `/p/*` + Host 通用 section / Host preset |
+| 时间流、分类标签、RSS、内容营销池 | **A 文章** | `/blog`、`/blog/:slug` |
+| 仅品牌/CTA/外链 | **B 配置** | site config / theme settings，不是新路由 |
+
+**官方主题义务：**
+
+- README 的 `routes/pages` 必须列出**建议进入主题的一级页**（C）。
+- 明确写出：`/p/*` 是扩展面，**不保证**与主题 hardcode 页同级观感。
+- 若产品站需要「上手 / 用例」与 `/` `/features` 一体：优先扩主题 `pages[]` 或提供 `pf-*` section，而不是仅依赖 Host 默认积木。
+
+**product-first 示例（修订后期望）：**
+
+| 页 | 建议 | 备注 |
+|----|------|------|
+| `/`、`/features` | C | 已有 |
+| 上手 / 用例 / Agent 导览（若进主导航核心） | **优先 C**，或 D+`pf-*` | 外链 Docs 仍可用 `docsUrl`；站内一级说明页可进主题 |
+| 隐私政策、活动落地、客户自定义 | D | Host preset 足够 |
+
+运营选型细则：omni `arch/inkless/content-type-decision-tree`（与本附录一致，细节场景表以该页为准）。
+
+---
+
+## 附录 B — D 类（动态页）Host 质量基线
+
+`/p/*` 生命周期属 Host；主题可贡献 section，但 **Host 必须保证无主题专用块时仍可用**。
+
+**Host 义务（D-class baseline）：**
+
+1. **Layout 壳：** 至少支持 reading / landing（或等价 auto 推断）；文档向页有页眉/阅读栏宽；落地向页允许全宽 section 栈。
+2. **富文本：** public HTML 与文章共用 typography 管线（可读层级、链接、代码块；禁止「prose 空类名」级回归）。
+3. **Host 内置 section 保底：** 不依赖任何官方主题即可完成基础落地（hero / rich-text / card-grid / checklist 等）。
+4. **未知 / 非活跃主题 section：** 降级 fallback（占位或跳过），**不白屏、不删 draft/published 数据**。
+5. **Host preset：** 服务 D 的新建/Agent 默认结构（如 doc-simple / doc-guide / landing-use-cases）；**不替代**主题 `pages[]` 的一级 IA（C）。
+
+**主题义务（可选增强 D）：**
+
+- 通过 `sections` / `sectionMetas` 注册形态专属块；命名与 fallback 见 `docs/theme-contract.md` §5.3。
+- 不得把 D 的发布/权限/版本做成主题私有逻辑。
+
+**观感预期（写给运营）：**
+
+- 仅用 Host 通用 section 的 `/p/*`：**可用、可读、可 SEO**；不承诺与当前主题首页同级品牌感。
+- 要同级品牌感：走 **C** 或 **D + 当前主题的 `xx-*` section**。
+
+---
+
+## 附录 C — 铁律 3 可检查表（实例数据 vs 主题源码）
+
+| 允许 | 禁止 |
+|------|------|
+| 结构占位、i18n key、中性 lorem、「请在站点配置中填写」 | 可识别品牌/产品的**定稿营销长文**作为唯一数据源 |
+| 从 content schema / site config / identity / unified page **读取**后渲染 | 主题源码写死某客户站或官方站终稿文案且不可配置覆盖 |
+| README / Storybook 示例（标明 example） | 激活 seed **无提示**覆盖用户已编辑 published content |
+| 装饰性默认色/布局 token | 第二套可写 DB 的内容模型 |
+
+**检查口诀：** 换站点实例、只改 config/content、不改主题包，文案与品牌是否仍正确？若必须改主题源码 → 违规。
+
+---
+
+## 附录 D — 路由与 slug 冲突优先级
+
+公开路由解析冲突时（同一 path 语义竞争），优先级**从高到低**：
+
+1. **Host 系统路由** — `/admin/*`、`/setup`、`/auth`、API、静态资源约定  
+2. **Host 内容系统标准入口** — `/blog`、`/blog/:slug`、`/categories/*`、`/tags/*`（及 Features 打开的等价入口）  
+3. **主题声明 slug** — `ThemePlugin.pages[]` 激活后的公开路径（如 `/`、`/features`）  
+4. **统一动态页** — `/p/:slug`（及未来若存在的 pretty 映射，仍不得抢占 1–3）  
+5. **外链** — 不占 Inkless 路由
+
+**规则：**
+
+- 禁止 unified page 的公开 path 与 1–3 静默同名抢占；Admin 创建/改 slug 时应校验并警告。  
+- 主题激活 seed 若与已有 `/p/:slug` 的「去前缀 slug」冲突：以 **3 优先展示主题页**；D 页数据保留，可在 admin 提示「被主题路由遮蔽」。  
+- 未来 pretty URL 若取消 `/p/` 前缀，必须仍服从本表，并做迁移说明（Open question，不阻塞本附录）。
+
+---
+
+## 附录 E — 开放问题（未决，实现勿各自发明）
+
+1. `/p/` 前缀是否永久；pretty slug 与主题路由共存的完整产品方案。  
+2. D 的 `layout` / `showPageHeader` 是否升为一等 API 字段（与 draftConfig 并列）。  
+3. Host 是否 export `DynamicPageShell` 供主题薄包装（生命周期仍 Host）。  
+4. content `schemaId` + version 与切换主题 seed 策略（后果节已记 P1 债）。
+
+---
+
+## 修订记录
+
+| 日期 | 变更 |
+|------|------|
+| 2026-07-29 | Accepted：分层、四类对象、路由、十条不变量 |
+| 2026-07-30 | 附录 A–E：C/D 裁决、D 基线、铁律 3 表、冲突优先级、开放问题；Related 链 KB 决策树 |

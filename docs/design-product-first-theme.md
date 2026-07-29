@@ -77,8 +77,9 @@
 | `/features` | **Theme** `pages[features]` | 能力详表（hardcoded；可与 home 共用 schema 片段） |
 | `/contact` | Theme **或** host contact | v1 建议 theme 轻量页：邮箱 + GitHub + 社区链接 |
 | `/blog`, `/blog/:slug` | **Host** | 可选 Changelog / 发布说明（Features.blog） |
-| Docs | **外链 only**（theme setting `docsUrl`） | 文档内容与服务由其他项目提供；Header/Footer 链出去 |
-| `/p/*` | Host | 任意补充页 |
+| 长篇工程文档 | **外链**（theme setting `docsUrl`） | 仓库 docs-site / 外部文档站；Header/Footer 可链出去 |
+| 站内一级产品说明（上手 / 用例 / Agent 导览等） | **优先 Theme `pages[]`（C）** 或 **`/p/*` + `pf-*` section（D）** | 与 home/features 同级观感时不要只靠 Host 通用 section；见 ADR-0002 附录 A |
+| `/p/*` | Host | 扩展页、政策、活动；**不保证**与主题 hardcode 页同级品牌感（ADR-0002 附录 B） |
 | corporate 页 about/advantages/… | **不注册** | Features 默认 off |
 
 ### 3.2 首页区块（上→下）
@@ -101,10 +102,13 @@
 |-----|--------|--------|
 | Home | ✓ | ✓ |
 | Features | ✓ | ✓ |
+| Get started / Use cases（若做进主题一级 IA） | ✓ | ✓ |
 | Blog（若 Features.blog） | ✓ | ✓ |
-| Docs（外链） | ✓ | ✓ |
+| Docs（外链，可选） | ✓ | ✓ |
 | Contact | ✓ | ✓ |
 | GitHub（外链） | utility | ✓ |
+
+> **与 ADR-0002 对齐（2026-07-30）：** 外链 Docs 与「站内一级上手/用例」可并存——前者服务完整工程文档，后者服务产品叙事。dogfood 若暂用 `/p/*`，应计划迁入主题页或 `pf-*` section，避免长期停留在 Host 通用积木。
 
 ---
 
