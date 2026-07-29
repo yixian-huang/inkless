@@ -100,6 +100,15 @@ export default defineConfig({
     port: 3000,
     host: "0.0.0.0",
     proxy: {
+      // Theme packages may call relative /public/* (not axios baseURL).
+      "/public": {
+        target: "http://localhost:8088",
+        changeOrigin: true,
+      },
+      "/auth": {
+        target: "http://localhost:8088",
+        changeOrigin: true,
+      },
       "/uploads": {
         target: "http://localhost:8088",
         changeOrigin: true,
