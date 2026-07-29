@@ -553,3 +553,17 @@ POST /admin/system/update/rollback # { "to": "previous" | "v0.1.9" } 仅本地 v
 5. **实现 H1**，先 **inkless-ops（产品）** 金丝雀，再 yx.ink / imgli。  
 
 主题市场验收 **不依赖** 本设计；本设计解决的是 **host 多站跟版** 的长期冗余。
+
+### 14.1 现网执行盘点（gomami · 2026-07-29）
+
+完整勾选表与实测 symlink：[`docs/internal/ops-isolation-inventory-gomami-2026-07-29.md`](internal/ops-isolation-inventory-gomami-2026-07-29.md)。
+
+摘要：
+
+| 站 | unit | port | data/JWT | `backend/current` realpath |
+|----|------|------|----------|----------------------------|
+| yx.ink | `inkless` | 8088 | 独立 | `/opt/inkless/backend/versions/main-…`（权威树） |
+| inkless.run | `inkless-ops` | 8089 | 独立 | **→ 同上（共享）** |
+| imgli.com | `inkless-imgli` | 8090 | 独立 | **→ 同上（共享）** |
+
+**H1 阻断：** ops / imgli 的 current 是指向 personal 树的 symlink。须先拆树再开站内 Host 升级。
