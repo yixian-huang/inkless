@@ -17,6 +17,7 @@ Inkless documentation lives in three places:
 | Understand layering | [architecture.md](architecture.md) · [developer-guide.md](developer-guide.md) |
 | Deploy to a server | [deployment.md](deployment.md) · [docker-setup.md](docker-setup.md) |
 | Theme packages / host boundary | [theme-contract.md](theme-contract.md) · [adr/0002-theme-host-boundary.md](adr/0002-theme-host-boundary.md) |
+| Official theme store (Phase A) | [design-official-extension-store-phase-a.md](design-official-extension-store-phase-a.md) |
 | Report a vulnerability | [../SECURITY.md](../SECURITY.md) |
 
 ## Public guides (recommended)
@@ -31,6 +32,7 @@ Inkless documentation lives in three places:
 - [testing-strategy.md](testing-strategy.md)  
 - [adr/0001-single-instance-single-site.md](adr/0001-single-instance-single-site.md)  
 - [adr/0002-theme-host-boundary.md](adr/0002-theme-host-boundary.md) — Host vs Theme ownership  
+- [design-official-extension-store-phase-a.md](design-official-extension-store-phase-a.md) — Official theme one-click install  
 
 ## Product / research (may lag code)
 

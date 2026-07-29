@@ -142,7 +142,8 @@ Inkless 定位为**多方向、多主题的综合建站工具**（对标 Halo）
 - `docs/theme-contract.md` 的 Ownership 章节与本 ADR 对齐；细节 API 仍以 contract 为准。  
 - Demo seed 若使用 corporate 内容，文档须标明「企业示例」，空白站默认仍为 blog-first（既有决策）。  
 - 同 `pageKey`（如 `home`）多形态 schema 互踩是已知债：后续应引入 schemaId/version 或切换时的显式 seed 策略（P1，不阻塞本 ADR）。  
-- 主题 live-dev（`THEME_*_PATH`）只影响开发解析路径，不改变运行时边界。
+- 主题 live-dev（`THEME_*_PATH`）只影响开发解析路径，不改变运行时边界。  
+- 官方扩展商店（主题一键安装）是分发通道，不改变本 ADR 边界；设计见 [`docs/design-official-extension-store-phase-a.md`](../design-official-extension-store-phase-a.md)。
 
 ## 不变量检查
 
