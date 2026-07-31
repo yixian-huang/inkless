@@ -126,6 +126,7 @@ type RouteDeps struct {
 	Database       *db.DB
 	ModuleMgr      *module.Manager
 	ContentDocRepo repository.ContentDocumentRepository
+	SiteConfigRepo repository.SiteConfigRepository
 	AuditWriter    audit.Writer
 	Build          BuildInfo
 	// APIKeyAuth optional long-lived token authenticator (PicGo / local agents).
@@ -300,7 +301,7 @@ func registerRoutes(router *gin.Engine, handlers *Handlers, deps *RouteDeps) {
 			}
 			accept := c.GetHeader("Accept")
 			if c.Request.Method == "GET" && strings.Contains(accept, "text/html") {
-				if !serveSPAWithMeta(c, seoRenderer, cfg.BaseURL, deps.ContentDocRepo) {
+				if !serveSPAWithMeta(c, seoRenderer, cfg.BaseURL, deps.SiteConfigRepo, deps.ContentDocRepo) {
 					c.File(indexPath)
 					c.Abort()
 				}
@@ -350,7 +351,7 @@ func registerRoutes(router *gin.Engine, handlers *Handlers, deps *RouteDeps) {
 
 		// SPA fallback: non-API GET requests return index.html with SEO meta
 		indexHTML := filepath.Join(cfg.FrontendDir, "index.html")
-		RegisterFrontendFallback(router, indexHTML, seoRenderer, cfg.BaseURL, deps.ContentDocRepo)
+		RegisterFrontendFallback(router, indexHTML, seoRenderer, cfg.BaseURL, deps.SiteConfigRepo, deps.ContentDocRepo)
 	}
 }
 
@@ -360,6 +361,7 @@ func RegisterFrontendFallback(
 	indexHTML string,
 	renderer *seo.Renderer,
 	baseURL string,
+	siteCfgRepo repository.SiteConfigRepository,
 	contentDocRepo repository.ContentDocumentRepository,
 ) {
 	router.NoRoute(func(c *gin.Context) {
@@ -378,7 +380,7 @@ func RegisterFrontendFallback(
 			path != "/metrics" &&
 			path != "/sitemap.xml" &&
 			path != "/robots.txt" {
-			if !serveSPAWithMeta(c, renderer, baseURL, contentDocRepo) {
+			if !serveSPAWithMeta(c, renderer, baseURL, siteCfgRepo, contentDocRepo) {
 				http.ServeFile(c.Writer, c.Request, indexHTML)
 				c.Abort()
 			}

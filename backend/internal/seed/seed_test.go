@@ -97,8 +97,16 @@ func TestSeeder_SeedContentDocuments(t *testing.T) {
 	err := seeder.SeedContentDocuments(ctx)
 	require.NoError(t, err)
 
-	// Verify all page keys have documents
+	// global is in site_configs; other page keys remain content_documents.
+	siteCfgRepo := repository.NewGormSiteConfigRepository(db)
+	sc, err := siteCfgRepo.FindByKey(ctx, model.SiteConfigKeyGlobal)
+	require.NoError(t, err)
+	require.NotZero(t, sc.ID)
+
 	for _, pageKey := range model.ValidPageKeys {
+		if pageKey == model.PageKeyGlobal {
+			continue
+		}
 		doc, err := contentRepo.FindByPageKey(ctx, pageKey)
 		require.NoError(t, err, "Document for %s should exist", pageKey)
 		assert.Equal(t, pageKey, doc.PageKey)
@@ -159,10 +167,15 @@ func TestSeeder_SeedAll(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, "editor", editorUser.Username)
 
-	// Verify all content documents were created
+	// content_documents exclude global (SSOT is site_configs).
 	docs, err := contentRepo.List(ctx)
 	require.NoError(t, err)
-	assert.Len(t, docs, len(model.ValidPageKeys))
+	assert.Len(t, docs, len(model.ValidPageKeys)-1)
+
+	siteCfgRepo := repository.NewGormSiteConfigRepository(db)
+	sc, err := siteCfgRepo.FindByKey(ctx, model.SiteConfigKeyGlobal)
+	require.NoError(t, err)
+	require.NotZero(t, sc.ID)
 }
 
 func TestSeeder_SeedAll_Idempotent(t *testing.T) {
@@ -188,7 +201,14 @@ func TestSeeder_SeedAll_Idempotent(t *testing.T) {
 
 	docs, err := contentRepo.List(ctx)
 	require.NoError(t, err)
-	assert.Len(t, docs, len(model.ValidPageKeys))
+	// global lives in site_configs, not content_documents.
+	assert.Len(t, docs, len(model.ValidPageKeys)-1)
+
+	siteCfgRepo := repository.NewGormSiteConfigRepository(db)
+	sc, err := siteCfgRepo.FindByKey(ctx, model.SiteConfigKeyGlobal)
+	require.NoError(t, err)
+	require.NotZero(t, sc.ID)
+	require.NotEmpty(t, sc.PublishedConfig["identity"])
 }
 
 func TestGetInitialConfig_Home(t *testing.T) {
@@ -283,6 +303,7 @@ func setupTestDB(t *testing.T) *gorm.DB {
 		&model.Page{},
 		&model.UnifiedPage{},
 		&model.PageTemplate{},
+		&model.SiteConfig{},
 	)
 	require.NoError(t, err)
 
@@ -297,7 +318,8 @@ func newTestSeeder(db *gorm.DB) *Seeder {
 	themePageSvc := service.NewThemePageService(pageRepo)
 	unifiedPageRepo := repository.NewGormUnifiedPageRepository(db)
 	templateRepo := repository.NewGormPageTemplateRepository(db)
-	return NewSeeder(userRepo, contentRepo, themeRepo, themePageSvc, unifiedPageRepo, templateRepo, nil)
+	siteCfgRepo := repository.NewGormSiteConfigRepository(db)
+	return NewSeeder(userRepo, contentRepo, themeRepo, themePageSvc, unifiedPageRepo, templateRepo, siteCfgRepo)
 }
 
 func TestBlankSiteSeed_CreatesGlobalWithDefaults(t *testing.T) {
@@ -321,13 +343,13 @@ func TestBlankSiteSeed_CreatesGlobalWithDefaults(t *testing.T) {
 	if err := s.BlankSiteSeed(context.Background()); err != nil {
 		t.Fatalf("blank seed: %v", err)
 	}
-	doc, err := contentRepo.FindByPageKey(context.Background(), model.PageKeyGlobal)
-	if err != nil {
-		t.Fatalf("find global: %v", err)
+	sc, err := siteCfgRepo.FindByKey(context.Background(), model.SiteConfigKeyGlobal)
+	if err != nil || sc == nil || sc.ID == 0 {
+		t.Fatalf("find global site_config: %v sc=%+v", err, sc)
 	}
-	identity, ok := doc.PublishedConfig["identity"].(map[string]interface{})
+	identity, ok := sc.PublishedConfig["identity"].(map[string]interface{})
 	if !ok {
-		t.Fatalf("expected identity map in published config, got: %#v", doc.PublishedConfig["identity"])
+		t.Fatalf("expected identity map in published config, got: %#v", sc.PublishedConfig["identity"])
 	}
 	if identity["localeMode"] != "mono-zh" {
 		t.Fatalf("expected mono-zh, got: %v", identity["localeMode"])

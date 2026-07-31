@@ -256,7 +256,7 @@ func TestFrontendFallbackReturns404ForRetiredAdminSites(t *testing.T) {
 	require.NoError(t, os.WriteFile(indexPath, []byte("<html>spa</html>"), 0o600))
 
 	router := gin.New()
-	app.RegisterFrontendFallback(router, indexPath, nil, "https://example.com", nil)
+	app.RegisterFrontendFallback(router, indexPath, nil, "https://example.com", nil, nil)
 
 	for _, path := range []string{"/admin/sites", "/admin/sites/1"} {
 		response := httptest.NewRecorder()

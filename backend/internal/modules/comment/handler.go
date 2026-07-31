@@ -257,7 +257,7 @@ func (h *Handler) AdminReply(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	authorName := resolveSiteAuthorName(c.Request.Context(), h.contentDocRepo)
+	authorName := resolveSiteAuthorName(c.Request.Context(), h.siteCfgRepo, h.contentDocRepo)
 
 	var contentType string
 	var contentID uint

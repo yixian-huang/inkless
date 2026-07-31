@@ -34,16 +34,26 @@ func authorNameFromGlobalConfig(cfg model.JSONMap) string {
 	return ""
 }
 
-func resolveSiteAuthorName(ctx context.Context, contentDoc repository.ContentDocumentRepository) string {
-	if contentDoc == nil {
-		return "Author"
+func resolveSiteAuthorName(
+	ctx context.Context,
+	siteCfg repository.SiteConfigRepository,
+	contentDoc repository.ContentDocumentRepository,
+) string {
+	if siteCfg != nil {
+		sc, err := siteCfg.FindByKey(ctx, model.SiteConfigKeyGlobal)
+		if err == nil && sc != nil && sc.ID != 0 && sc.PublishedConfig != nil {
+			if name := authorNameFromGlobalConfig(sc.PublishedConfig); name != "" {
+				return name
+			}
+		}
 	}
-	doc, err := contentDoc.FindByPageKey(ctx, model.PageKeyGlobal)
-	if err != nil || doc == nil || doc.PublishedConfig == nil {
-		return "Author"
-	}
-	if name := authorNameFromGlobalConfig(doc.PublishedConfig); name != "" {
-		return name
+	if contentDoc != nil {
+		doc, err := contentDoc.FindByPageKey(ctx, model.PageKeyGlobal)
+		if err == nil && doc != nil && doc.PublishedConfig != nil {
+			if name := authorNameFromGlobalConfig(doc.PublishedConfig); name != "" {
+				return name
+			}
+		}
 	}
 	return "Author"
 }

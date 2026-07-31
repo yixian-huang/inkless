@@ -1,7 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback, useMemo, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import {
-  fetchPublicContent,
   normalizeConfigForLocale,
   type Locale,
 } from "@/api/publicContent";
@@ -61,7 +60,11 @@ export function GlobalConfigProvider({ children }: { children: ReactNode }) {
   const { i18n } = useTranslation("common");
   const locale = resolveLocale(i18n.language);
 
-  const { data: bootstrapData, isLoading: bootstrapLoading } = useBootstrap();
+  const {
+    data: bootstrapData,
+    isLoading: bootstrapLoading,
+    refetch: refetchBootstrap,
+  } = useBootstrap();
   const [config, setConfig] = useState<GlobalConfig>({});
   const [loading, setLoading] = useState(true);
   const features = useMemo(
@@ -69,7 +72,7 @@ export function GlobalConfigProvider({ children }: { children: ReactNode }) {
     [bootstrapData?.features],
   );
 
-  // Use bootstrap data for initial load
+  // Bootstrap.globalConfig is SSOT (site_configs); do not re-fetch /public/content/global.
   useEffect(() => {
     if (bootstrapLoading) return;
 
@@ -87,24 +90,14 @@ export function GlobalConfigProvider({ children }: { children: ReactNode }) {
     setLoading(false);
   }, [bootstrapData, bootstrapLoading, locale]);
 
-  // refetch still uses the direct API for manual refresh scenarios (e.g. admin edits)
+  // Admin publish → refetch bootstrap so identity/branding refresh from site_configs.
   const doFetch = useCallback(async () => {
     try {
-      const data = await fetchPublicContent("global", locale);
-      const rawConfig = data.config as Record<string, unknown>;
-      const normalized = normalizeConfigForLocale(rawConfig, locale) as GlobalConfig;
-      // For the new SiteConfigGlobal shape, attach the RAW config (pre-normalization) so
-      // LocalizedString values like { zh, en } stay intact for pickLocaleValue downstream.
-      if (rawConfig && typeof rawConfig === "object" && "identity" in rawConfig) {
-        normalized.siteConfig = rawConfig as unknown as SiteConfigGlobal;
-      }
-      setConfig(normalized);
-    } catch {
-      // Keep previous config on error
+      await refetchBootstrap();
     } finally {
       setLoading(false);
     }
-  }, [locale]);
+  }, [refetchBootstrap]);
 
   return (
     <GlobalConfigContext.Provider value={{ config, loading, locale, features, refetch: doFetch }}>

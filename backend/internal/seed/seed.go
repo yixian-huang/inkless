@@ -121,9 +121,20 @@ func (s *Seeder) SeedUsers(ctx context.Context) error {
 	return nil
 }
 
-// SeedContentDocuments creates initial content documents for all page keys if they don't exist
+// SeedContentDocuments creates initial content documents for page keys if they don't exist.
+// Site identity (global) is seeded into site_configs, not content_documents.
 func (s *Seeder) SeedContentDocuments(ctx context.Context) error {
+	if s.siteCfgRepo != nil {
+		if err := s.ensureGlobalSiteConfig(ctx); err != nil {
+			return err
+		}
+	}
+
 	for _, pageKey := range model.ValidPageKeys {
+		if pageKey == model.PageKeyGlobal {
+			// SSOT is site_configs; do not dual-write content_documents.global.
+			continue
+		}
 		// Check if content document already exists
 		existingDoc, err := s.contentRepo.FindByPageKey(ctx, pageKey)
 		if err != nil && !strings.Contains(err.Error(), "not found") {
@@ -151,6 +162,32 @@ func (s *Seeder) SeedContentDocuments(ctx context.Context) error {
 		log.Printf("Created content document for page: %s", pageKey)
 	}
 
+	return nil
+}
+
+func (s *Seeder) ensureGlobalSiteConfig(ctx context.Context) error {
+	if s.siteCfgRepo == nil {
+		return nil
+	}
+	existing, err := s.siteCfgRepo.FindByKey(ctx, model.SiteConfigKeyGlobal)
+	if existing != nil && existing.ID != 0 {
+		return nil
+	}
+	_ = err
+	// blankGlobalConfig matches SiteConfigGlobal schema (identity/brand/author/footer/seo).
+	// Do not use legacy getInitialConfig(global) header/footer shape.
+	cfg := blankGlobalConfig()
+	row := &model.SiteConfig{
+		Key:              model.SiteConfigKeyGlobal,
+		DraftConfig:      cfg,
+		DraftVersion:     1,
+		PublishedConfig:  cfg,
+		PublishedVersion: 1,
+	}
+	if err := s.siteCfgRepo.Upsert(ctx, row); err != nil {
+		return err
+	}
+	log.Println("Created global site_config")
 	return nil
 }
 
@@ -386,23 +423,9 @@ func (s *Seeder) BlankSiteSeed(ctx context.Context) error {
 func (s *Seeder) BlankSiteSeedContent(ctx context.Context) error {
 	log.Println("Starting blank-site content seed (no users)...")
 
-	// Ensure a "global" content_document exists with personal-blog defaults.
-	existing, err := s.contentRepo.FindByPageKey(ctx, model.PageKeyGlobal)
-	if err != nil && !strings.Contains(err.Error(), "not found") {
+	// Site identity SSOT: site_configs "global".
+	if err := s.ensureGlobalSiteConfig(ctx); err != nil {
 		return err
-	}
-	if existing == nil {
-		doc := &model.ContentDocument{
-			PageKey:          model.PageKeyGlobal,
-			DraftConfig:      blankGlobalConfig(),
-			DraftVersion:     1,
-			PublishedConfig:  blankGlobalConfig(),
-			PublishedVersion: 1,
-		}
-		if err := s.contentRepo.Create(ctx, doc); err != nil {
-			return err
-		}
-		log.Println("Created blank global content document")
 	}
 
 	// Seed site_configs.features with personal-blog defaults so the gates

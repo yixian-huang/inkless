@@ -112,7 +112,8 @@ func newS1Harness(t *testing.T) *s1TestHarness {
 		Env:              "test",
 	}
 	authH := authHandler.NewHandler(userRepo, refreshTokenRepo, cfg)
-	globalCfgH := globalConfigHandler.NewHandler(contentDocRepo, sharedCache)
+	globalCfgH := globalConfigHandler.NewHandler(siteConfigRepo, sharedCache).
+		WithLegacyContentDoc(contentDocRepo)
 	featuresH := featuresHandler.NewHandler(siteConfigRepo, sharedCache)
 	bootstrapH := bootstrapHandler.NewHandler(contentDocRepo, installedThemeRepo, pageRepo, unifiedPageRepo, siteConfigRepo, sharedCache)
 

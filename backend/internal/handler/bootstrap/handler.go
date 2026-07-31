@@ -160,18 +160,18 @@ func (h *Handler) PublicBootstrap(c *gin.Context) {
 		}
 	}
 
-	// 5. Global config
+	// 5. Global config — site_configs "global" is SSOT; content_documents is legacy fallback.
 	var globalConfig interface{}
-	globalDoc, err := h.contentDocRepo.FindByPageKey(ctx, model.PageKey("global"))
-	if err != nil {
-		globalConfig = gin.H{}
-	} else {
+	if cfg, version, source := loadPublishedGlobal(ctx, h.siteCfgRepo, h.contentDocRepo); len(cfg) > 0 {
 		globalConfig = gin.H{
-			"pageKey": globalDoc.PageKey.String(),
-			"version": globalDoc.PublishedVersion,
+			"pageKey": model.SiteConfigKeyGlobal,
+			"version": version,
 			"locale":  locale,
-			"config":  globalDoc.PublishedConfig,
+			"config":  cfg,
+			"source":  source,
 		}
+	} else {
+		globalConfig = gin.H{}
 	}
 
 	// 6. Features config
@@ -228,4 +228,25 @@ func (h *Handler) loadPublishedThemeTokens(ctx context.Context) interface{} {
 		return doc.PublishedConfig
 	}
 	return defaultThemeConfig()
+}
+
+// loadPublishedGlobal prefers site_configs; falls back to content_documents.global.
+func loadPublishedGlobal(
+	ctx context.Context,
+	siteCfg repository.SiteConfigRepository,
+	legacyDoc repository.ContentDocumentRepository,
+) (model.JSONMap, int, string) {
+	if siteCfg != nil {
+		sc, err := siteCfg.FindByKey(ctx, model.SiteConfigKeyGlobal)
+		if err == nil && sc != nil && sc.ID != 0 && len(sc.PublishedConfig) > 0 {
+			return sc.PublishedConfig, sc.PublishedVersion, "site_config"
+		}
+	}
+	if legacyDoc != nil {
+		doc, err := legacyDoc.FindByPageKey(ctx, model.PageKeyGlobal)
+		if err == nil && doc != nil && len(doc.PublishedConfig) > 0 {
+			return doc.PublishedConfig, doc.PublishedVersion, "content_document"
+		}
+	}
+	return model.JSONMap{}, 0, ""
 }

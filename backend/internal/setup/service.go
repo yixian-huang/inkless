@@ -201,7 +201,6 @@ func (s *Service) Complete(ctx context.Context, in CompleteInput) error {
 
 	return s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		seeder := s.seederFactory(tx)
-		contentRepo := repository.NewGormContentDocumentRepository(tx)
 		siteCfgRepo := repository.NewGormSiteConfigRepository(tx)
 		userRepo := repository.NewGormUserRepository(tx)
 
@@ -216,7 +215,7 @@ func (s *Service) Complete(ctx context.Context, in CompleteInput) error {
 			}
 		}
 
-		if err := applyGlobalSiteName(ctx, contentRepo, in.Site); err != nil {
+		if err := applyGlobalSiteName(ctx, siteCfgRepo, in.Site); err != nil {
 			return fmt.Errorf("apply site name: %w", err)
 		}
 
@@ -319,19 +318,26 @@ func validatePassword(password string) error {
 	return nil
 }
 
-func applyGlobalSiteName(ctx context.Context, contentRepo repository.ContentDocumentRepository, site SiteInput) error {
-	doc, err := contentRepo.FindByPageKey(ctx, model.PageKeyGlobal)
-	if err != nil {
-		if repository.IsNotFound(err) {
-			return nil
-		}
-		return err
-	}
-	if doc == nil {
+func applyGlobalSiteName(ctx context.Context, siteCfgRepo repository.SiteConfigRepository, site SiteInput) error {
+	if siteCfgRepo == nil {
 		return nil
 	}
+	sc, err := siteCfgRepo.FindByKey(ctx, model.SiteConfigKeyGlobal)
+	if err != nil && !repository.IsNotFound(err) && (sc == nil || sc.ID == 0) {
+		// treat missing row as create-below
+		sc = nil
+	}
+	if sc == nil || sc.ID == 0 {
+		sc = &model.SiteConfig{
+			Key:              model.SiteConfigKeyGlobal,
+			DraftConfig:      model.JSONMap{},
+			DraftVersion:     1,
+			PublishedConfig:  model.JSONMap{},
+			PublishedVersion: 1,
+		}
+	}
 
-	cfg := doc.PublishedConfig
+	cfg := sc.PublishedConfig
 	if cfg == nil {
 		cfg = model.JSONMap{}
 	}
@@ -367,14 +373,14 @@ func applyGlobalSiteName(ctx context.Context, contentRepo repository.ContentDocu
 	}
 
 	cfg["identity"] = identity
-	doc.DraftConfig = cfg
-	doc.PublishedConfig = cfg
-	if doc.DraftVersion < 1 {
-		doc.DraftVersion = 1
+	sc.DraftConfig = cfg
+	sc.PublishedConfig = cfg
+	if sc.DraftVersion < 1 {
+		sc.DraftVersion = 1
 	}
-	if doc.PublishedVersion < 1 {
-		doc.PublishedVersion = 1
+	if sc.PublishedVersion < 1 {
+		sc.PublishedVersion = 1
 	}
-
-	return contentRepo.Update(ctx, doc)
+	sc.Key = model.SiteConfigKeyGlobal
+	return siteCfgRepo.Upsert(ctx, sc)
 }

@@ -258,7 +258,8 @@ func wireHandlers(
 		InstalledTheme: installedThemeHandler.NewHandler(r.installedTheme, themePageService, publicCache, r.unifiedPage),
 		EmailSettings:  emailSettingsHandler.NewHandler(r.siteConfig, emailSvc),
 		Features:       featuresHandler.NewHandler(r.siteConfig, publicCache),
-		GlobalConfig:   globalConfigHandler.NewHandler(r.contentDoc, publicCache),
+		GlobalConfig: globalConfigHandler.NewHandler(r.siteConfig, publicCache).
+			WithLegacyContentDoc(r.contentDoc),
 		User:           userHandler.NewHandler(r.user),
 		SEO:            seoHandler.NewHandler(database.DB),
 		Search:         searchhandler.NewHandler(searchService),
@@ -289,6 +290,7 @@ func wireHandlers(
 		Database:       database,
 		ModuleMgr:      mgr,
 		ContentDocRepo: r.contentDoc,
+		SiteConfigRepo: r.siteConfig,
 		AuditWriter:    auditDbWriter,
 		Build:          build,
 		APIKeyAuth:     apiKeySvc,
