@@ -107,6 +107,8 @@ curl -sS "$INKLESS_BASE_URL/admin/agent/whoami" \
   "capabilities": {
     "articles": true,
     "pages": false,
+    "themeContent": true,
+    "themeContentKeys": ["home", "about", "contact", "…"],
     "mediaUpload": true,
     "aiArticleMeta": true,
     "publish": false
@@ -120,6 +122,8 @@ curl -sS "$INKLESS_BASE_URL/admin/agent/whoami" \
 | `authMethod` | `api_key` 或 `session` |
 | `scopes` | key 声明的 scope；session 为空数组 |
 | `capabilities` | **RBAC ∩ scopes** 的摘要，便于 agent 短路 |
+| `capabilities.themeContent` | 能否走 `/admin/content/:pageKey`（主题绑定槽，如 product-first `home`） |
+| `capabilities.themeContentKeys` | 可读写的 pageKey 列表（`home` 等；**不是** `pages list` 里的 unified 页） |
 
 Agent 规则：若 `baseUrl` 与任务站点 profile 不一致 → **中止写操作**。
 
@@ -287,7 +291,7 @@ curl -sS -X PUT "$INKLESS_BASE_URL/admin/articles/ID" \
 
 `PUT` 请求体字段需与后台编辑器一致（缺失字段可能被置空——先 `GET` 再合并修改项）。
 
-### 5.5 页面草稿
+### 5.5 页面草稿（unified `/p/*`）
 
 ```bash
 # 读草稿
@@ -306,6 +310,47 @@ curl -sS -X POST "$INKLESS_BASE_URL/admin/pages/ID/publish" \
 ```
 
 页面 SEO 元数据也在 `PUT /admin/pages/:id` 的 `zhMetaDescription` / `enMetaDescription` 等字段。
+
+### 5.5b 主题绑定内容（product-first `home` 等）
+
+**真源：** `content_documents.page_key`（如 `home`），**不是** articles，也**不在** `pages list`。  
+**API：** `GET/PUT /admin/content/:pageKey/draft` + `POST .../publish`（设计见 [design-theme-content-admin-api.md](design-theme-content-admin-api.md)）。  
+**权限：** 读 `pages:read`；写 `pages:update`；发布 `pages:publish`。  
+**MediaRef：** `url` / `alt` / `caption` 必须是 **string**（禁止 `{zh,en}`，否则 400 / 白屏）。
+
+CLI（推荐）：
+
+```bash
+inkless site whoami --site SITE   # capabilities.themeContent + themeContentKeys
+
+inkless media upload ./shot.png --site SITE --json   # → .url
+
+# home.json = product-first config；MediaRef 全 string
+inkless content apply home --site SITE --from-file home.json --dry-run
+inkless content apply home --site SITE --from-file home.json
+
+# publish_policy=never 时停在 draft；允许时：
+inkless content publish home --site SITE
+
+inkless content get home --site SITE --public --locale zh --json
+```
+
+curl 等价：
+
+```bash
+curl -sS "$INKLESS_BASE_URL/admin/content/home/draft" \
+  -H "Authorization: Bearer $INKLESS_API_KEY" | jq .
+
+curl -sS -X PUT "$INKLESS_BASE_URL/admin/content/home/draft" \
+  -H "Authorization: Bearer $INKLESS_API_KEY" \
+  -H "Content-Type: application/json" \
+  -H "If-Match: $VERSION" \
+  -d @home.json   # body: {"config":{...}} 或 CLI 自动包一层
+
+curl -sS "$INKLESS_BASE_URL/public/content/home?locale=zh" | jq .
+```
+
+无 content API 的旧实例：**禁止写库**；应升级 host 到含 M1 的版本，或人工在 SPA 编辑（若 UI 已接同一 API）。
 
 ### 5.6 验收
 

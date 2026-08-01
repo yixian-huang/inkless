@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 )
 
@@ -92,5 +93,155 @@ func TestClientWhoamiAndArticles(t *testing.T) {
 	}
 	if out["zhSeoTitle"] != "SEO A" {
 		t.Fatalf("put=%v", out)
+	}
+}
+
+func TestClientContentDraftApplyPublish(t *testing.T) {
+	var lastIfMatch string
+	var published map[string]any
+	draft := map[string]any{
+		"pageKey": "home",
+		"version": 2,
+		"config": map[string]any{
+			"hero": map[string]any{"title": map[string]any{"zh": "旧", "en": "Old"}},
+		},
+	}
+	mux := http.NewServeMux()
+	mux.HandleFunc("/admin/content/home/draft", func(w http.ResponseWriter, r *http.Request) {
+		if r.Header.Get("Authorization") != "Bearer ink_test" {
+			http.Error(w, "unauthorized", 401)
+			return
+		}
+		switch r.Method {
+		case http.MethodGet:
+			_ = json.NewEncoder(w).Encode(draft)
+		case http.MethodPut:
+			lastIfMatch = r.Header.Get("If-Match")
+			var body map[string]any
+			_ = json.NewDecoder(r.Body).Decode(&body)
+			draft["version"] = 3
+			draft["config"] = body["config"]
+			_ = json.NewEncoder(w).Encode(map[string]any{"pageKey": "home", "version": 3})
+		default:
+			http.Error(w, "method", 405)
+		}
+	})
+	mux.HandleFunc("/admin/content/home/validate", func(w http.ResponseWriter, r *http.Request) {
+		_ = json.NewEncoder(w).Encode(map[string]any{"valid": true, "errors": []any{}})
+	})
+	mux.HandleFunc("/admin/content/home/publish", func(w http.ResponseWriter, r *http.Request) {
+		_ = json.NewDecoder(r.Body).Decode(&published)
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"pageKey": "home", "publishedVersion": 1,
+		})
+	})
+	mux.HandleFunc("/public/content/home", func(w http.ResponseWriter, r *http.Request) {
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"pageKey": "home", "version": 1, "locale": r.URL.Query().Get("locale"),
+			"config": draft["config"],
+		})
+	})
+
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+	c := NewClient(&Endpoint{BaseURL: srv.URL, APIKey: "ink_test"})
+
+	got, err := c.GetContentDraft(context.Background(), "home")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if ContentDraftVersion(got) != 2 {
+		t.Fatalf("version=%v", got["version"])
+	}
+
+	cfg := map[string]any{
+		"hero": map[string]any{"title": map[string]any{"zh": "新", "en": "New"}},
+		"install": map[string]any{"code": "curl | sh"},
+	}
+	diff := ShallowConfigDiff(got["config"].(map[string]any), cfg)
+	changed, _ := diff["changed"].([]string)
+	added, _ := diff["added"].([]string)
+	if len(changed) == 0 || len(added) == 0 {
+		t.Fatalf("diff=%v", diff)
+	}
+
+	_, err = c.PutContentDraft(context.Background(), "home", 2, cfg, "agent")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if lastIfMatch != "2" {
+		t.Fatalf("If-Match=%q", lastIfMatch)
+	}
+
+	pub, err := c.PublishContent(context.Background(), "home", 3, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if pub["publishedVersion"] != float64(1) {
+		t.Fatalf("pub=%v", pub)
+	}
+	if published["expectedDraftVersion"] != float64(3) {
+		t.Fatalf("body=%v", published)
+	}
+
+	public, err := c.GetPublicContent(context.Background(), "home", "zh")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if public["locale"] != "zh" {
+		t.Fatalf("public=%v", public)
+	}
+}
+
+func TestContentConfigFromFileBody(t *testing.T) {
+	cfg, err := ContentConfigFromFileBody(map[string]any{
+		"config":     map[string]any{"hero": map[string]any{}},
+		"changeNote": "x",
+	})
+	if err != nil || cfg["hero"] == nil {
+		t.Fatalf("%v %v", cfg, err)
+	}
+	bare, err := ContentConfigFromFileBody(map[string]any{"hero": map[string]any{"x": 1}})
+	if err != nil || bare["hero"] == nil {
+		t.Fatalf("%v %v", bare, err)
+	}
+}
+
+func TestClientUploadMedia(t *testing.T) {
+	mux := http.NewServeMux()
+	mux.HandleFunc("/admin/media/upload", func(w http.ResponseWriter, r *http.Request) {
+		if r.Header.Get("Authorization") != "Bearer ink_test" {
+			http.Error(w, "unauthorized", 401)
+			return
+		}
+		if err := r.ParseMultipartForm(4 << 20); err != nil {
+			http.Error(w, err.Error(), 400)
+			return
+		}
+		f, hdr, err := r.FormFile("file")
+		if err != nil {
+			http.Error(w, err.Error(), 400)
+			return
+		}
+		defer f.Close()
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"id": 9, "url": "/uploads/" + hdr.Filename, "filename": hdr.Filename,
+		})
+	})
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+
+	tmp := t.TempDir() + "/shot.png"
+	// minimal valid-ish file content
+	if err := os.WriteFile(tmp, []byte{0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a}, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	c := NewClient(&Endpoint{BaseURL: srv.URL, APIKey: "ink_test"})
+	out, err := c.UploadMedia(context.Background(), tmp)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if out["url"] != "/uploads/shot.png" {
+		t.Fatalf("%v", out)
 	}
 }

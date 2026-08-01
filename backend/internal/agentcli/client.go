@@ -6,8 +6,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"mime/multipart"
 	"net/http"
 	"net/url"
+	"os"
+	"path/filepath"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -288,6 +292,130 @@ func (c *Client) PublishPage(ctx context.Context, id uint) (map[string]any, erro
 	return out, nil
 }
 
+// GetContentDraft GET /admin/content/:pageKey/draft
+func (c *Client) GetContentDraft(ctx context.Context, pageKey string) (map[string]any, error) {
+	var out map[string]any
+	if err := c.DoJSON(ctx, http.MethodGet, "/admin/content/"+url.PathEscape(pageKey)+"/draft", nil, &out); err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// GetPublicContent GET /public/content/:pageKey?locale=
+func (c *Client) GetPublicContent(ctx context.Context, pageKey, locale string) (map[string]any, error) {
+	path := "/public/content/" + url.PathEscape(pageKey)
+	if locale != "" {
+		path += "?locale=" + url.QueryEscape(locale)
+	}
+	var out map[string]any
+	// Public endpoint does not require auth, but sending the key is fine.
+	if err := c.DoJSON(ctx, http.MethodGet, path, nil, &out); err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// PutContentDraft PUT /admin/content/:pageKey/draft with If-Match.
+// config is the raw page config map (not wrapped).
+func (c *Client) PutContentDraft(ctx context.Context, pageKey string, expectedVersion int, config map[string]any, changeNote string) (map[string]any, error) {
+	body := map[string]any{"config": config}
+	if changeNote != "" {
+		body["changeNote"] = changeNote
+	}
+	var out map[string]any
+	if err := c.DoJSONWithHeaders(ctx, http.MethodPut, "/admin/content/"+url.PathEscape(pageKey)+"/draft", body, map[string]string{
+		"If-Match": strconv.Itoa(expectedVersion),
+	}, &out); err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// ValidateContent POST /admin/content/:pageKey/validate
+func (c *Client) ValidateContent(ctx context.Context, pageKey string, config map[string]any) (map[string]any, error) {
+	var out map[string]any
+	if err := c.DoJSON(ctx, http.MethodPost, "/admin/content/"+url.PathEscape(pageKey)+"/validate", map[string]any{
+		"config": config,
+	}, &out); err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// PublishContent POST /admin/content/:pageKey/publish
+func (c *Client) PublishContent(ctx context.Context, pageKey string, expectedDraftVersion int, changeNote string) (map[string]any, error) {
+	body := map[string]any{"expectedDraftVersion": expectedDraftVersion}
+	if changeNote != "" {
+		body["changeNote"] = changeNote
+	}
+	var out map[string]any
+	if err := c.DoJSON(ctx, http.MethodPost, "/admin/content/"+url.PathEscape(pageKey)+"/publish", body, &out); err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// ContentDraftVersion extracts integer version from a draft response.
+func ContentDraftVersion(draft map[string]any) int {
+	if draft == nil {
+		return 0
+	}
+	switch v := draft["version"].(type) {
+	case float64:
+		return int(v)
+	case int:
+		return v
+	case json.Number:
+		n, _ := v.Int64()
+		return int(n)
+	default:
+		return 0
+	}
+}
+
+// ContentConfigFromFileBody accepts either a bare config object or {"config":{...}}.
+func ContentConfigFromFileBody(raw map[string]any) (map[string]any, error) {
+	if raw == nil {
+		return map[string]any{}, nil
+	}
+	if cfg, ok := raw["config"].(map[string]any); ok && len(raw) <= 3 {
+		// Wrapped form: {"config":..., "changeNote":...}
+		return cfg, nil
+	}
+	return raw, nil
+}
+
+// ShallowConfigDiff returns keys present only in left, only in right, or changed (JSON-equal).
+func ShallowConfigDiff(left, right map[string]any) map[string]any {
+	added := []string{}
+	removed := []string{}
+	changed := []string{}
+	for k := range right {
+		if _, ok := left[k]; !ok {
+			added = append(added, k)
+			continue
+		}
+		lb, _ := json.Marshal(left[k])
+		rb, _ := json.Marshal(right[k])
+		if string(lb) != string(rb) {
+			changed = append(changed, k)
+		}
+	}
+	for k := range left {
+		if _, ok := right[k]; !ok {
+			removed = append(removed, k)
+		}
+	}
+	sort.Strings(added)
+	sort.Strings(removed)
+	sort.Strings(changed)
+	return map[string]any{
+		"added":   added,
+		"removed": removed,
+		"changed": changed,
+	}
+}
+
 // ArticleMissingSEO returns true if common SEO fields look empty.
 func ArticleMissingSEO(item map[string]any) bool {
 	keys := []string{"zhSeoTitle", "enSeoTitle", "zhMetaDescription", "enMetaDescription"}
@@ -333,6 +461,75 @@ func MergeArticleUpdate(current, patch map[string]any) map[string]any {
 		}
 	}
 	return out
+}
+
+// UploadMedia POST /admin/media/upload multipart field "file".
+func (c *Client) UploadMedia(ctx context.Context, filePath string) (map[string]any, error) {
+	if c == nil || c.BaseURL == "" {
+		return nil, fmt.Errorf("client base URL is empty")
+	}
+	if c.APIKey == "" {
+		return nil, fmt.Errorf("API key is empty")
+	}
+	f, err := os.Open(filePath)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+
+	var buf bytes.Buffer
+	w := multipart.NewWriter(&buf)
+	part, err := w.CreateFormFile("file", filepath.Base(filePath))
+	if err != nil {
+		return nil, err
+	}
+	if _, err := io.Copy(part, f); err != nil {
+		return nil, err
+	}
+	if err := w.Close(); err != nil {
+		return nil, err
+	}
+
+	u := c.BaseURL + "/admin/media/upload"
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, u, &buf)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Authorization", "Bearer "+c.APIKey)
+	req.Header.Set("Content-Type", w.FormDataContentType())
+	req.Header.Set("Accept", "application/json")
+	if c.UserAgent != "" {
+		req.Header.Set("User-Agent", c.UserAgent)
+	}
+
+	httpClient := c.HTTPClient
+	if httpClient == nil {
+		httpClient = http.DefaultClient
+	}
+	resp, err := httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("POST /admin/media/upload: %w", err)
+	}
+	defer resp.Body.Close()
+	data, err := io.ReadAll(io.LimitReader(resp.Body, 32<<20))
+	if err != nil {
+		return nil, err
+	}
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		msg := strings.TrimSpace(string(data))
+		if len(msg) > 500 {
+			msg = msg[:500] + "…"
+		}
+		return nil, fmt.Errorf("POST /admin/media/upload: HTTP %d: %s", resp.StatusCode, msg)
+	}
+	var out map[string]any
+	if len(data) == 0 {
+		return map[string]any{}, nil
+	}
+	if err := json.Unmarshal(data, &out); err != nil {
+		return nil, fmt.Errorf("decode media upload: %w", err)
+	}
+	return out, nil
 }
 
 func ensureLeadingSlash(path string) string {

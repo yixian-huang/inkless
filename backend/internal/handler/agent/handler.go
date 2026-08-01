@@ -47,10 +47,15 @@ type WhoamiUser struct {
 // WhoamiCapabilities summarizes effective content powers (RBAC ∩ key scopes).
 type WhoamiCapabilities struct {
 	Articles      bool `json:"articles"`      // articles:read
-	Pages         bool `json:"pages"`         // pages:read
-	MediaUpload   bool `json:"mediaUpload"`   // media:create
-	AIArticleMeta bool `json:"aiArticleMeta"` // articles:update (article-meta endpoint)
-	Publish       bool `json:"publish"`       // articles:publish or pages:publish
+	Pages         bool `json:"pages"`         // pages:read (unified /admin/pages)
+	// ThemeContent is true when the agent can use theme-bound content_documents
+	// Admin API (/admin/content/:pageKey/*). Gated by pages:read (same as content GET draft).
+	ThemeContent bool `json:"themeContent"`
+	// ThemeContentKeys lists writable/readable content pageKeys (agent discovery).
+	ThemeContentKeys []string `json:"themeContentKeys,omitempty"`
+	MediaUpload      bool     `json:"mediaUpload"`   // media:create
+	AIArticleMeta    bool     `json:"aiArticleMeta"` // articles:update (article-meta endpoint)
+	Publish          bool     `json:"publish"`       // articles:publish or pages:publish
 }
 
 // Whoami GET /admin/agent/whoami
@@ -109,8 +114,12 @@ func (h *Handler) Whoami(c *gin.Context) {
 		},
 		Permissions: permissions,
 		Capabilities: WhoamiCapabilities{
-			Articles:      h.can(c, user, "articles", "read"),
-			Pages:         h.can(c, user, "pages", "read"),
+			Articles:     h.can(c, user, "articles", "read"),
+			Pages:        h.can(c, user, "pages", "read"),
+			ThemeContent: h.can(c, user, "pages", "read"),
+			ThemeContentKeys: themeContentPageKeys(
+				h.can(c, user, "pages", "read"),
+			),
 			MediaUpload:   h.can(c, user, "media", "create"),
 			AIArticleMeta: h.can(c, user, "articles", "update"),
 			Publish: h.can(c, user, "articles", "publish") ||
@@ -118,6 +127,22 @@ func (h *Handler) Whoami(c *gin.Context) {
 		},
 	}
 	c.JSON(http.StatusOK, resp)
+}
+
+// themeContentPageKeys returns content_documents page keys for agent discovery.
+// Excludes internal-only keys (e.g. theme package blob).
+func themeContentPageKeys(allowed bool) []string {
+	if !allowed {
+		return nil
+	}
+	out := make([]string, 0, len(model.ValidPageKeys))
+	for _, k := range model.ValidPageKeys {
+		if k == model.PageKeyTheme {
+			continue
+		}
+		out = append(out, string(k))
+	}
+	return out
 }
 
 func (h *Handler) can(c *gin.Context, user *model.User, resource, action string) bool {

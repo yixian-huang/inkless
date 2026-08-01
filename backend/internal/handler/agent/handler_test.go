@@ -56,6 +56,8 @@ func TestWhoami_APIKey(t *testing.T) {
 	assert.True(t, resp.Capabilities.MediaUpload)
 	// pages:read not in key scopes → false even if RBAC allows
 	assert.False(t, resp.Capabilities.Pages)
+	assert.False(t, resp.Capabilities.ThemeContent)
+	assert.Empty(t, resp.Capabilities.ThemeContentKeys)
 	assert.False(t, resp.Capabilities.Publish)
 }
 
@@ -83,6 +85,9 @@ func TestWhoami_Session(t *testing.T) {
 	assert.Equal(t, []string{"*:*"}, resp.Permissions)
 	assert.True(t, resp.Capabilities.Articles)
 	assert.True(t, resp.Capabilities.Pages)
+	assert.True(t, resp.Capabilities.ThemeContent)
+	assert.Contains(t, resp.Capabilities.ThemeContentKeys, "home")
+	assert.NotContains(t, resp.Capabilities.ThemeContentKeys, "theme")
 	assert.True(t, resp.Capabilities.Publish)
 }
 
