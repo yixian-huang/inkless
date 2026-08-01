@@ -24,6 +24,19 @@ import (
 
 var publicPageSlugPattern = regexp.MustCompile(`^[a-z0-9]+(?:-[a-z0-9]+)*$`)
 
+// isPublicListable reports whether a published page should appear on public list/detail.
+// Template-bound pages (theme-as-templates) are listable even with empty config so
+// routing can prefer Page(home) while theme components fall back to content_documents.
+func isPublicListable(p *model.UnifiedPage) bool {
+	if p == nil || p.Status != "published" {
+		return false
+	}
+	if p.TemplateKey != "" || p.Mode == model.PageModeTemplate {
+		return true
+	}
+	return len(p.PublishedConfig) > 0
+}
+
 var reservedPublicPageSlugs = map[string]struct{}{
 	"admin":      {},
 	"setup":      {},
@@ -200,7 +213,7 @@ func (h *Handler) PublicList(c *gin.Context) {
 
 	items := make([]gin.H, 0, len(pages))
 	for _, p := range pages {
-		if len(p.PublishedConfig) == 0 {
+		if !isPublicListable(p) {
 			continue
 		}
 		items = append(items, gin.H{
@@ -209,6 +222,8 @@ func (h *Handler) PublicList(c *gin.Context) {
 			"title":           localizedField(c, p.ZhTitle, p.EnTitle),
 			"description":     localizedField(c, p.ZhDescription, p.EnDescription),
 			"mode":            p.Mode,
+			"templateKey":     p.TemplateKey,
+			"templateId":      p.TemplateID,
 			"publishedConfig": p.PublishedConfig,
 			"sortOrder":       p.SortOrder,
 			"showInNav":       p.ShowInNav,
@@ -243,7 +258,7 @@ func (h *Handler) PublicGetBySlug(c *gin.Context) {
 		apierror.Message(c, http.StatusNotFound, "page not found")
 		return
 	}
-	if page.Status != "published" || len(page.PublishedConfig) == 0 {
+	if page.Status != "published" || !isPublicListable(page) {
 		apierror.Message(c, http.StatusNotFound, "page not found")
 		return
 	}
@@ -253,6 +268,8 @@ func (h *Handler) PublicGetBySlug(c *gin.Context) {
 		"title":           localizedField(c, page.ZhTitle, page.EnTitle),
 		"description":     localizedField(c, page.ZhDescription, page.EnDescription),
 		"mode":            page.Mode,
+		"templateKey":     page.TemplateKey,
+		"templateId":      page.TemplateID,
 		"publishedConfig": page.PublishedConfig,
 		"sortOrder":       page.SortOrder,
 		"showInNav":       page.ShowInNav,
@@ -315,6 +332,7 @@ type createInput struct {
 	EnDescription     string        `json:"enDescription"`
 	Mode              string        `json:"mode"`
 	TemplateID        *uint         `json:"templateId"`
+	TemplateKey       string        `json:"templateKey"`
 	DraftConfig       model.JSONMap `json:"draftConfig"`
 	SortOrder         int           `json:"sortOrder"`
 	ShowInNav         bool          `json:"showInNav"`
@@ -361,6 +379,7 @@ func (h *Handler) AdminCreate(c *gin.Context) {
 		EnDescription:     input.EnDescription,
 		Mode:              input.Mode,
 		TemplateID:        input.TemplateID,
+		TemplateKey:       strings.TrimSpace(input.TemplateKey),
 		DraftConfig:       input.DraftConfig,
 		DraftVersion:      1,
 		Status:            "draft",
@@ -373,6 +392,9 @@ func (h *Handler) AdminCreate(c *gin.Context) {
 		EnMetaDescription: input.EnMetaDescription,
 		ZhMetaKeywords:    input.ZhMetaKeywords,
 		EnMetaKeywords:    input.EnMetaKeywords,
+	}
+	if page.Mode == "" && page.TemplateKey != "" {
+		page.Mode = model.PageModeTemplate
 	}
 
 	if err := h.pageRepo.Create(c.Request.Context(), page); err != nil {
@@ -401,6 +423,9 @@ type updateInput struct {
 	EnTitle           *string         `json:"enTitle"`
 	ZhDescription     *string         `json:"zhDescription"`
 	EnDescription     *string         `json:"enDescription"`
+	Mode              *string         `json:"mode"`
+	TemplateID        *uint           `json:"templateId"`
+	TemplateKey       *string         `json:"templateKey"`
 	SortOrder         *int            `json:"sortOrder"`
 	ShowInNav         *bool           `json:"showInNav"`
 	ParentID          json.RawMessage `json:"parentId"`
@@ -467,6 +492,15 @@ func (h *Handler) AdminUpdate(c *gin.Context) {
 	}
 	if input.ShowInNav != nil {
 		page.ShowInNav = *input.ShowInNav
+	}
+	if input.Mode != nil {
+		page.Mode = *input.Mode
+	}
+	if input.TemplateKey != nil {
+		page.TemplateKey = strings.TrimSpace(*input.TemplateKey)
+	}
+	if input.TemplateID != nil {
+		page.TemplateID = input.TemplateID
 	}
 	if len(input.ParentID) > 0 {
 		var parentID *uint

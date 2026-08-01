@@ -2,7 +2,7 @@
 
 | 字段 | 值 |
 |------|-----|
-| 状态 | **Proposed（产品方向锁定）** |
+| 状态 | **T1–T2 in progress / partial** — templateKey + home Page seed + dual-read |
 | 日期 | 2026-08-01 |
 | 范围 | 内容真源收敛到 Page（unified_pages）+ Post（articles）；主题提供模板/默认 seed/section；迁移 content_documents 与硬编码 C 页 |
 | 相关 | [ADR-0002](adr/0002-theme-host-boundary.md)（将修订）、[theme-contract](theme-contract.md)、[theme-content-slots](design-theme-content-slots.md)（演进）、[theme-content-admin-api](design-theme-content-admin-api.md)、[agent-access](agent-access.md) |
@@ -286,14 +286,14 @@ content_documents.page_key=home (published)
 
 | 阶段 | 交付 | 完成标准 |
 |------|------|----------|
-| **T0** | 本文 + ADR 修订草案 + 弃用说明 | 方向书面锁定 |
-| **T1** | Page：`template_key`（或等价）；bootstrap `/` 优先 Page(home) | 有 Page 时不再只靠硬编码空壳 |
-| **T2** | product-first：seed home Page；模板渲染吃 Page config；双读 content_documents | dogfood 站 pages list 见 home；CLI pages 可改首页 |
-| **T3** | 迁移工具 content→page；content API deprecation | 新写路径只走 pages |
-| **T4** | `templates[]` 发现 API；contentSlots 只读投影；CLI 别名 | Agent skill 改写完成 |
-| **T5** | 硬编码 pages[] 薄壳化 / 文档删除生产 content 写路径 | 模型干净 |
+| **T0** | 本文 + ADR 修订草案 + 弃用说明 | **done**（design） |
+| **T1** | Page：`templateKey`；bootstrap/public list 纳入 template 页 | **done**（本迭代） |
+| **T2** | product/blog-first：EnsureHomePage seed；product-first 双读 Page→content | **done**（本迭代） |
+| **T3** | 迁移工具 content→page；content API deprecation | 待做 |
+| **T4** | `templates[]` 发现 API；contentSlots 只读投影；CLI 别名 | 待做 |
+| **T5** | 硬编码 pages[] 薄壳化 / 文档删除生产 content 写路径 | 待做 |
 
-**T1–T2 为关键路径**；未完成前 content API 保持可用。
+**T1–T2 本迭代已落地 MVP**；content API 仍可用作回退写路径。
 
 ---
 

@@ -141,7 +141,8 @@ func (h *Handler) PublicBootstrap(c *gin.Context) {
 		pages, err := h.unifiedPageRepo.ListPublished(ctx)
 		if err == nil {
 			for _, p := range pages {
-				if len(p.PublishedConfig) == 0 {
+				// Prefer template-bound pages even with empty config (theme-as-templates home).
+				if len(p.PublishedConfig) == 0 && p.TemplateKey == "" && p.Mode != model.PageModeTemplate {
 					continue
 				}
 				unifiedPages = append(unifiedPages, gin.H{
@@ -150,6 +151,7 @@ func (h *Handler) PublicBootstrap(c *gin.Context) {
 					"title":            gin.H{"zh": p.ZhTitle, "en": p.EnTitle},
 					"description":      gin.H{"zh": p.ZhDescription, "en": p.EnDescription},
 					"mode":             p.Mode,
+					"templateKey":      p.TemplateKey,
 					"sortOrder":        p.SortOrder,
 					"showInNav":        p.ShowInNav,
 					"parentId":         p.ParentID,

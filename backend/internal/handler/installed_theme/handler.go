@@ -22,6 +22,7 @@ type Handler struct {
 	themeRepo        repository.InstalledThemeRepository
 	themePageService *service.ThemePageService
 	unifiedPageRepo  repository.UnifiedPageRepository
+	contentDocRepo   repository.ContentDocumentRepository
 	cache            *cache.Cache
 }
 
@@ -38,6 +39,14 @@ func NewHandler(
 		unifiedPageRepo:  unifiedPageRepo,
 		cache:            c,
 	}
+}
+
+// WithContentDoc enables content_documents → home Page migration on activate.
+func (h *Handler) WithContentDoc(repo repository.ContentDocumentRepository) *Handler {
+	if h != nil {
+		h.contentDocRepo = repo
+	}
+	return h
 }
 
 func (h *Handler) invalidateBootstrapCache() {
@@ -393,6 +402,14 @@ func (h *Handler) AdminActivate(c *gin.Context) {
 		if err := service.ApplyEditorialFirmPageSeeds(c.Request.Context(), h.unifiedPageRepo); err != nil {
 			// Warning only — activation must still succeed
 			log.Printf("Warning: editorial-firm unified page seeds failed: %v", err)
+		}
+	}
+
+	// theme-as-templates: ensure slug=home Page for product-first / blog-first
+	if h.unifiedPageRepo != nil && service.ShouldEnsureHomePage(target.ThemeID) {
+		migrator := service.NewHomePageMigrator(h.unifiedPageRepo, h.contentDocRepo)
+		if err := migrator.EnsureHomePage(c.Request.Context(), target.ThemeID); err != nil {
+			log.Printf("Warning: ensure home page for theme %s: %v", target.ThemeID, err)
 		}
 	}
 

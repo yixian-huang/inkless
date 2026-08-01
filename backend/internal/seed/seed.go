@@ -379,7 +379,17 @@ func (s *Seeder) SeedThemePages(ctx context.Context) error {
 	}
 
 	log.Printf("Seeding pages for active theme: %s", activeTheme.ThemeID)
-	return s.themePageService.SeedThemePages(ctx, activeTheme.ThemeID)
+	if err := s.themePageService.SeedThemePages(ctx, activeTheme.ThemeID); err != nil {
+		return err
+	}
+	// theme-as-templates: ensure unified home Page when applicable
+	if s.unifiedPageRepo != nil && service.ShouldEnsureHomePage(activeTheme.ThemeID) {
+		m := service.NewHomePageMigrator(s.unifiedPageRepo, s.contentRepo)
+		if err := m.EnsureHomePage(ctx, activeTheme.ThemeID); err != nil {
+			log.Printf("Warning: ensure home page: %v", err)
+		}
+	}
+	return nil
 }
 
 // DemoSiteSeed runs the full consultancy demo data seed.

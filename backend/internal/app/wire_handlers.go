@@ -275,7 +275,8 @@ func wireHandlers(
 		Sitemap:        sitemapHandler.NewHandler(r.contentDoc, r.article, cfg.BaseURL),
 		Feed:           feedHandler.NewHandler(r.article, r.siteConfig, cfg.BaseURL, "Blog", "Latest posts"),
 		Theme:          themeHandler.NewHandler(r.siteConfig, publicCache),
-		InstalledTheme: installedThemeHandler.NewHandler(r.installedTheme, themePageService, publicCache, r.unifiedPage),
+		InstalledTheme: installedThemeHandler.NewHandler(r.installedTheme, themePageService, publicCache, r.unifiedPage).
+			WithContentDoc(r.contentDoc),
 		EmailSettings:  emailSettingsHandler.NewHandler(r.siteConfig, emailSvc),
 		Features:       featuresHandler.NewHandler(r.siteConfig, publicCache),
 		GlobalConfig: globalConfigHandler.NewHandler(r.siteConfig, publicCache).

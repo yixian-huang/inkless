@@ -20,6 +20,8 @@ type UnifiedPage struct {
 	EnDescription     string          `gorm:"type:text;not null;default:''" json:"enDescription"`
 	Mode              string          `gorm:"size:20;not null;default:'composable'" json:"mode"`
 	TemplateID        *uint           `gorm:"index" json:"templateId"`
+	// TemplateKey is a theme-scoped template id (e.g. product-first/home). Preferred over TemplateID for theme packs.
+	TemplateKey       string          `gorm:"size:200;index;not null;default:''" json:"templateKey"`
 	DraftConfig       JSONMap         `gorm:"type:text" json:"draftConfig"`
 	DraftVersion      int             `gorm:"not null;default:1" json:"draftVersion"`
 	PublishedConfig   NullableJSONMap `gorm:"type:text" json:"publishedConfig"`
@@ -51,8 +53,9 @@ func (p *UnifiedPage) Validate() error {
 	if p.Mode != PageModeTemplate && p.Mode != PageModeComposable {
 		return errors.New("mode must be 'template' or 'composable'")
 	}
-	if p.Mode == PageModeTemplate && p.TemplateID == nil {
-		return errors.New("templateId is required for template mode")
+	// template mode: theme templateKey and/or legacy page_templates TemplateID
+	if p.Mode == PageModeTemplate && p.TemplateID == nil && p.TemplateKey == "" {
+		return errors.New("templateKey or templateId is required for template mode")
 	}
 	if p.Status != "" && p.Status != "draft" && p.Status != "published" && p.Status != "scheduled" {
 		return errors.New("invalid status")

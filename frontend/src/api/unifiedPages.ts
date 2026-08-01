@@ -10,6 +10,8 @@ export interface UnifiedPageItem {
   enTitle: string;
   mode: "template" | "composable";
   templateId?: number;
+  /** Theme template key e.g. product-first/home (theme-as-templates) */
+  templateKey?: string;
   status: string;
   sortOrder: number;
   showInNav: boolean;
@@ -26,6 +28,7 @@ export interface PublicUnifiedPageItem {
   title: { zh?: string; en?: string };
   description?: { zh?: string; en?: string };
   mode: "template" | "composable";
+  templateKey?: string;
   sortOrder: number;
   showInNav: boolean;
   parentId?: number;
@@ -48,6 +51,7 @@ export interface CreateUnifiedPageRequest {
   enTitle?: string;
   mode: "template" | "composable";
   templateId?: number;
+  templateKey?: string;
   draftConfig?: JSONMap;
   sortOrder?: number;
   showInNav?: boolean;
@@ -60,6 +64,9 @@ export interface UpdateUnifiedPageRequest {
   enTitle?: string;
   zhDescription?: string;
   enDescription?: string;
+  mode?: "template" | "composable";
+  templateId?: number;
+  templateKey?: string;
   sortOrder?: number;
   showInNav?: boolean;
   parentId?: number;

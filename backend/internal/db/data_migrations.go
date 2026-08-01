@@ -1,6 +1,9 @@
 package db
 
 import (
+	"time"
+
+	"github.com/yixian-huang/inkless/backend/internal/builtinthemes"
 	"github.com/yixian-huang/inkless/backend/internal/model"
 
 	"gorm.io/gorm"
@@ -79,6 +82,78 @@ func DataMigrations() []Migration {
 			},
 			// Removing the compatibility marker on rollback could make an existing
 			// deployment silently switch to a different index namespace.
+			Down: func(*gorm.DB) error { return nil },
+		},
+		{
+			// theme-as-templates T1/T2: ensure slug=home Page from content_documents when active theme is product/blog-first
+			// Kept in db package (no import of service) to avoid cycles.
+			ID: "005_ensure_home_unified_page",
+			Up: func(db *gorm.DB) error {
+				if !db.Migrator().HasTable(&model.UnifiedPage{}) {
+					return nil
+				}
+				_ = db.AutoMigrate(&model.UnifiedPage{})
+
+				var active model.InstalledTheme
+				if err := db.Where("is_active = ?", true).First(&active).Error; err != nil {
+					return nil
+				}
+				var templateKey string
+				switch active.ThemeID {
+				case builtinthemes.ProductFirst:
+					templateKey = "product-first/home"
+				case builtinthemes.BlogFirst:
+					templateKey = "blog-first/home"
+				default:
+					return nil
+				}
+
+				var existing model.UnifiedPage
+				err := db.Where("slug = ?", "home").First(&existing).Error
+				if err == nil {
+					// Upgrade empty template binding only
+					updates := map[string]interface{}{}
+					if existing.TemplateKey == "" {
+						updates["template_key"] = templateKey
+					}
+					if existing.Mode == "" || existing.Mode == model.PageModeComposable {
+						updates["mode"] = model.PageModeTemplate
+					}
+					if len(updates) > 0 {
+						return db.Model(&existing).Updates(updates).Error
+					}
+					return nil
+				}
+
+				cfg := model.JSONMap{}
+				var doc model.ContentDocument
+				if err := db.Where("page_key = ?", "home").First(&doc).Error; err == nil {
+					if len(doc.PublishedConfig) > 0 {
+						cfg = model.JSONMap(doc.PublishedConfig)
+					} else if len(doc.DraftConfig) > 0 {
+						cfg = model.JSONMap(doc.DraftConfig)
+					}
+				}
+				if len(cfg) == 0 {
+					cfg = model.JSONMap{"_templateKey": templateKey}
+				}
+				now := time.Now().UTC()
+				page := model.UnifiedPage{
+					Slug:             "home",
+					ZhTitle:          "首页",
+					EnTitle:          "Home",
+					Mode:             model.PageModeTemplate,
+					TemplateKey:      templateKey,
+					DraftConfig:      cfg,
+					DraftVersion:     1,
+					PublishedConfig:  model.NullableJSONMap(cfg),
+					PublishedVersion: 1,
+					Status:           "published",
+					ShowInNav:        true,
+					PublishedAt:      &now,
+				}
+				return db.Create(&page).Error
+			},
 			Down: func(*gorm.DB) error { return nil },
 		},
 	}
