@@ -98,9 +98,11 @@ func (h *Handler) GetPublicContent(c *gin.Context) {
 		return
 	}
 
-	// Try unified_pages first (slug == pageKey for the 7 builtin pages)
+	// Try unified_pages first (theme-as-templates: Page is operational SSOT).
 	var flatConfig model.JSONMap
 	version := 0
+	source := "" // page | content_document | merged
+	fromPage := false
 
 	if h.pageRepo != nil {
 		page, err := h.pageRepo.FindBySlug(c.Request.Context(), pageKeyStr)
@@ -108,6 +110,8 @@ func (h *Handler) GetPublicContent(c *gin.Context) {
 			publishedMap := model.JSONMap(page.PublishedConfig)
 			flatConfig = service.ConvertSectionsToContentDoc(pageKeyStr, publishedMap)
 			version = page.PublishedVersion
+			fromPage = true
+			source = "page"
 		}
 	}
 
@@ -121,13 +125,19 @@ func (h *Handler) GetPublicContent(c *gin.Context) {
 			if flatConfig == nil {
 				flatConfig = legacyConfig
 				version = doc.PublishedVersion
+				source = "content_document"
 			} else {
 				// Merge: fill empty keys in flatConfig from legacy
+				merged := false
 				for k, v := range legacyConfig {
 					existing, exists := flatConfig[k]
 					if !exists || isEmptyValue(existing) {
 						flatConfig[k] = v
+						merged = true
 					}
+				}
+				if merged && fromPage {
+					source = "merged"
 				}
 			}
 		}
@@ -137,6 +147,9 @@ func (h *Handler) GetPublicContent(c *gin.Context) {
 		metrics.Global().RecordPublicGetFailure()
 		apierror.Write(c, apierror.NotFound("page not found"))
 		return
+	}
+	if source == "" {
+		source = "unknown"
 	}
 
 	latency := time.Since(startTime)
@@ -149,6 +162,8 @@ func (h *Handler) GetPublicContent(c *gin.Context) {
 		"version": version,
 		"locale":  locale,
 		"config":  flatConfig,
+		// source helps agents verify Page dual-read without treating content_documents as SSOT
+		"source": source,
 	}
 	h.cache.Set(cacheKey, result)
 	c.Header("X-Cache", "MISS")

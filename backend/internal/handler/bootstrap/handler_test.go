@@ -74,3 +74,60 @@ func TestPublicBootstrapIncludesPublishedUnifiedPageFacts(t *testing.T) {
 	require.Equal(t, float64(2), payload.UnifiedPages[0]["publishedVersion"])
 	require.NotContains(t, payload.UnifiedPages[0], "publishedConfig")
 }
+
+func TestPublicBootstrapPageContentPrefersUnifiedPage(t *testing.T) {
+	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
+	require.NoError(t, err)
+	require.NoError(t, db.AutoMigrate(
+		&model.ContentDocument{},
+		&model.InstalledTheme{},
+		&model.Page{},
+		&model.UnifiedPage{},
+		&model.SiteConfig{},
+	))
+
+	unifiedRepo := repository.NewGormUnifiedPageRepository(db)
+	require.NoError(t, unifiedRepo.Create(t.Context(), &model.UnifiedPage{
+		Slug:             "home",
+		Mode:             model.PageModeTemplate,
+		TemplateKey:      "product-first/home@1",
+		Status:           "published",
+		PublishedConfig:  model.NullableJSONMap{"hero": map[string]any{"title": map[string]any{"zh": "从 Page"}}},
+		PublishedVersion: 3,
+	}))
+	docRepo := repository.NewGormContentDocumentRepository(db)
+	require.NoError(t, docRepo.Create(t.Context(), &model.ContentDocument{
+		PageKey:          model.PageKeyHome,
+		PublishedConfig:  model.JSONMap{"hero": map[string]any{"title": map[string]any{"zh": "从 content_doc"}}},
+		PublishedVersion: 1,
+	}))
+
+	publicCache := cache.New(time.Minute)
+	defer publicCache.Stop()
+	handler := NewHandler(
+		docRepo,
+		repository.NewGormInstalledThemeRepository(db),
+		repository.NewGormPageRepository(db),
+		unifiedRepo,
+		repository.NewGormSiteConfigRepository(db),
+		publicCache,
+	)
+
+	gin.SetMode(gin.TestMode)
+	router := gin.New()
+	router.GET("/public/bootstrap", handler.PublicBootstrap)
+	recorder := httptest.NewRecorder()
+	router.ServeHTTP(recorder, httptest.NewRequest(http.MethodGet, "/public/bootstrap?locale=zh&pageKey=home", nil))
+
+	require.Equal(t, http.StatusOK, recorder.Code)
+	var payload map[string]any
+	require.NoError(t, json.Unmarshal(recorder.Body.Bytes(), &payload))
+	pc, ok := payload["pageContent"].(map[string]any)
+	require.True(t, ok, "pageContent missing: %v", payload)
+	require.Equal(t, "page", pc["source"])
+	require.Equal(t, "product-first/home@1", pc["templateKey"])
+	cfg, _ := pc["config"].(map[string]any)
+	hero, _ := cfg["hero"].(map[string]any)
+	title, _ := hero["title"].(map[string]any)
+	require.Equal(t, "从 Page", title["zh"])
+}

@@ -47,7 +47,7 @@ Create key: login ops site → **设置 → API Key** → preset **内容 Agent�
 source ~/.config/inkless/dogfood.sh
 
 inkless-ops whoami
-# expect: pages, pageTemplates (e.g. product-first/home@1), activeThemeId
+# expect: preferPages, contentWritePath=pages, pageTemplates includes home
 
 inkless-ops articles list --missing-seo --json
 inkless-ops articles get ID --json
@@ -55,19 +55,16 @@ inkless-ops articles get ID --json
 inkless-ops articles apply ID --from-file patch.json --dry-run
 inkless-ops articles apply ID --from-file patch.json
 
-inkless-ops pages list
-inkless-ops pages get-draft ID
-
-# product-first home (theme-as-templates: prefer pages + templates)
 inkless templates list --site inkless-ops
-inkless content migrate-to-pages --site inkless-ops   # once: content_documents → Page home
-inkless pages list --site inkless-ops                 # should include slug=home + templateKey
+inkless pages list --site inkless-ops
+inkless pages get-draft ID --site inkless-ops --json
 inkless media upload ./shot.png --site inkless-ops --json
-# Preferred write path:
-inkless pages get-draft ID --json
-inkless pages put-draft ID --from-file home.json --dry-run
-# Legacy content apply still works (bridges to Page + deprecation warning):
-inkless content apply home --site inkless-ops --from-file home.json --dry-run
+# Production write (home / operational pages):
+inkless pages put-draft ID --site inkless-ops --from-file home.json --dry-run
+inkless pages put-draft ID --site inkless-ops --from-file home.json
+# Migration only (do not use in new skills):
+# inkless content migrate-to-pages --site inkless-ops
+# inkless content apply home …  # deprecated bridge
 ```
 
 Full form:
@@ -94,25 +91,24 @@ inkless articles list --site inkless-ops --missing-seo --json
 
 `articles apply` merges onto the current article (safe PUT).
 
-## Product-first home（theme-as-templates）
+## Product-first home（theme-as-templates T5）
 
 | 真源 | 说明 |
 |------|------|
-| **`unified_pages` slug=`home`** | 推荐运营真源（`templateKey` 如 `product-first/home@1`） |
-| `content_documents.page_key=home` | 迁移期 / 公开双读回退 |
-| **不是** articles | `articles list` 看不到 home |
+| **`unified_pages` slug=`home`** | **生产**运营真源（`templateKey` 如 `product-first/home@1`） |
+| 主题 `pages[home]` | 仅显示壳；中性 placeholder |
+| `content_documents` | 迁移 / dual-read only |
 
 **最小闭环：**
 
-1. `whoami` → `pages: true`，`pageTemplates` 含 home 模板
+1. `whoami` → `preferPages` + `contentWritePath=pages` + `pageTemplates`
 2. `templates list` / `pages list` 确认 slug=home
-3. `media upload` → 拿到 `url`
-4. 编辑 `home.json`：`hero/showcase/features/…`；**MediaRef 的 url/alt/caption 必须是 string**
-5. `pages put-draft ID --from-file home.json --dry-run` → 再 apply
-6. 迁移期可用 `content apply home`（bridge + deprecation）
-7. `publish_policy=never` → **不要** CLI publish；人工后台发
+3. `media upload` → `url`
+4. 编辑 `home.json`（hero/…）；**MediaRef url/alt/caption = string**
+5. `pages put-draft ID --from-file home.json --dry-run` → apply
+6. `publish_policy=never` → **不要** CLI publish
 
-设计：`docs/design-theme-as-templates.md`、`docs/design-theme-content-admin-api.md`。
+设计：`docs/design-theme-as-templates.md`、`docs/agent-access.md` §5.5。
 
 ## Dynamic pages (presets)
 

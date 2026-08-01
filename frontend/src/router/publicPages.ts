@@ -80,9 +80,12 @@ function themeRoutingPages(
 }
 
 /**
- * Published unified pages are the editable route truth. Theme definitions only
- * select a hardcoded component for a matching slug. During migration, legacy
- * theme routes fill only slugs that unified pages do not own yet.
+ * Published unified pages are the editable route truth (theme-as-templates).
+ * Theme package `pages[]` is a **display shell** registry: for a matching slug it
+ * only selects the hardcoded renderer (lazyComponent); operational copy/media
+ * live on the Page draft/published config (templateKey), not in theme source.
+ * During migration, legacy theme DB rows / manifest fill only slugs that
+ * unified pages do not own yet.
  */
 export function resolvePublicRoutingPages({
   unifiedPages,

@@ -2,10 +2,12 @@
 
 | 字段 | 值 |
 |------|-----|
-| 状态 | **S1–S4 implemented (MVP)** — slots/schema API + path validate + CLI + product-first embed |
+| 状态 | **Discovery still valid**；**生产写**已收敛到 Page（[theme-as-templates T5](design-theme-as-templates.md)）。slots 投影为 templates |
 | 日期 | 2026-08-01 |
-| 范围 | Host：schema 发现 API + validate 挂主题契约；CLI：`--validate-schema`；主题：`inkless.theme.json` / 包内 schema |
-| 相关 | [ADR-0002](adr/0002-theme-host-boundary.md)、[theme-contract](theme-contract.md)、[theme-content-admin-api](design-theme-content-admin-api.md)、[product-first](design-product-first-theme.md)、[agent-access](agent-access.md) |
+| 范围 | Host：schema 发现 + path validate；CLI：`templates` / 迁移期 `content slots`；**不要**以 content apply 为生产写 |
+| 相关 | [theme-as-templates](design-theme-as-templates.md)、[ADR-0002](adr/0002-theme-host-boundary.md)、[agent-access](agent-access.md) |
+
+> **T5：** 发现用 `inkless templates *`；写用 `inkless pages *`。contentSlots 为 v0 契约，Host 可投影为 templates。
 
 ---
 

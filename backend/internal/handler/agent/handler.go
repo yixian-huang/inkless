@@ -68,22 +68,28 @@ type WhoamiUser struct {
 type WhoamiCapabilities struct {
 	Articles bool `json:"articles"` // articles:read
 	Pages    bool `json:"pages"`    // pages:read (unified /admin/pages)
+	// PreferPages is always true when pages capability is available (theme-as-templates T5).
+	// Production write path for operational pages is /admin/pages, not /admin/content.
+	PreferPages bool `json:"preferPages"`
 	// ThemeContent is true when the agent can use theme-bound content_documents
-	// Admin API (/admin/content/:pageKey/*). Gated by pages:read (same as content GET draft).
+	// Admin API (/admin/content/:pageKey/*). Migration-only; prefer pages.
 	ThemeContent bool `json:"themeContent"`
 	// ThemeContentKeys lists content pageKeys: theme slots when declared, else host whitelist.
+	// Deprecated discovery; prefer pageTemplates.
 	ThemeContentKeys []string `json:"themeContentKeys,omitempty"`
 	// Active theme discovery (for multi-theme agents).
 	ActiveThemeID      string   `json:"activeThemeId,omitempty"`
 	ActiveThemeVersion string   `json:"activeThemeVersion,omitempty"`
-	ContentSlots       []string `json:"contentSlots,omitempty"` // pageKeys from theme contentSlots (deprecated; prefer pageTemplates)
-	// PageTemplates lists template keys for page appliesTo (theme-as-templates T4).
+	ContentSlots       []string `json:"contentSlots,omitempty"` // deprecated; prefer pageTemplates
+	// PageTemplates lists template keys for page appliesTo (theme-as-templates).
 	PageTemplates []string `json:"pageTemplates,omitempty"`
 	// PostTemplate is defaultTemplates.post when present.
-	PostTemplate  string `json:"postTemplate,omitempty"`
-	MediaUpload   bool   `json:"mediaUpload"`   // media:create
-	AIArticleMeta bool   `json:"aiArticleMeta"` // articles:update
-	Publish       bool   `json:"publish"`       // articles:publish or pages:publish
+	PostTemplate string `json:"postTemplate,omitempty"`
+	// ContentWritePath documents the recommended production write surface.
+	ContentWritePath string `json:"contentWritePath,omitempty"` // "pages" | "content-bridge"
+	MediaUpload      bool   `json:"mediaUpload"`                   // media:create
+	AIArticleMeta    bool   `json:"aiArticleMeta"`                 // articles:update
+	Publish          bool   `json:"publish"`                       // articles:publish or pages:publish
 }
 
 // Whoami GET /admin/agent/whoami
@@ -130,12 +136,15 @@ func (h *Handler) Whoami(c *gin.Context) {
 	}
 
 	canTheme := h.can(c, user, "pages", "read")
+	canPages := h.can(c, user, "pages", "read")
 	caps := WhoamiCapabilities{
-		Articles:      h.can(c, user, "articles", "read"),
-		Pages:         h.can(c, user, "pages", "read"),
-		ThemeContent:  canTheme,
-		MediaUpload:   h.can(c, user, "media", "create"),
-		AIArticleMeta: h.can(c, user, "articles", "update"),
+		Articles:         h.can(c, user, "articles", "read"),
+		Pages:            canPages,
+		PreferPages:      canPages,
+		ThemeContent:     canTheme,
+		ContentWritePath: "pages", // T5: production write = pages; content API is bridge only
+		MediaUpload:      h.can(c, user, "media", "create"),
+		AIArticleMeta:    h.can(c, user, "articles", "update"),
 		Publish: h.can(c, user, "articles", "publish") ||
 			h.can(c, user, "pages", "publish"),
 	}

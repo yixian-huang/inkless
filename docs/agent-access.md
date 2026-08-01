@@ -127,13 +127,15 @@ curl -sS "$INKLESS_BASE_URL/admin/agent/whoami" \
 | `authMethod` | `api_key` 或 `session` |
 | `scopes` | key 声明的 scope；session 为空数组 |
 | `capabilities` | **RBAC ∩ scopes** 的摘要，便于 agent 短路 |
-| `capabilities.pages` | 能否走 `/admin/pages`（**推荐**一级页写路径） |
-| `capabilities.pageTemplates` | 当前主题 page 模板 key 列表（theme-as-templates T4） |
+| `capabilities.pages` | 能否走 `/admin/pages`（**生产写路径**） |
+| `capabilities.preferPages` | T5：生产写应走 pages（与 pages 同真时为 true） |
+| `capabilities.contentWritePath` | 固定提示 `"pages"`（content 仅为 bridge） |
+| `capabilities.pageTemplates` | 当前主题 page 模板 key 列表 |
 | `capabilities.postTemplate` | 默认 post chrome 模板 key |
-| `capabilities.themeContent` | 能否走 `/admin/content/:pageKey`（**迁移期**；prefer pages） |
-| `capabilities.themeContentKeys` | 有主题 slots 时 = slots 的 pageKey；否则 Host 白名单 |
+| `capabilities.themeContent` | 能否走 `/admin/content/:pageKey`（**迁移 only**） |
+| `capabilities.themeContentKeys` | deprecated；prefer pageTemplates |
 | `capabilities.activeThemeId` | 当前激活主题 id |
-| `capabilities.contentSlots` | 主题声明的 contentSlots pageKey 列表（**deprecated**；prefer pageTemplates） |
+| `capabilities.contentSlots` | deprecated；prefer pageTemplates |
 
 Agent 规则：若 `baseUrl` 与任务站点 profile 不一致 → **中止写操作**。
 
@@ -301,105 +303,64 @@ curl -sS -X PUT "$INKLESS_BASE_URL/admin/articles/ID" \
 
 `PUT` 请求体字段需与后台编辑器一致（缺失字段可能被置空——先 `GET` 再合并修改项）。
 
-### 5.5 页面草稿（unified `/p/*`）
+### 5.5 运营页（theme-as-templates · **生产写路径**）
+
+**真源：** `unified_pages`（`inkless pages *` / `/admin/pages`）。  
+product-first 首页 = **slug=`home`** + `templateKey`（如 `product-first/home@1`）。  
+主题 `pages[]` 只是 **显示壳**（hardcoded 组件）；文案/配图在 Page config。  
+**MediaRef：** `url` / `alt` / `caption` 必须是 **string**（禁止 `{zh,en}`）。
 
 ```bash
-# 读草稿
+inkless site whoami --site SITE
+# expect: preferPages / contentWritePath=pages, pageTemplates includes home template
+
+inkless templates list --site SITE
+inkless pages list --site SITE                 # slug=home, templateKey=…
+inkless pages get-draft ID --site SITE --json
+inkless media upload ./shot.png --site SITE --json
+
+# home.json = flat product-first config (hero / features / …)
+inkless pages put-draft ID --site SITE --from-file home.json --dry-run
+inkless pages put-draft ID --site SITE --from-file home.json
+# publish 仅当 publish_policy 允许且 key 有 pages:publish
+```
+
+curl（生产写）：
+
+```bash
+curl -sS "$INKLESS_BASE_URL/admin/pages" -H "Authorization: Bearer $INKLESS_API_KEY" | jq .
 curl -sS "$INKLESS_BASE_URL/admin/pages/ID/draft" \
   -H "Authorization: Bearer $INKLESS_API_KEY" | jq .
-
-# 写草稿（scope: pages:update）
 curl -sS -X PUT "$INKLESS_BASE_URL/admin/pages/ID/draft" \
   -H "Authorization: Bearer $INKLESS_API_KEY" \
   -H 'Content-Type: application/json' \
-  -d '{"config":{…},"changeNote":"agent: seo copy"}' | jq .
-
-# 发布（需 pages:publish；默认 agent key 不要开）
-curl -sS -X POST "$INKLESS_BASE_URL/admin/pages/ID/publish" \
-  -H "Authorization: Bearer $INKLESS_API_KEY" | jq .
+  -d '{"config":{…},"changeNote":"agent: home copy"}' | jq .
 ```
 
-页面 SEO 元数据也在 `PUT /admin/pages/:id` 的 `zhMetaDescription` / `enMetaDescription` 等字段。
+公开验收（**读** dual-read，非写真源）：`GET /public/pages/home` 或 `GET /public/content/home`（`source` 字段可能为 `page` / `merged` / `content_document`）。
 
-### 5.5b 主题绑定内容（product-first `home` 等）
+### 5.5b 迁移专用：`content *`（**不要**写进新 skill）
 
-**真源：** `content_documents.page_key`（如 `home`），**不是** articles，也**不在** `pages list`。  
-**API：** `GET/PUT /admin/content/:pageKey/draft` + `POST .../publish`（设计见 [design-theme-content-admin-api.md](design-theme-content-admin-api.md)）。  
-**权限：** 读 `pages:read`；写 `pages:update`；发布 `pages:publish`。  
-**MediaRef：** `url` / `alt` / `caption` 必须是 **string**（禁止 `{zh,en}`，否则 400 / 白屏）。
-
-CLI（推荐）：
+`inkless content` / `/admin/content/:pageKey/*` 为 **迁移桥**：有 Page 时 dual-write 并返回 `Deprecation` / `X-Inkless-Prefer`。  
+历史设计见 [design-theme-content-admin-api.md](design-theme-content-admin-api.md)（已 superseded）。
 
 ```bash
-inkless site whoami --site SITE   # pageTemplates + themeContentKeys
-inkless templates list --site SITE              # 推荐：主题 templates 发现
-inkless templates get product-first/home@1 --site SITE --json
-
-# 迁移期别名（仍可用；stderr deprecation）
-inkless content slots --site SITE   # 含 templatesProjection
-inkless content schema home --site SITE
-inkless content keys --site SITE    # 含 pageTemplates
-
-inkless media upload ./shot.png --site SITE --json   # → .url
-
-# 生产写路径（推荐）：pages 绑定 templateKey
-inkless pages list --site SITE
-inkless pages get-draft ID --site SITE --json
-inkless pages put-draft ID --site SITE --from-file home.json --dry-run
-
-# 迁移期 content 写（bridge → Page + Deprecation 头）
-inkless content apply home --site SITE --from-file home.json --dry-run --validate-schema
-inkless content apply home --site SITE --from-file home.json --validate-schema
-inkless content publish home --site SITE   # honors publish_policy
-
-inkless content get home --site SITE --public --locale zh --json
-inkless content versions home --site SITE
-```
-
-Swagger：`/api-docs` → tags **Content (Admin)**、**Themes**（`/admin/themes/active/templates`）。
-
-curl 等价：
-
-```bash
-curl -sS "$INKLESS_BASE_URL/admin/content/home/draft" \
-  -H "Authorization: Bearer $INKLESS_API_KEY" | jq .
-
-curl -sS -X PUT "$INKLESS_BASE_URL/admin/content/home/draft" \
-  -H "Authorization: Bearer $INKLESS_API_KEY" \
-  -H "Content-Type: application/json" \
-  -H "If-Match: $VERSION" \
-  -d @home.json   # body: {"config":{...}} 或 CLI 自动包一层
-
-curl -sS "$INKLESS_BASE_URL/public/content/home?locale=zh" | jq .
-```
-
-无 content API 的旧实例：**禁止写库**；应升级 host 到含 M1 的版本，或人工在 SPA 编辑（若 UI 已接同一 API）。
-
-### 5.5c 迁移到 Page（theme-as-templates T3）
-
-生产写路径目标为 **unified pages**。一次性迁移：
-
-```bash
+# 一次性迁移 content_documents → Page
 inkless content migrate-to-pages --site SITE
-# 强制用 content_documents 覆盖 Page（慎用）:
-inkless content migrate-to-pages --site SITE --force
 
-inkless pages list --site SITE   # 应见 slug=home
+# 仅兼容旧脚本（stderr 警告）
+inkless content apply home --site SITE --from-file home.json --dry-run
 ```
 
-迁移后 `content get/apply/publish home` 仍可用：有 Page 时 **桥接到 Page**，并 dual-write content_documents 供公开双读；响应带 `Deprecation` / `X-Inkless-Prefer` 头。  
-新 skill 请优先 `pages *`。
-
-### 5.5d 主题模板发现（theme-as-templates T4）
+### 5.5c 主题模板发现
 
 | 任务 | 命令 / API |
 |------|------------|
 | 列模板 | `inkless templates list` → `GET /admin/themes/active/templates` |
-| 取 schema | `inkless templates get <key>` → `GET /admin/themes/active/template?key=` |
-| whoami | `capabilities.pageTemplates` / `postTemplate` |
-| 兼容 | `content slots` 返回 `templatesProjection`；`content schema` 可带 `templateKey` |
+| 取 schema | `inkless templates get <key>` |
+| whoami | `pageTemplates` / `postTemplate` / `preferPages` |
 
-无原生 `templates[]` 时 Host 将 **contentSlots 投影** 为 page 模板 + 默认 `{themeId}/post`。权限：`pages:read`。
+无原生 `templates[]` 时 Host **投影** contentSlots → page 模板 + 默认 `{themeId}/post`。
 
 ### 5.6 验收
 

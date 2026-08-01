@@ -60,7 +60,7 @@
 | 首页 | 作者 + 文章列表 | 企业 hero + 服务区块 | **产品 hero + 能力 + 上手 + CTA** |
 | 布局 | reading ~42rem | wide 1200px | **wide + maxWidth 72rem**（v1 不新增 contentProfile） |
 | 主导航 | Home, Blog, About | 关于/优势/服务/案例/专家 | **Product, Features, Docs*, Changelog*, Contact** |
-| 内容源 | Author + Articles | CMS 企业 page keys | **Site config + product home schema**（+ 可选 blog） |
+| 内容源 | Author + Articles | CMS 企业 page keys | **Host Page(home) + templateKey**（theme shell + site config；+ 可选 blog） |
 | Chrome | 阅读向 header | 企业 sticky | **产品 logo + 主 CTA 按钮** |
 
 \* Docs 可为外链或后续 host 路由；Changelog 可映射 host `/blog`。
@@ -73,8 +73,8 @@
 
 | 路由 | 所有者 | 说明 |
 |------|--------|------|
-| `/` | **Theme** `pages[home]` | 产品 landing（hardcoded 页组件） |
-| `/features` | **Theme** `pages[features]` | 能力详表（hardcoded；可与 home 共用 schema 片段） |
+| `/` | Theme shell + **Page home** | 产品 landing：显示壳 `pages[home]`；数据 `unified_pages` slug=home |
+| `/features` | Theme shell + optional Page | 能力页壳；运营文案优先 Page，否则中性 placeholder |
 | `/contact` | Theme **或** host contact | v1 建议 theme 轻量页：邮箱 + GitHub + 社区链接 |
 | `/blog`, `/blog/:slug` | **Host** | 可选 Changelog / 发布说明（Features.blog） |
 | 长篇工程文档 | **外链**（theme setting `docsUrl`） | 仓库 docs-site / 外部文档站；Header/Footer 可链出去 |

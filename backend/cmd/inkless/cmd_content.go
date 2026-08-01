@@ -14,22 +14,21 @@ import (
 func contentCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "content",
-		Short: "Theme-bound content_documents Admin API (home, etc.)",
-		Long: `Read/write theme page content slots (content_documents), not unified /pages.
+		Short: "Migration-only content_documents bridge (prefer pages)",
+		Long: `DEPRECATED — theme-as-templates T5: production write path is pages + articles.
 
-Typical product-first flow:
-  inkless content get home --site SITE
-  inkless content apply home --from-file home.json --dry-run
-  inkless content apply home --from-file home.json
-  inkless content publish home   # honors publish_policy
-  inkless content versions home
-  inkless content rollback home 3
+Do not use content * in new agent skills. Prefer:
+  inkless templates list
+  inkless pages list / get-draft / put-draft / apply / publish
+  inkless articles *
 
-MediaRef leaves (url/alt/caption) must be plain strings.
+content get/apply/publish remain as a migration bridge: when slug=pageKey Page
+exists they dual-write Page + content_documents and emit Deprecation headers.
 
-DEPRECATED (theme-as-templates T3): prefer inkless pages * for home and other
-operational pages. content get/apply/publish still work and bridge to unified
-Page when slug=pageKey exists; responses include Deprecation headers.`,
+One-shot migration:
+  inkless content migrate-to-pages --site SITE
+
+MediaRef leaves (url/alt/caption) must be plain strings.`,
 		SilenceUsage: true,
 	}
 	cmd.AddCommand(contentGetCmd())

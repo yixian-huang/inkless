@@ -2,14 +2,16 @@
 
 | 字段 | 值 |
 |------|-----|
-| 状态 | **M1–M3 implemented** — Admin API + CLI + deep dry-run + versions/rollback + swagger |
-| 日期 | 2026-08-01 |
-| 范围 | Host：Admin API + cache + CLI/skill 文档；**不改** product-first 视觉 |
-| 相关 | [ADR-0002 主题边界](adr/0002-theme-host-boundary.md)、[product-first 设计](design-product-first-theme.md)、[api-spec § content](api-spec.md)、[agent-access](agent-access.md) |
+| 状态 | **Superseded for production writes** — 历史 M1–M3 仍在作 **迁移桥**；生产写路径见 [theme-as-templates](design-theme-as-templates.md)（`pages *`） |
+| 日期 | 2026-08-01（T5 标注 2026-08-01） |
+| 范围 | Host：Admin content API + CLI；**不再**作为 agent 生产写路径文档 |
+| 相关 | [theme-as-templates](design-theme-as-templates.md)、[ADR-0002](adr/0002-theme-host-boundary.md)、[agent-access](agent-access.md) |
+
+> **T5：** 新 skill / 运营流程请用 `inkless pages` + `templates`。`content apply` 仅迁移；响应含 Deprecation 头。
 
 ---
 
-## 1. 问题
+## 1. 问题（历史背景）
 
 | 事实 | 影响 |
 |------|------|

@@ -136,20 +136,21 @@ Canonical narrative and switch-theme rules: **[ADR-0002](adr/0002-theme-host-bou
 | Site-type IA (blog vs product vs corporate) | — | ✓ (`pages[]` + seed) |
 | Features toggles (blog on/off, …) | instance config | theme *responds* only |
 
-### 5.1 Routes
+### 5.1 Routes（theme-as-templates）
 
-| Route | Owner |
-|-------|--------|
-| `/` (theme home) | Theme `pages[]` |
-| Theme-declared slugs (`/features`, `/author`, …) | Theme `pages[]` |
-| `/blog`, `/blog/:slug` | Host |
-| `/categories/*`, `/tags/*` | Host |
-| `/admin/*`, `/setup`, `/auth` | Host |
-| Dynamic CMS pages (`/p/*`, unified pages) | Host + sections |
+| Route | Display shell | Operational data |
+|-------|---------------|------------------|
+| `/` (home) | Theme `pages[home]` component | **Host Page** slug=`home` + `templateKey` |
+| Theme-declared slugs (`/features`, …) | Theme `pages[]` component | Prefer Host Page when published; else placeholders |
+| `/blog`, `/blog/:slug` | Theme chrome | Host articles |
+| `/categories/*`, `/tags/*` | Theme chrome | Host |
+| `/admin/*`, `/setup`, `/auth` | Host | Host |
+| Dynamic CMS (`/p/*`) | Host sections (+ theme section types) | Host unified_pages |
 
-**Primary IA (C vs D):** first-class nav narrative pages belong in theme `pages[]` (class C) or D with theme-prefixed sections — not Host-only generic blocks if brand parity with home is required. See ADR-0002 **附录 A–B**.
+**Theme `pages[]` is a shell registry** (slug, nav, lazyComponent, contentKey) — not the content store.  
+**Primary IA data** lives on Page/Post; themes supply templates + chrome. See [design-theme-as-templates](design-theme-as-templates.md) and ADR-0002 **附录 F**.
 
-**Route / slug conflicts (highest wins):** Host system → Host blog/taxonomy → theme `pages[]` → `/p/:slug` → external links. See ADR-0002 **附录 D**.
+**Route / slug conflicts (highest wins):** Host system → Host blog/taxonomy → published Page path → theme shell fallback → external links. See ADR-0002 **附录 D**.
 
 ### 5.2 Built-in themes (examples)
 

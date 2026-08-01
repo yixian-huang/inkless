@@ -10,6 +10,7 @@ import (
 	featurespkg "github.com/yixian-huang/inkless/backend/internal/handler/features"
 	"github.com/yixian-huang/inkless/backend/internal/model"
 	"github.com/yixian-huang/inkless/backend/internal/repository"
+	"github.com/yixian-huang/inkless/backend/internal/service"
 )
 
 // Handler aggregates multiple public endpoints into a single response
@@ -185,18 +186,42 @@ func (h *Handler) PublicBootstrap(c *gin.Context) {
 		features = featurespkg.MergePublishedDefaults(featuresCfg.PublishedConfig)
 	}
 
-	// 7. Page content (optional, only if pageKey is provided)
+	// 7. Page content (optional): theme-as-templates dual-read — Page first, content_documents fallback.
 	var pageContent interface{}
 	if pageKey != "" {
 		pk := model.PageKey(pageKey)
-		if pk.IsValid() {
+		// Prefer unified_pages (slug == pageKey) for operational home/features etc.
+		if h.unifiedPageRepo != nil {
+			if up, err := h.unifiedPageRepo.FindBySlug(ctx, pageKey); err == nil && up != nil && len(up.PublishedConfig) > 0 {
+				cfg := service.ConvertSectionsToContentDoc(pageKey, model.JSONMap(up.PublishedConfig))
+				// Skip pure seed markers (_templateKey only)
+				keys := 0
+				for k := range cfg {
+					if len(k) > 0 && k[0] != '_' {
+						keys++
+					}
+				}
+				if keys > 0 {
+					pageContent = gin.H{
+						"pageKey":     pageKey,
+						"version":     up.PublishedVersion,
+						"locale":      locale,
+						"config":      cfg,
+						"source":      "page",
+						"templateKey": up.TemplateKey,
+					}
+				}
+			}
+		}
+		if pageContent == nil && h.contentDocRepo != nil && pk.IsValid() {
 			pageDoc, err := h.contentDocRepo.FindByPageKey(ctx, pk)
-			if err == nil {
+			if err == nil && pageDoc != nil && len(pageDoc.PublishedConfig) > 0 {
 				pageContent = gin.H{
 					"pageKey": pageDoc.PageKey.String(),
 					"version": pageDoc.PublishedVersion,
 					"locale":  locale,
 					"config":  pageDoc.PublishedConfig,
+					"source":  "content_document",
 				}
 			}
 		}

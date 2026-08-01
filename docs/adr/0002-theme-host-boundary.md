@@ -246,15 +246,16 @@ Inkless 定位为**多方向、多主题的综合建站工具**（对标 Halo）
 
 1. **Host 系统路由** — `/admin/*`、`/setup`、`/auth`、API、静态资源约定  
 2. **Host 内容系统标准入口** — `/blog`、`/blog/:slug`、`/categories/*`、`/tags/*`（及 Features 打开的等价入口）  
-3. **主题声明 slug** — `ThemePlugin.pages[]` 激活后的公开路径（如 `/`、`/features`）  
-4. **统一动态页** — `/p/:slug`（及未来若存在的 pretty 映射，仍不得抢占 1–3）  
-5. **外链** — 不占 Inkless 路由
+3. **已发布 Host Page 的公开 path** — `unified_pages`（含 slug=`home` → `/`）；主题 `pages[]` 仅选 **显示壳**  
+4. **主题声明 slug fallback** — 尚无 Page 时的 `ThemePlugin.pages[]` 壳（迁移期）  
+5. **`/p/:slug` 扩展面**（pretty 映射仍不得抢占 1–3）  
+6. **外链** — 不占 Inkless 路由
 
 **规则：**
 
-- 禁止 unified page 的公开 path 与 1–3 静默同名抢占；Admin 创建/改 slug 时应校验并警告。  
-- 主题激活 seed 若与已有 `/p/:slug` 的「去前缀 slug」冲突：以 **3 优先展示主题页**；D 页数据保留，可在 admin 提示「被主题路由遮蔽」。  
-- 未来 pretty URL 若取消 `/p/` 前缀，必须仍服从本表，并做迁移说明（Open question，不阻塞本附录）。
+- 禁止 unified page 的公开 path 与 1–2 静默同名抢占；Admin 创建/改 slug 时应校验并警告。  
+- 主题激活 seed 不得覆盖已有运营 Page 的 published 内容（见 theme-as-templates §4.3）。  
+- 未来 pretty URL 若取消 `/p/` 前缀，必须仍服从本表。
 
 ---
 
@@ -267,9 +268,29 @@ Inkless 定位为**多方向、多主题的综合建站工具**（对标 Halo）
 
 ---
 
+## 附录 F — Theme as Templates（2026-08 修订）
+
+完整设计：[design-theme-as-templates.md](../design-theme-as-templates.md)。
+
+| 原表述 | 修订 |
+|--------|------|
+| `/` 所有者 = 主题 `pages[home]` | `/` **数据** = published Page(slug=home)；**显示** = 主题模板/硬编码壳 |
+| C = 主题拥有一级 IA 内容 | C = 主题 **templates + chrome + shell 组件**；一级 IA **数据** 在 Page/Post |
+| content_documents 为主题页写路径 | **迁移/ dual-read only**；生产写 = `/admin/pages` + articles |
+| Agent 用 `content apply home` | Agent 用 `pages *` + `templates *` |
+
+**不变量补充：**
+
+1. 主题 `pages[]` 不得作为运营文案的唯一真源（铁律 3）。  
+2. Host 须支持 Page `templateKey` 与主题 templates 发现。  
+3. `content_documents` 可保留作兼容，不可再作为新 agent 文档的生产写路径。
+
+---
+
 ## 修订记录
 
 | 日期 | 变更 |
 |------|------|
 | 2026-07-29 | Accepted：分层、四类对象、路由、十条不变量 |
 | 2026-07-30 | 附录 A–E：C/D 裁决、D 基线、铁律 3 表、冲突优先级、开放问题；Related 链 KB 决策树 |
+| 2026-08-01 | 附录 F theme-as-templates；附录 D 优先级以 published Page 为一级 IA 数据 |
