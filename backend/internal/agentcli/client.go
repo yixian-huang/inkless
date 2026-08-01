@@ -292,6 +292,24 @@ func (c *Client) PublishPage(ctx context.Context, id uint) (map[string]any, erro
 	return out, nil
 }
 
+// ListContentSlots GET /admin/content/slots
+func (c *Client) ListContentSlots(ctx context.Context) (map[string]any, error) {
+	var out map[string]any
+	if err := c.DoJSON(ctx, http.MethodGet, "/admin/content/slots", nil, &out); err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// GetContentSchema GET /admin/content/:pageKey/schema
+func (c *Client) GetContentSchema(ctx context.Context, pageKey string) (map[string]any, error) {
+	var out map[string]any
+	if err := c.DoJSON(ctx, http.MethodGet, "/admin/content/"+url.PathEscape(pageKey)+"/schema", nil, &out); err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // GetContentDraft GET /admin/content/:pageKey/draft
 func (c *Client) GetContentDraft(ctx context.Context, pageKey string) (map[string]any, error) {
 	var out map[string]any

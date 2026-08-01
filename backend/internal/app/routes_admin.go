@@ -143,7 +143,10 @@ func registerAdminContent(
 
 	// Theme-bound content_documents (product-first home, corporate page keys, …).
 	// Separate from unified /admin/pages (D-class). See docs/design-theme-content-admin-api.md.
+	// Register static /content/slots BEFORE /content/:pageKey/* so "slots" is not a pageKey.
 	if h.Content != nil {
+		admin.GET("/content/slots", require("pages", "read"), h.Content.ListSlots)
+		admin.GET("/content/:pageKey/schema", require("pages", "read"), h.Content.GetSchema)
 		admin.GET("/content/:pageKey/draft", require("pages", "read"), h.Content.GetDraft)
 		admin.PUT("/content/:pageKey/draft", require("pages", "update"), h.Content.UpdateDraft)
 		admin.POST("/content/:pageKey/validate", require("pages", "update"), h.Content.Validate)

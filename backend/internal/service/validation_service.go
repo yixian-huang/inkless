@@ -2,8 +2,10 @@ package service
 
 import (
 	"fmt"
-	"github.com/yixian-huang/inkless/backend/internal/model"
 	"strings"
+
+	"github.com/yixian-huang/inkless/backend/internal/contentslots"
+	"github.com/yixian-huang/inkless/backend/internal/model"
 )
 
 // ValidationError represents a field-level validation error
@@ -29,6 +31,9 @@ type ValidationResult struct {
 	TranslationStatus map[string]TranslationState `json:"translationStatus"`
 	// SchemaKind is a discovery hint for agents: product-first | corporate | empty | unknown | global | …
 	SchemaKind string `json:"schemaKind,omitempty"`
+	// Theme contract discovery (when contentSlots apply).
+	SchemaID     string `json:"schemaId,omitempty"`
+	SchemaSource string `json:"schemaSource,omitempty"` // theme | host-fallback | none
 }
 
 // ValidationService provides content validation and translation state tracking
@@ -42,10 +47,22 @@ func NewValidationService() *ValidationService {
 // ValidateConfig validates a page configuration and calculates translation states.
 // Always enforces MediaRef string leaves (url/alt/caption) across the tree.
 func (vs *ValidationService) ValidateConfig(pageKey model.PageKey, config model.JSONMap) *ValidationResult {
+	return vs.ValidateConfigWithSlot(pageKey, config, nil, "")
+}
+
+// ValidateConfigWithSlot is ValidateConfig plus optional theme contentSlots path rules.
+// When slot is non-nil, host shape heuristics for home are skipped (theme is source of truth).
+func (vs *ValidationService) ValidateConfigWithSlot(
+	pageKey model.PageKey,
+	config model.JSONMap,
+	slot *contentslots.Slot,
+	schemaSource string,
+) *ValidationResult {
 	result := &ValidationResult{
 		Valid:             true,
 		Errors:            []ValidationError{},
 		TranslationStatus: make(map[string]TranslationState),
+		SchemaSource:      schemaSource,
 	}
 
 	if config == nil {
@@ -54,6 +71,36 @@ func (vs *ValidationService) ValidateConfig(pageKey model.PageKey, config model.
 
 	// Hard gate: MediaRef leaves must be plain strings (product-first + corporate).
 	result.Errors = append(result.Errors, CollectMediaRefLeafErrors(config)...)
+
+	if slot != nil {
+		result.SchemaID = slot.SchemaID
+		if result.SchemaSource == "" {
+			result.SchemaSource = "theme"
+		}
+		// Prefer schemaId theme prefix as kind hint
+		if slot.SchemaID != "" {
+			if i := strings.IndexByte(slot.SchemaID, '/'); i > 0 {
+				result.SchemaKind = slot.SchemaID[:i]
+			} else {
+				result.SchemaKind = slot.SchemaID
+			}
+		}
+		for _, pe := range contentslots.ValidateConfigAgainstSlot(config, *slot) {
+			result.Errors = append(result.Errors, ValidationError{
+				Path: pe.Path, Code: pe.Code, Message: pe.Message,
+			})
+		}
+		// Still allow light product-first structural checks when schema is product-first
+		if pageKey == model.PageKeyHome && (result.SchemaKind == "product-first" || isProductFirstHomeConfig(config)) {
+			vs.validateProductFirstHome(config, result)
+		}
+		result.Valid = len(result.Errors) == 0
+		return result
+	}
+
+	if result.SchemaSource == "" {
+		result.SchemaSource = "host-fallback"
+	}
 
 	switch pageKey {
 	case model.PageKeyHome:
@@ -81,9 +128,9 @@ func (vs *ValidationService) ValidateConfig(pageKey model.PageKey, config model.
 		vs.validateGlobalPage(config, result)
 	case model.PageKeyTheme:
 		result.SchemaKind = "theme"
-		// Theme settings blob — structure owned by theme; MediaRef walk already applied.
 	default:
 		result.SchemaKind = "unknown"
+		result.SchemaSource = "none"
 		result.Valid = false
 		result.Errors = append(result.Errors, ValidationError{
 			Path:    "pageKey",

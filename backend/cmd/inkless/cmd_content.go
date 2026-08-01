@@ -36,6 +36,8 @@ MediaRef leaves (url/alt/caption) must be plain strings.`,
 	cmd.AddCommand(contentVersionCmd())
 	cmd.AddCommand(contentRollbackCmd())
 	cmd.AddCommand(contentKeysCmd())
+	cmd.AddCommand(contentSlotsCmd())
+	cmd.AddCommand(contentSchemaCmd())
 	return cmd
 }
 
@@ -94,7 +96,7 @@ func contentGetCmd() *cobra.Command {
 func contentApplyCmd() *cobra.Command {
 	var f remoteFlags
 	var fromFile, changeNote string
-	var dryRun bool
+	var dryRun, validateSchema, noSchema bool
 	cmd := &cobra.Command{
 		Use:   "apply <pageKey>",
 		Short: "PUT draft from file (If-Match from current version); supports --dry-run diff",
@@ -105,9 +107,14 @@ File may be either:
   { "config": { ... }, "changeNote": "..." }     # wrapped
 
 Always uses optimistic locking (If-Match = current draft version).
-Use --dry-run for deep path diff + local MediaRef preflight + server validate.`,
+Use --dry-run for deep path diff + local MediaRef preflight + server validate.
+--validate-schema requires theme contentSlots (schemaSource=theme) and valid=true.
+--no-schema skips local MediaRef preflight block (still sends server validate unless dry-run only).`,
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if validateSchema && noSchema {
+				return fmt.Errorf("--validate-schema and --no-schema are mutually exclusive")
+			}
 			pageKey := strings.TrimSpace(args[0])
 			if pageKey == "" {
 				return fmt.Errorf("pageKey is required")
@@ -157,8 +164,8 @@ Use --dry-run for deep path diff + local MediaRef preflight + server validate.`,
 			diff := agentcli.DeepConfigDiff(curCfg, config)
 			localMedia := agentcli.LocalMediaRefIssues(config)
 
+			val, valErr := c.ValidateContent(ctx, pageKey, config)
 			if dryRun {
-				val, valErr := c.ValidateContent(ctx, pageKey, config)
 				out := map[string]any{
 					"dryRun":           true,
 					"siteId":           ep.SiteID,
@@ -174,11 +181,22 @@ Use --dry-run for deep path diff + local MediaRef preflight + server validate.`,
 				if valErr != nil {
 					out["validateError"] = valErr.Error()
 				}
-				return f.printJSON(out)
+				if err := f.printJSON(out); err != nil {
+					return err
+				}
+				if validateSchema {
+					return requireThemeSchemaValid(val, valErr)
+				}
+				return nil
 			}
 
-			if len(localMedia) > 0 {
+			if !noSchema && len(localMedia) > 0 {
 				return fmt.Errorf("local MediaRef preflight failed (%d issue(s)); fix url/alt/caption to strings or use --dry-run", len(localMedia))
+			}
+			if validateSchema {
+				if err := requireThemeSchemaValid(val, valErr); err != nil {
+					return err
+				}
 			}
 
 			res, err := c.PutContentDraft(ctx, pageKey, ver, config, changeNote)
@@ -202,6 +220,82 @@ Use --dry-run for deep path diff + local MediaRef preflight + server validate.`,
 	cmd.Flags().StringVar(&fromFile, "from-file", "", "JSON config file (bare or {config:...})")
 	cmd.Flags().StringVar(&changeNote, "change-note", "", "Optional change note")
 	cmd.Flags().BoolVar(&dryRun, "dry-run", false, "Deep path diff + local MediaRef + server validate; no write")
+	cmd.Flags().BoolVar(&validateSchema, "validate-schema", false, "Require theme contentSlots validation (schemaSource=theme, valid=true)")
+	cmd.Flags().BoolVar(&noSchema, "no-schema", false, "Skip local MediaRef preflight block on write")
+	return cmd
+}
+
+func requireThemeSchemaValid(val map[string]any, valErr error) error {
+	if valErr != nil {
+		return fmt.Errorf("--validate-schema: validate request failed: %w", valErr)
+	}
+	if val == nil {
+		return fmt.Errorf("--validate-schema: empty validate response")
+	}
+	src, _ := val["schemaSource"].(string)
+	if src != "theme" {
+		return fmt.Errorf("--validate-schema: active theme has no contentSlots for this pageKey (schemaSource=%q)", src)
+	}
+	valid, _ := val["valid"].(bool)
+	if !valid {
+		return fmt.Errorf("--validate-schema: validation failed (schemaId=%v errors=%v)", val["schemaId"], val["errors"])
+	}
+	return nil
+}
+
+func contentSlotsCmd() *cobra.Command {
+	var f remoteFlags
+	cmd := &cobra.Command{
+		Use:   "slots",
+		Short: "GET /admin/content/slots (active theme contentSlots)",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			ep, err := f.resolve()
+			if err != nil {
+				return err
+			}
+			ctx, cancel := f.context()
+			defer cancel()
+			c := f.client(ep)
+			if err := f.verifyIfNeeded(ctx, ep, c); err != nil {
+				return err
+			}
+			res, err := c.ListContentSlots(ctx)
+			if err != nil {
+				return err
+			}
+			return f.printJSON(res)
+		},
+	}
+	f.addTo(cmd)
+	return cmd
+}
+
+func contentSchemaCmd() *cobra.Command {
+	var f remoteFlags
+	cmd := &cobra.Command{
+		Use:   "schema <pageKey>",
+		Short: "GET /admin/content/:pageKey/schema",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			pageKey := strings.TrimSpace(args[0])
+			ep, err := f.resolve()
+			if err != nil {
+				return err
+			}
+			ctx, cancel := f.context()
+			defer cancel()
+			c := f.client(ep)
+			if err := f.verifyIfNeeded(ctx, ep, c); err != nil {
+				return err
+			}
+			res, err := c.GetContentSchema(ctx, pageKey)
+			if err != nil {
+				return err
+			}
+			return f.printJSON(res)
+		},
+	}
+	f.addTo(cmd)
 	return cmd
 }
 

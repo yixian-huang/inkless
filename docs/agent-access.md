@@ -322,14 +322,17 @@ CLI（推荐）：
 
 ```bash
 inkless site whoami --site SITE   # capabilities.themeContent + themeContentKeys
-inkless content keys --site SITE  # 同上 keys，短输出
+inkless content slots --site SITE # activeTheme + contentSlots（主题契约）
+inkless content schema home --site SITE
+inkless content keys --site SITE
 
 inkless media upload ./shot.png --site SITE --json   # → .url
 
 # home.json = product-first config；MediaRef 全 string
-# --dry-run：深层 path diff + local MediaRef 预检 + 服务端 validate（含 schemaKind）
-inkless content apply home --site SITE --from-file home.json --dry-run
-inkless content apply home --site SITE --from-file home.json
+# --dry-run：深层 path diff + local MediaRef + validate.schemaSource
+# --validate-schema：要求 theme contentSlots 且 valid=true
+inkless content apply home --site SITE --from-file home.json --dry-run --validate-schema
+inkless content apply home --site SITE --from-file home.json --validate-schema
 
 # publish_policy=never 时停在 draft；允许时：
 inkless content publish home --site SITE

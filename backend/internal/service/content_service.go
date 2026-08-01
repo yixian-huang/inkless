@@ -30,6 +30,8 @@ type ContentService struct {
 	docRepo       repository.ContentDocumentRepository
 	versionRepo   repository.ContentVersionRepository
 	validationSvc *ValidationService
+	// optional: resolve theme contentSlots for publish gate
+	slotValidate func(ctx context.Context, pageKey model.PageKey, config model.JSONMap) *ValidationResult
 }
 
 // NewContentService creates a ContentService.
@@ -45,6 +47,14 @@ func NewContentService(
 		versionRepo:   versionRepo,
 		validationSvc: validationSvc,
 	}
+}
+
+// WithSlotValidator injects theme-aware validation used on publish.
+func (cs *ContentService) WithSlotValidator(fn func(ctx context.Context, pageKey model.PageKey, config model.JSONMap) *ValidationResult) *ContentService {
+	if cs != nil {
+		cs.slotValidate = fn
+	}
+	return cs
 }
 
 // PublishResult is the outcome of a successful publish.
@@ -87,7 +97,12 @@ func (cs *ContentService) Publish(
 			return ErrVersionMismatch
 		}
 
-		validationResult := cs.validationSvc.ValidateConfig(pageKey, doc.DraftConfig)
+		var validationResult *ValidationResult
+		if cs.slotValidate != nil {
+			validationResult = cs.slotValidate(ctx, pageKey, doc.DraftConfig)
+		} else {
+			validationResult = cs.validationSvc.ValidateConfig(pageKey, doc.DraftConfig)
+		}
 		if !cs.validationSvc.CanPublish(validationResult) {
 			return ErrCannotPublish
 		}

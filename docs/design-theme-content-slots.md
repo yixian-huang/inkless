@@ -2,7 +2,7 @@
 
 | 字段 | 值 |
 |------|-----|
-| 状态 | **Proposed** |
+| 状态 | **S1–S4 implemented (MVP)** — slots/schema API + path validate + CLI + product-first embed |
 | 日期 | 2026-08-01 |
 | 范围 | Host：schema 发现 API + validate 挂主题契约；CLI：`--validate-schema`；主题：`inkless.theme.json` / 包内 schema |
 | 相关 | [ADR-0002](adr/0002-theme-host-boundary.md)、[theme-contract](theme-contract.md)、[theme-content-admin-api](design-theme-content-admin-api.md)、[product-first](design-product-first-theme.md)、[agent-access](agent-access.md) |
@@ -281,11 +281,11 @@ Dry-run 输出增量：
 
 | 阶段 | 交付 | 完成标准 |
 |------|------|----------|
-| **S0（文档）** | 本文 + theme-contract 指针 | 主题作者知如何声明 |
-| **S1 Host** | 解析激活主题 `contentSlots`；`GET slots` / `GET :pageKey/schema`；validate 挂 paths + schemaId | product-first 声明后 whoami/slots 可见 home |
-| **S2 校验** | JSON Schema 执行（或 paths-only MVP）+ warnings；去掉对「有 slots 主题」的错误启发式 | 错误路径带 schemaId |
-| **S3 CLI** | `content slots/schema`、`--validate-schema` / `--no-schema` | dogfood skill 严格模式一条龙 |
-| **S4 官方主题** | product-first（必做）、blog-first/corporate（可选 slots） | 主题仓 schema + fixture CI |
+| **S0（文档）** | 本文 + theme-contract 指针 | **done** |
+| **S1 Host** | 解析激活主题 `contentSlots`；`GET slots` / `GET :pageKey/schema` | **done**（registry + installed config override） |
+| **S2 校验** | paths-only MVP + schemaId/schemaSource on validate/publish | **done**（完整 JSON Schema 执行可后续） |
+| **S3 CLI** | `content slots/schema`、`--validate-schema` / `--no-schema` | **done** |
+| **S4 官方主题** | product-first contentSlots + home.schema.json；host embed 同步 | **done**（blog-first 可选未做） |
 
 **S1 最小可用：** 即使暂不跑完整 JSON Schema，只要 **mediaRefPaths / stringPaths / localizedPaths** 进 validate，已能替代大部分启发式。
 

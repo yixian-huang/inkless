@@ -59,12 +59,14 @@ inkless-ops pages list
 inkless-ops pages get-draft ID
 
 # product-first home (theme content slot — NOT pages list)
+inkless content slots --site inkless-ops          # activeTheme + contentSlots
+inkless content schema home --site inkless-ops    # schemaId / mediaRefPaths
 inkless content keys --site inkless-ops
 inkless content get home --site inkless-ops --json
 inkless media upload ./shot.png --site inkless-ops --json
-inkless content apply home --site inkless-ops --from-file home.json --dry-run
-# dry-run 看: diff.paths / localMediaIssues / validate.schemaKind
-inkless content apply home --site inkless-ops --from-file home.json
+inkless content apply home --site inkless-ops --from-file home.json --dry-run --validate-schema
+# dry-run: diff.paths / localMediaIssues / validate.schemaSource=theme
+inkless content apply home --site inkless-ops --from-file home.json --validate-schema
 inkless content get home --site inkless-ops --public --locale zh --json
 inkless content versions home --site inkless-ops
 ```

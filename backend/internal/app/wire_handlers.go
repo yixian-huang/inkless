@@ -19,6 +19,7 @@ import (
 	categoryHandler "github.com/yixian-huang/inkless/backend/internal/handler/category"
 	chunkedUploadHandler "github.com/yixian-huang/inkless/backend/internal/handler/chunked_upload"
 	contentHandler "github.com/yixian-huang/inkless/backend/internal/handler/content"
+	"github.com/yixian-huang/inkless/backend/internal/contentslots"
 	dashboardHandler "github.com/yixian-huang/inkless/backend/internal/handler/dashboard"
 	emailSettingsHandler "github.com/yixian-huang/inkless/backend/internal/handler/email_settings"
 	extensionsHandler "github.com/yixian-huang/inkless/backend/internal/handler/extensions"
@@ -50,6 +51,7 @@ import (
 	userHandler "github.com/yixian-huang/inkless/backend/internal/handler/user"
 	wizardHandler "github.com/yixian-huang/inkless/backend/internal/handler/wizard"
 	"github.com/yixian-huang/inkless/backend/internal/migration"
+	"github.com/yixian-huang/inkless/backend/internal/model"
 	"github.com/yixian-huang/inkless/backend/internal/module"
 	backupMod "github.com/yixian-huang/inkless/backend/internal/modules/backup"
 	commentMod "github.com/yixian-huang/inkless/backend/internal/modules/comment"
@@ -238,7 +240,20 @@ func wireHandlers(
 
 	contentVersionRepo := repository.NewGormContentVersionRepository(database.DB)
 	validationSvc := service.NewValidationService()
-	contentSvc := service.NewContentService(database.DB, r.contentDoc, contentVersionRepo, validationSvc)
+	contentSlotResolver := contentslots.NewResolver(r.installedTheme, contentslots.DefaultRegistry())
+	contentSvc := service.NewContentService(database.DB, r.contentDoc, contentVersionRepo, validationSvc).
+		WithSlotValidator(func(ctx context.Context, pageKey model.PageKey, config model.JSONMap) *service.ValidationResult {
+			res, slot, ok := contentSlotResolver.ResolveSlot(ctx, string(pageKey))
+			if ok {
+				s := slot
+				return validationSvc.ValidateConfigWithSlot(pageKey, config, &s, "theme")
+			}
+			src := res.Source
+			if src == "" || src == "none" {
+				src = "host-fallback"
+			}
+			return validationSvc.ValidateConfigWithSlot(pageKey, config, nil, src)
+		})
 
 	handlers := &Handlers{
 		Auth: authHandler.NewHandler(r.user, r.refreshToken, cfg),
@@ -291,7 +306,7 @@ func wireHandlers(
 			contentSvc,
 			auditDbWriter,
 			publicCache,
-		),
+		).WithSlots(contentSlotResolver),
 		Scheduler:    schedulerHandler.NewHandler(schedulerService),
 		PageTemplate: pageTemplateHandler.NewHandler(r.pageTemplate),
 		ThemeExport:  themeExportHandler.NewHandler(themeExportSvc),

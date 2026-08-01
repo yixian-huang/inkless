@@ -23,6 +23,8 @@ type ValidateResponse struct {
 	Errors            []service.ValidationError           `json:"errors"`
 	TranslationStatus map[string]service.TranslationState `json:"translationStatus"`
 	SchemaKind        string                              `json:"schemaKind,omitempty"`
+	SchemaID          string                              `json:"schemaId,omitempty"`
+	SchemaSource      string                              `json:"schemaSource,omitempty"`
 }
 
 // Validate checks a config without saving.
@@ -60,7 +62,22 @@ func (h *Handler) Validate(c *gin.Context) {
 		actorName = user.Username
 	}
 
-	result := h.validationSvc.ValidateConfig(pageKey, req.Config)
+	var result *service.ValidationResult
+	if h.slots != nil {
+		res, slot, ok := h.slots.ResolveSlot(c.Request.Context(), string(pageKey))
+		if ok {
+			s := slot
+			result = h.validationSvc.ValidateConfigWithSlot(pageKey, req.Config, &s, "theme")
+		} else {
+			src := res.Source
+			if src == "" || src == "none" {
+				src = "host-fallback"
+			}
+			result = h.validationSvc.ValidateConfigWithSlot(pageKey, req.Config, nil, src)
+		}
+	} else {
+		result = h.validationSvc.ValidateConfig(pageKey, req.Config)
+	}
 	if !result.Valid {
 		metrics.Global().RecordValidationFailure()
 	}
@@ -80,5 +97,7 @@ func (h *Handler) Validate(c *gin.Context) {
 		Errors:            result.Errors,
 		TranslationStatus: result.TranslationStatus,
 		SchemaKind:        result.SchemaKind,
+		SchemaID:          result.SchemaID,
+		SchemaSource:      result.SchemaSource,
 	})
 }
