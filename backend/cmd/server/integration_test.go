@@ -187,7 +187,7 @@ func TestAuthUnauthorizedAccess(t *testing.T) {
 
 // TestRoleBasedAuthorization tests role-based access control
 func TestRoleBasedAuthorization(t *testing.T) {
-	t.Skip("Old content handler removed — RBAC is now enforced by unified page handler")
+	t.Skip("RBAC for content API covered by pages:publish middleware + handler/content tests; full multi-role wiring needs app.Bootstrap harness")
 	router, database := setupTestRouter(t)
 	defer database.Close()
 
@@ -288,7 +288,7 @@ func TestRoleBasedAuthorization(t *testing.T) {
 
 // TestConcurrentDraftConflict tests optimistic locking for concurrent edits
 func TestConcurrentDraftConflict(t *testing.T) {
-	t.Skip("Old content handler removed — optimistic locking is now handled by unified page handler")
+	t.Skip("Optimistic locking covered by handler/content TestContentDraftPublishProductFirst")
 	router, database := setupTestRouter(t)
 	defer database.Close()
 
@@ -386,7 +386,7 @@ func TestConcurrentDraftConflict(t *testing.T) {
 
 // TestValidationGate tests that publish is blocked when validation fails
 func TestValidationGate(t *testing.T) {
-	t.Skip("Old content handler removed — validation is now handled by unified page handler")
+	t.Skip("Validation/MediaRef gates covered by handler/content + service/mediaref_validate tests")
 	router, database := setupTestRouter(t)
 	defer database.Close()
 

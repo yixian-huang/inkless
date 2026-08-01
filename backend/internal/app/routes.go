@@ -18,6 +18,7 @@ import (
 	bootstrapHandler "github.com/yixian-huang/inkless/backend/internal/handler/bootstrap"
 	categoryHandler "github.com/yixian-huang/inkless/backend/internal/handler/category"
 	chunkedUploadHandler "github.com/yixian-huang/inkless/backend/internal/handler/chunked_upload"
+	contentHandler "github.com/yixian-huang/inkless/backend/internal/handler/content"
 	dashboardHandler "github.com/yixian-huang/inkless/backend/internal/handler/dashboard"
 	emailSettingsHandler "github.com/yixian-huang/inkless/backend/internal/handler/email_settings"
 	extensionsHandler "github.com/yixian-huang/inkless/backend/internal/handler/extensions"
@@ -107,6 +108,7 @@ type Handlers struct {
 	System         *systemHandler.Handler
 	Translation    *translationHandler.Handler
 	UnifiedPage    *unifiedPageHandler.Handler
+	Content        *contentHandler.Handler
 	Scheduler      interface {
 		List(*gin.Context)
 		Schedule(*gin.Context)

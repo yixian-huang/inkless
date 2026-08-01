@@ -20,10 +20,7 @@ func TestValidateConfig_HomePage_Valid(t *testing.T) {
 			},
 			"backgroundImage": map[string]interface{}{
 				"url": "/images/hero.jpg",
-				"alt": map[string]interface{}{
-					"zh": "背景图",
-					"en": "Background",
-				},
+				"alt": "背景图",
 			},
 		},
 		"about": map[string]interface{}{
@@ -39,10 +36,7 @@ func TestValidateConfig_HomePage_Valid(t *testing.T) {
 			},
 			"image": map[string]interface{}{
 				"url": "/images/about.jpg",
-				"alt": map[string]interface{}{
-					"zh": "关于图",
-					"en": "About Image",
-				},
+				"alt": "关于图",
 			},
 			"cta": map[string]interface{}{
 				"label": map[string]interface{}{
@@ -73,10 +67,7 @@ func TestValidateConfig_HomePage_Valid(t *testing.T) {
 					},
 					"image": map[string]interface{}{
 						"url": "/images/adv1.jpg",
-						"alt": map[string]interface{}{
-							"zh": "优势图",
-							"en": "Advantage Image",
-						},
+						"alt": "优势图",
 					},
 				},
 			},
@@ -98,10 +89,7 @@ func TestValidateConfig_HomePage_Valid(t *testing.T) {
 					},
 					"image": map[string]interface{}{
 						"url": "/images/service1.jpg",
-						"alt": map[string]interface{}{
-							"zh": "服务图",
-							"en": "Service Image",
-						},
+						"alt": "服务图",
 					},
 					"cta": map[string]interface{}{
 						"label": map[string]interface{}{
@@ -146,10 +134,7 @@ func TestValidateConfig_HomePage_MissingSection(t *testing.T) {
 			},
 			"backgroundImage": map[string]interface{}{
 				"url": "/images/hero.jpg",
-				"alt": map[string]interface{}{
-					"zh": "背景图",
-					"en": "Background",
-				},
+				"alt": "背景图",
 			},
 		},
 		// Missing about, advantages, coreServices
@@ -192,10 +177,7 @@ func TestValidateConfig_MissingTranslation(t *testing.T) {
 			},
 			"image": map[string]interface{}{
 				"url": "/images/hero.jpg",
-				"alt": map[string]interface{}{
-					"zh": "背景图",
-					"en": "Background",
-				},
+				"alt": "背景图",
 			},
 		},
 		"companyProfile": map[string]interface{}{
@@ -267,10 +249,7 @@ func TestValidateConfig_AdvantagesPage_Valid(t *testing.T) {
 			},
 			"image": map[string]interface{}{
 				"url": "/images/advantages-hero.jpg",
-				"alt": map[string]interface{}{
-					"zh": "优势背景",
-					"en": "Advantages Background",
-				},
+				"alt": "优势背景",
 			},
 		},
 		"blocks": []interface{}{
@@ -285,10 +264,7 @@ func TestValidateConfig_AdvantagesPage_Valid(t *testing.T) {
 				},
 				"image": map[string]interface{}{
 					"url": "/images/adv1.jpg",
-					"alt": map[string]interface{}{
-						"zh": "优势图1",
-						"en": "Advantage Image 1",
-					},
+					"alt": "优势图1",
 				},
 			},
 		},
@@ -316,10 +292,7 @@ func TestValidateConfig_CoreServicesPage_Valid(t *testing.T) {
 			},
 			"image": map[string]interface{}{
 				"url": "/images/services-hero.jpg",
-				"alt": map[string]interface{}{
-					"zh": "服务背景",
-					"en": "Services Background",
-				},
+				"alt": "服务背景",
 			},
 		},
 		"services": []interface{}{
@@ -334,10 +307,7 @@ func TestValidateConfig_CoreServicesPage_Valid(t *testing.T) {
 				},
 				"image": map[string]interface{}{
 					"url": "/images/service1.jpg",
-					"alt": map[string]interface{}{
-						"zh": "服务图",
-						"en": "Service Image",
-					},
+					"alt": "服务图",
 				},
 			},
 		},
@@ -365,10 +335,7 @@ func TestValidateConfig_CasesPage_Valid(t *testing.T) {
 			},
 			"image": map[string]interface{}{
 				"url": "/images/cases-hero.jpg",
-				"alt": map[string]interface{}{
-					"zh": "案例背景",
-					"en": "Cases Background",
-				},
+				"alt": "案例背景",
 			},
 		},
 		"cases": []interface{}{
@@ -409,10 +376,7 @@ func TestValidateConfig_ExpertsPage_Valid(t *testing.T) {
 			},
 			"image": map[string]interface{}{
 				"url": "/images/experts-hero.jpg",
-				"alt": map[string]interface{}{
-					"zh": "专家背景",
-					"en": "Experts Background",
-				},
+				"alt": "专家背景",
 			},
 		},
 		"sectionTitle": map[string]interface{}{
@@ -432,10 +396,7 @@ func TestValidateConfig_ExpertsPage_Valid(t *testing.T) {
 				},
 				"avatar": map[string]interface{}{
 					"url": "/images/expert1.jpg",
-					"alt": map[string]interface{}{
-						"zh": "张三头像",
-						"en": "Zhang San Avatar",
-					},
+					"alt": "张三头像",
 				},
 				"bioParagraphs": []interface{}{
 					map[string]interface{}{
@@ -509,10 +470,7 @@ func TestValidateConfig_GlobalPage_Valid(t *testing.T) {
 		"branding": map[string]interface{}{
 			"logo": map[string]interface{}{
 				"url": "/images/logo.png",
-				"alt": map[string]interface{}{
-					"zh": "公司Logo",
-					"en": "Company Logo",
-				},
+				"alt": "公司Logo",
 			},
 			"companyName": map[string]interface{}{
 				"zh": "测试站点",
@@ -627,10 +585,7 @@ func TestValidateConfig_EmptyArrays(t *testing.T) {
 			},
 			"image": map[string]interface{}{
 				"url": "/images/hero.jpg",
-				"alt": map[string]interface{}{
-					"zh": "背景图",
-					"en": "Background",
-				},
+				"alt": "背景图",
 			},
 		},
 		"blocks": []interface{}{}, // Empty array should fail
@@ -668,10 +623,7 @@ func TestValidateConfig_NestedArrayValidation(t *testing.T) {
 			},
 			"image": map[string]interface{}{
 				"url": "/images/hero.jpg",
-				"alt": map[string]interface{}{
-					"zh": "背景",
-					"en": "Background",
-				},
+				"alt": "背景",
 			},
 		},
 		"cases": []interface{}{

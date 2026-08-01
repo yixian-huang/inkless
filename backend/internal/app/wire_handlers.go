@@ -18,6 +18,7 @@ import (
 	bootstrapHandler "github.com/yixian-huang/inkless/backend/internal/handler/bootstrap"
 	categoryHandler "github.com/yixian-huang/inkless/backend/internal/handler/category"
 	chunkedUploadHandler "github.com/yixian-huang/inkless/backend/internal/handler/chunked_upload"
+	contentHandler "github.com/yixian-huang/inkless/backend/internal/handler/content"
 	dashboardHandler "github.com/yixian-huang/inkless/backend/internal/handler/dashboard"
 	emailSettingsHandler "github.com/yixian-huang/inkless/backend/internal/handler/email_settings"
 	extensionsHandler "github.com/yixian-huang/inkless/backend/internal/handler/extensions"
@@ -235,6 +236,10 @@ func wireHandlers(
 
 	apiKeySvc := service.NewAPIKeyService(database.DB)
 
+	contentVersionRepo := repository.NewGormContentVersionRepository(database.DB)
+	validationSvc := service.NewValidationService()
+	contentSvc := service.NewContentService(database.DB, r.contentDoc, contentVersionRepo, validationSvc)
+
 	handlers := &Handlers{
 		Auth: authHandler.NewHandler(r.user, r.refreshToken, cfg),
 		Article: articleHandler.NewHandler(r.article, r.category, r.tag, searchService, bus, publicCache).
@@ -278,9 +283,18 @@ func wireHandlers(
 		Translation:    translationHandler.NewHandlerWithRegistry(registry, r.glossary, r.article),
 		UnifiedPage: unifiedPageHandler.NewHandler(r.unifiedPage, r.pageVersion, unifiedPageSvc, publicCache, bus).
 			WithInstalledThemes(r.installedTheme),
-		Scheduler:      schedulerHandler.NewHandler(schedulerService),
-		PageTemplate:   pageTemplateHandler.NewHandler(r.pageTemplate),
-		ThemeExport:    themeExportHandler.NewHandler(themeExportSvc),
+		Content: contentHandler.NewHandler(
+			database.DB,
+			r.contentDoc,
+			contentVersionRepo,
+			validationSvc,
+			contentSvc,
+			auditDbWriter,
+			publicCache,
+		),
+		Scheduler:    schedulerHandler.NewHandler(schedulerService),
+		PageTemplate: pageTemplateHandler.NewHandler(r.pageTemplate),
+		ThemeExport:  themeExportHandler.NewHandler(themeExportSvc),
 	}
 
 	routeDeps := &RouteDeps{

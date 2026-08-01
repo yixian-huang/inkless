@@ -140,6 +140,18 @@ func registerAdminContent(
 	admin.POST("/wizard/apply-plan", require("pages", "create"), h.Wizard.ApplyPlan)
 	admin.POST("/wizard/suggest-colors", require("pages", "create"), h.Wizard.SuggestColors)
 	admin.POST("/wizard/generate-content", require("pages", "create"), h.Wizard.GenerateContent)
+
+	// Theme-bound content_documents (product-first home, corporate page keys, …).
+	// Separate from unified /admin/pages (D-class). See docs/design-theme-content-admin-api.md.
+	if h.Content != nil {
+		admin.GET("/content/:pageKey/draft", require("pages", "read"), h.Content.GetDraft)
+		admin.PUT("/content/:pageKey/draft", require("pages", "update"), h.Content.UpdateDraft)
+		admin.POST("/content/:pageKey/validate", require("pages", "update"), h.Content.Validate)
+		admin.POST("/content/:pageKey/publish", require("pages", "publish"), h.Content.Publish)
+		admin.POST("/content/:pageKey/rollback/:version", require("pages", "publish"), h.Content.Rollback)
+		admin.GET("/content/:pageKey/versions", require("pages", "read"), h.Content.GetVersions)
+		admin.GET("/content/:pageKey/versions/:version", require("pages", "read"), h.Content.GetVersionDetail)
+	}
 }
 
 func registerAdminTaxonomy(admin *gin.RouterGroup, h *Handlers, require requireFn) {

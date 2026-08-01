@@ -522,10 +522,7 @@ func getInitialConfig(pageKey model.PageKey) model.JSONMap {
 				},
 				"backgroundImage": model.JSONMap{
 					"url": "/images/hero-bg.jpg",
-					"alt": model.JSONMap{
-						"zh": "首页背景",
-						"en": "Home Background",
-					},
+					"alt": "首页背景",
 				},
 			},
 			"about": model.JSONMap{
@@ -541,10 +538,7 @@ func getInitialConfig(pageKey model.PageKey) model.JSONMap {
 				},
 				"image": model.JSONMap{
 					"url": "/images/about.jpg",
-					"alt": model.JSONMap{
-						"zh": "关于我们",
-						"en": "About Us",
-					},
+					"alt": "关于我们",
 				},
 				"cta": model.JSONMap{
 					"label": model.JSONMap{
@@ -579,10 +573,7 @@ func getInitialConfig(pageKey model.PageKey) model.JSONMap {
 				},
 				"backgroundImage": model.JSONMap{
 					"url": "/images/about-hero.jpg",
-					"alt": model.JSONMap{
-						"zh": "关于我们背景",
-						"en": "About Us Background",
-					},
+					"alt": "关于我们背景",
 				},
 			},
 			"companyProfile": model.JSONMap{
@@ -659,10 +650,7 @@ func getInitialConfig(pageKey model.PageKey) model.JSONMap {
 			"header": model.JSONMap{
 				"logo": model.JSONMap{
 					"url": "/images/logo.svg",
-					"alt": model.JSONMap{
-						"zh": "北辰工作室",
-						"en": "Northstar Studio",
-					},
+					"alt": "北辰工作室",
 				},
 				"navLinks": []interface{}{},
 			},

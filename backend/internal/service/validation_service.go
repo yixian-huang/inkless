@@ -37,13 +37,21 @@ func NewValidationService() *ValidationService {
 	return &ValidationService{}
 }
 
-// ValidateConfig validates a page configuration and calculates translation states
+// ValidateConfig validates a page configuration and calculates translation states.
+// Always enforces MediaRef string leaves (url/alt/caption) across the tree.
 func (vs *ValidationService) ValidateConfig(pageKey model.PageKey, config model.JSONMap) *ValidationResult {
 	result := &ValidationResult{
 		Valid:             true,
 		Errors:            []ValidationError{},
 		TranslationStatus: make(map[string]TranslationState),
 	}
+
+	if config == nil {
+		config = model.JSONMap{}
+	}
+
+	// Hard gate: MediaRef leaves must be plain strings (product-first + corporate).
+	result.Errors = append(result.Errors, CollectMediaRefLeafErrors(config)...)
 
 	switch pageKey {
 	case model.PageKeyHome:
@@ -62,6 +70,8 @@ func (vs *ValidationService) ValidateConfig(pageKey model.PageKey, config model.
 		vs.validateContactPage(config, result)
 	case model.PageKeyGlobal:
 		vs.validateGlobalPage(config, result)
+	case model.PageKeyTheme:
+		// Theme settings blob — structure owned by theme; MediaRef walk already applied.
 	default:
 		result.Valid = false
 		result.Errors = append(result.Errors, ValidationError{
@@ -94,7 +104,13 @@ func (vs *ValidationService) CanPublish(validationResult *ValidationResult) bool
 // Helper functions for validation
 
 func (vs *ValidationService) validateHomePage(config model.JSONMap, result *ValidationResult) {
-	// Validate hero section
+	// product-first home schema (hero/showcase/features/…) — do not require corporate blocks.
+	if isProductFirstHomeConfig(config) {
+		vs.validateProductFirstHome(config, result)
+		return
+	}
+
+	// Corporate / legacy home schema
 	hero := getMapField(config, "hero")
 	if hero == nil {
 		addRequiredError(result, "hero", "Hero section is required")
@@ -104,7 +120,6 @@ func (vs *ValidationService) validateHomePage(config model.JSONMap, result *Vali
 		validateMediaRef(hero, "hero.backgroundImage", result, true)
 	}
 
-	// Validate about section
 	about := getMapField(config, "about")
 	if about == nil {
 		addRequiredError(result, "about", "About section is required")
@@ -113,7 +128,6 @@ func (vs *ValidationService) validateHomePage(config model.JSONMap, result *Vali
 		validateMediaRef(about, "about.image", result, true)
 		validateCta(about, "about.cta", result, true)
 
-		// descriptions is an array of LocalizedRichText
 		descriptions := getArrayField(about, "descriptions")
 		if descriptions == nil || len(descriptions) == 0 {
 			addRequiredError(result, "about.descriptions", "At least one description is required")
@@ -127,7 +141,6 @@ func (vs *ValidationService) validateHomePage(config model.JSONMap, result *Vali
 		}
 	}
 
-	// Validate advantages section
 	advantages := getMapField(config, "advantages")
 	if advantages == nil {
 		addRequiredError(result, "advantages", "Advantages section is required")
@@ -149,7 +162,6 @@ func (vs *ValidationService) validateHomePage(config model.JSONMap, result *Vali
 		}
 	}
 
-	// Validate coreServices section
 	coreServices := getMapField(config, "coreServices")
 	if coreServices == nil {
 		addRequiredError(result, "coreServices", "Core services section is required")
@@ -167,6 +179,63 @@ func (vs *ValidationService) validateHomePage(config model.JSONMap, result *Vali
 					validateMediaRef(itemMap, basePath+".image", result, true)
 					validateCta(itemMap, basePath+".cta", result, true)
 				}
+			}
+		}
+	}
+}
+
+// isProductFirstHomeConfig detects product-first landing schema vs corporate home.
+func isProductFirstHomeConfig(config model.JSONMap) bool {
+	if config == nil {
+		return false
+	}
+	// Strong product-first markers
+	for _, key := range []string{"showcase", "howItWorks", "install", "bottomCta"} {
+		if _, ok := config[key]; ok {
+			return true
+		}
+	}
+	// features grid without corporate about/coreServices
+	if _, hasFeatures := config["features"]; hasFeatures {
+		if _, hasAbout := config["about"]; !hasAbout {
+			if _, hasCore := config["coreServices"]; !hasCore {
+				return true
+			}
+		}
+	}
+	// hero.media (product) without corporate required siblings when only hero present
+	if hero := getMapField(config, "hero"); hero != nil {
+		if _, hasMedia := hero["media"]; hasMedia {
+			if _, hasAbout := config["about"]; !hasAbout {
+				return true
+			}
+		}
+		// hero with localized title only and no backgroundImage/about → product-first agent draft
+		if _, hasBG := hero["backgroundImage"]; !hasBG {
+			if _, hasAbout := config["about"]; !hasAbout {
+				if _, hasAdv := config["advantages"]; !hasAdv {
+					return true
+				}
+			}
+		}
+	}
+	return false
+}
+
+func (vs *ValidationService) validateProductFirstHome(config model.JSONMap, result *ValidationResult) {
+	// Light structure checks only — MediaRef leaves already collected.
+	// Empty config is allowed for draft; publish can ship placeholders via theme.
+	hero := getMapField(config, "hero")
+	if hero != nil {
+		// title may be Localized or already string after partial edits
+		if title, ok := hero["title"]; ok && title != nil {
+			if m, isMap := title.(map[string]interface{}); isMap {
+				validateLocalizedTextMap(m, "hero.title", result, false)
+			}
+		}
+		if sub, ok := hero["subtitle"]; ok && sub != nil {
+			if m, isMap := sub.(map[string]interface{}); isMap {
+				validateLocalizedTextMap(m, "hero.subtitle", result, false)
 			}
 		}
 	}
@@ -544,10 +613,17 @@ func validateMediaRef(parent map[string]interface{}, fullPath string, result *Va
 		})
 	}
 
-	// Validate alt text as LocalizedText (optional — nice-to-have for SEO/a11y)
-	alt := getMapField(field, "alt")
-	if alt != nil {
-		validateLocalizedTextMap(alt, fullPath+".alt", result, false)
+	// MediaRef.alt / caption must be plain strings (not LocalizedText bags).
+	for _, leaf := range []string{"url", "alt", "caption"} {
+		if val, ok := field[leaf]; ok && val != nil {
+			if _, isStr := val.(string); !isStr {
+				result.Errors = append(result.Errors, ValidationError{
+					Path:    fullPath + "." + leaf,
+					Code:    "MEDIAREF_TYPE",
+					Message: leaf + " must be a string (not a bilingual object or other type)",
+				})
+			}
+		}
 	}
 }
 
