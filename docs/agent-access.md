@@ -106,12 +106,14 @@ curl -sS "$INKLESS_BASE_URL/admin/agent/whoami" \
   "permissions": ["articles:read", "articles:update", "…"],
   "capabilities": {
     "articles": true,
-    "pages": false,
+    "pages": true,
     "themeContent": true,
     "themeContentKeys": ["home"],
     "activeThemeId": "product-first",
     "activeThemeVersion": "0.1.9",
     "contentSlots": ["home"],
+    "pageTemplates": ["product-first/home@1"],
+    "postTemplate": "product-first/post",
     "mediaUpload": true,
     "aiArticleMeta": true,
     "publish": false
@@ -125,10 +127,13 @@ curl -sS "$INKLESS_BASE_URL/admin/agent/whoami" \
 | `authMethod` | `api_key` 或 `session` |
 | `scopes` | key 声明的 scope；session 为空数组 |
 | `capabilities` | **RBAC ∩ scopes** 的摘要，便于 agent 短路 |
-| `capabilities.themeContent` | 能否走 `/admin/content/:pageKey`（主题绑定槽，如 product-first `home`） |
+| `capabilities.pages` | 能否走 `/admin/pages`（**推荐**一级页写路径） |
+| `capabilities.pageTemplates` | 当前主题 page 模板 key 列表（theme-as-templates T4） |
+| `capabilities.postTemplate` | 默认 post chrome 模板 key |
+| `capabilities.themeContent` | 能否走 `/admin/content/:pageKey`（**迁移期**；prefer pages） |
 | `capabilities.themeContentKeys` | 有主题 slots 时 = slots 的 pageKey；否则 Host 白名单 |
 | `capabilities.activeThemeId` | 当前激活主题 id |
-| `capabilities.contentSlots` | 主题声明的 contentSlots pageKey 列表（可空） |
+| `capabilities.contentSlots` | 主题声明的 contentSlots pageKey 列表（**deprecated**；prefer pageTemplates） |
 
 Agent 规则：若 `baseUrl` 与任务站点 profile 不一致 → **中止写操作**。
 
@@ -326,30 +331,32 @@ curl -sS -X POST "$INKLESS_BASE_URL/admin/pages/ID/publish" \
 CLI（推荐）：
 
 ```bash
-inkless site whoami --site SITE   # capabilities.themeContent + themeContentKeys
-inkless content slots --site SITE # activeTheme + contentSlots（主题契约）
+inkless site whoami --site SITE   # pageTemplates + themeContentKeys
+inkless templates list --site SITE              # 推荐：主题 templates 发现
+inkless templates get product-first/home@1 --site SITE --json
+
+# 迁移期别名（仍可用；stderr deprecation）
+inkless content slots --site SITE   # 含 templatesProjection
 inkless content schema home --site SITE
-inkless content keys --site SITE
+inkless content keys --site SITE    # 含 pageTemplates
 
 inkless media upload ./shot.png --site SITE --json   # → .url
 
-# home.json = product-first config；MediaRef 全 string
-# --dry-run：深层 path diff + local MediaRef + validate.schemaSource
-# --validate-schema：要求 theme contentSlots 且 valid=true
+# 生产写路径（推荐）：pages 绑定 templateKey
+inkless pages list --site SITE
+inkless pages get-draft ID --site SITE --json
+inkless pages put-draft ID --site SITE --from-file home.json --dry-run
+
+# 迁移期 content 写（bridge → Page + Deprecation 头）
 inkless content apply home --site SITE --from-file home.json --dry-run --validate-schema
 inkless content apply home --site SITE --from-file home.json --validate-schema
-
-# publish_policy=never 时停在 draft；允许时：
-inkless content publish home --site SITE
+inkless content publish home --site SITE   # honors publish_policy
 
 inkless content get home --site SITE --public --locale zh --json
 inkless content versions home --site SITE
-inkless content version home 3 --site SITE
-# rollback 同 publish 门禁（never/manual+--force）
-# inkless content rollback home 2 --site SITE
 ```
 
-Swagger：`/api-docs` → tag **Content (Admin)**。
+Swagger：`/api-docs` → tags **Content (Admin)**、**Themes**（`/admin/themes/active/templates`）。
 
 curl 等价：
 
@@ -382,6 +389,17 @@ inkless pages list --site SITE   # 应见 slug=home
 
 迁移后 `content get/apply/publish home` 仍可用：有 Page 时 **桥接到 Page**，并 dual-write content_documents 供公开双读；响应带 `Deprecation` / `X-Inkless-Prefer` 头。  
 新 skill 请优先 `pages *`。
+
+### 5.5d 主题模板发现（theme-as-templates T4）
+
+| 任务 | 命令 / API |
+|------|------------|
+| 列模板 | `inkless templates list` → `GET /admin/themes/active/templates` |
+| 取 schema | `inkless templates get <key>` → `GET /admin/themes/active/template?key=` |
+| whoami | `capabilities.pageTemplates` / `postTemplate` |
+| 兼容 | `content slots` 返回 `templatesProjection`；`content schema` 可带 `templateKey` |
+
+无原生 `templates[]` 时 Host 将 **contentSlots 投影** 为 page 模板 + 默认 `{themeId}/post`。权限：`pages:read`。
 
 ### 5.6 验收
 

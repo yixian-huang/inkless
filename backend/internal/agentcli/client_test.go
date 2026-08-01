@@ -245,3 +245,54 @@ func TestClientUploadMedia(t *testing.T) {
 		t.Fatalf("%v", out)
 	}
 }
+
+func TestClientActiveTemplates(t *testing.T) {
+	mux := http.NewServeMux()
+	mux.HandleFunc("/admin/themes/active/templates", func(w http.ResponseWriter, r *http.Request) {
+		if r.Header.Get("Authorization") != "Bearer ink_test" {
+			http.Error(w, "unauthorized", 401)
+			return
+		}
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"activeThemeId": "product-first",
+			"source":        "projection",
+			"templates": []map[string]any{
+				{"key": "product-first/home@1", "appliesTo": "page", "slug": "home", "hasSchema": true},
+			},
+			"defaultTemplates": map[string]string{"home": "product-first/home@1", "post": "product-first/post"},
+		})
+	})
+	mux.HandleFunc("/admin/themes/active/template", func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Query().Get("key") != "product-first/home@1" {
+			http.Error(w, "not found", 404)
+			return
+		}
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"activeThemeId": "product-first",
+			"source":        "projection",
+			"template": map[string]any{
+				"key": "product-first/home@1", "appliesTo": "page",
+				"mediaRefPaths": []string{"hero.media.url"},
+			},
+		})
+	})
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+	c := NewClient(&Endpoint{BaseURL: srv.URL, APIKey: "ink_test"})
+
+	list, err := c.ListActiveTemplates(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if list["source"] != "projection" {
+		t.Fatalf("list=%v", list)
+	}
+	got, err := c.GetActiveTemplate(context.Background(), "product-first/home@1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	tmpl, _ := got["template"].(map[string]any)
+	if tmpl["key"] != "product-first/home@1" {
+		t.Fatalf("get=%v", got)
+	}
+}

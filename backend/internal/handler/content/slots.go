@@ -7,8 +7,13 @@ import (
 
 	"github.com/yixian-huang/inkless/backend/internal/contentslots"
 	"github.com/yixian-huang/inkless/backend/internal/model"
+	"github.com/yixian-huang/inkless/backend/internal/themetemplates"
 	"github.com/yixian-huang/inkless/backend/pkg/apierror"
 )
+
+func projectTemplateSummaries(res themetemplates.ResolveResult) []themetemplates.TemplateSummary {
+	return themetemplates.Summarize(res.Templates)
+}
 
 // ListSlotsResponse is GET /admin/content/slots.
 type ListSlotsResponse struct {
@@ -42,12 +47,25 @@ func (h *Handler) ListSlots(c *gin.Context) {
 			HasSchema:   s.SchemaInline != nil || s.SchemaPath != "",
 		})
 	}
-	c.JSON(http.StatusOK, ListSlotsResponse{
-		ActiveThemeID:      res.ActiveThemeID,
-		ActiveThemeVersion: res.ActiveThemeVersion,
-		Source:             res.Source,
-		Slots:              summaries,
-		HostPageKeys:       contentslots.HostPageKeys(),
+	// T4: also project contentSlots → templates (read-only discovery)
+	var projected any
+	if h.templates != nil {
+		tres := h.templates.ResolveActive(c.Request.Context())
+		projected = gin.H{
+			"source":           tres.Source,
+			"templates":        projectTemplateSummaries(tres),
+			"defaultTemplates": tres.DefaultTemplates,
+		}
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"activeThemeId":      res.ActiveThemeID,
+		"activeThemeVersion": res.ActiveThemeVersion,
+		"source":             res.Source,
+		"slots":              summaries,
+		"hostPageKeys":       contentslots.HostPageKeys(),
+		"templatesProjection": projected,
+		"deprecated":          "prefer GET /admin/themes/active/templates (theme-as-templates T4)",
 	})
 }
 
@@ -88,6 +106,29 @@ func (h *Handler) GetSchema(c *gin.Context) {
 			if res.Source == "none" {
 				payload.Source = "host-fallback"
 			}
+		}
+	}
+	// T4: attach projected templateKey for agents moving to pages
+	if h.templates != nil {
+		tres := h.templates.ResolveActive(c.Request.Context())
+		if t, ok := themetemplates.FindBySlug(tres.Templates, string(pageKey)); ok {
+			c.Header("X-Inkless-Template-Key", t.Key)
+			c.JSON(http.StatusOK, gin.H{
+				"pageKey":            payload.PageKey,
+				"activeThemeId":      payload.ActiveThemeID,
+				"activeThemeVersion": payload.ActiveThemeVersion,
+				"schemaId":           payload.SchemaID,
+				"mediaRefPaths":      payload.MediaRefPaths,
+				"localizedPaths":     payload.LocalizedPaths,
+				"stringPaths":        payload.StringPaths,
+				"jsonSchema":         payload.JSONSchema,
+				"source":             payload.Source,
+				"description":        payload.Description,
+				"templateKey":        t.Key,
+				"templateSource":     t.Source,
+				"deprecated":         "prefer GET /admin/themes/active/template?key=…",
+			})
+			return
 		}
 	}
 	c.JSON(http.StatusOK, payload)

@@ -310,6 +310,25 @@ func (c *Client) GetContentSchema(ctx context.Context, pageKey string) (map[stri
 	return out, nil
 }
 
+// ListActiveTemplates GET /admin/themes/active/templates (theme-as-templates T4).
+func (c *Client) ListActiveTemplates(ctx context.Context) (map[string]any, error) {
+	var out map[string]any
+	if err := c.DoJSON(ctx, http.MethodGet, "/admin/themes/active/templates", nil, &out); err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// GetActiveTemplate GET /admin/themes/active/template?key=
+func (c *Client) GetActiveTemplate(ctx context.Context, key string) (map[string]any, error) {
+	path := "/admin/themes/active/template?key=" + url.QueryEscape(key)
+	var out map[string]any
+	if err := c.DoJSON(ctx, http.MethodGet, path, nil, &out); err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // GetContentDraft GET /admin/content/:pageKey/draft
 func (c *Client) GetContentDraft(ctx context.Context, pageKey string) (map[string]any, error) {
 	var out map[string]any

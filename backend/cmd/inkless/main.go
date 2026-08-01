@@ -20,7 +20,7 @@ func rootCmd() *cobra.Command {
 		Long: `inkless is a command-line tool for managing Inkless CMS.
 
 Local instance: init, serve, migrate, seed, export/import, plugin.
-Remote multi-site agents: site, articles, pages, content, media (API Key + fleet).
+Remote multi-site agents: site, articles, pages, templates, content, media (API Key + fleet).
 See docs/agent-access.md.`,
 		Version: Version,
 	}
@@ -38,6 +38,7 @@ See docs/agent-access.md.`,
 	cmd.AddCommand(siteCmd())
 	cmd.AddCommand(articlesCmd())
 	cmd.AddCommand(pagesCmd())
+	cmd.AddCommand(templatesCmd())
 	cmd.AddCommand(contentCmd())
 	cmd.AddCommand(mediaCmd())
 	cmd.AddCommand(mcpCmd())

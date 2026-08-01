@@ -190,6 +190,13 @@ func registerAdminThemes(admin *gin.RouterGroup, h *Handlers, require requireFn)
 	admin.GET("/theme", require("themes", "read"), h.Theme.AdminGet)
 	admin.PUT("/theme", require("themes", "update"), h.Theme.AdminUpdate)
 
+	// Static /themes/active/* before /themes/:id
+	if h.ThemeTemplates != nil {
+		// pages:read so content-agent can discover without themes:manage
+		admin.GET("/themes/active/templates", require("pages", "read"), h.ThemeTemplates.ListActive)
+		admin.GET("/themes/active/template", require("pages", "read"), h.ThemeTemplates.GetActive)
+	}
+
 	admin.GET("/themes", require("themes", "read"), h.InstalledTheme.AdminList)
 	admin.GET("/themes/:id", require("themes", "read"), h.InstalledTheme.AdminGetByID)
 	admin.POST("/themes", require("themes", "create"), h.InstalledTheme.AdminCreate)

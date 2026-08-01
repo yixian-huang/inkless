@@ -12,6 +12,7 @@ import (
 	"github.com/yixian-huang/inkless/backend/internal/model"
 	"github.com/yixian-huang/inkless/backend/internal/repository"
 	"github.com/yixian-huang/inkless/backend/internal/service"
+	"github.com/yixian-huang/inkless/backend/internal/themetemplates"
 	"github.com/yixian-huang/inkless/backend/pkg/audit"
 	"gorm.io/gorm"
 )
@@ -52,6 +53,7 @@ type Handler struct {
 	slots         *contentslots.Resolver
 	pageRepo      repository.UnifiedPageRepository
 	pageSvc       *service.UnifiedPageService
+	templates     *themetemplates.Resolver
 }
 
 // NewHandler constructs a content admin handler.
@@ -88,6 +90,14 @@ func (h *Handler) WithPages(pageRepo repository.UnifiedPageRepository, pageSvc *
 	if h != nil {
 		h.pageRepo = pageRepo
 		h.pageSvc = pageSvc
+	}
+	return h
+}
+
+// WithTemplates attaches templates discovery (T4 projection on slots endpoint).
+func (h *Handler) WithTemplates(r *themetemplates.Resolver) *Handler {
+	if h != nil {
+		h.templates = r
 	}
 	return h
 }

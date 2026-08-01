@@ -47,7 +47,7 @@ Create key: login ops site → **设置 → API Key** → preset **内容 Agent�
 source ~/.config/inkless/dogfood.sh
 
 inkless-ops whoami
-# expect: themeContent, activeThemeId, contentSlots, themeContentKeys
+# expect: pages, pageTemplates (e.g. product-first/home@1), activeThemeId
 
 inkless-ops articles list --missing-seo --json
 inkless-ops articles get ID --json
@@ -58,10 +58,10 @@ inkless-ops articles apply ID --from-file patch.json
 inkless-ops pages list
 inkless-ops pages get-draft ID
 
-# product-first home (theme-as-templates: prefer pages)
+# product-first home (theme-as-templates: prefer pages + templates)
+inkless templates list --site inkless-ops
 inkless content migrate-to-pages --site inkless-ops   # once: content_documents → Page home
-inkless pages list --site inkless-ops                 # should include slug=home
-inkless content slots --site inkless-ops
+inkless pages list --site inkless-ops                 # should include slug=home + templateKey
 inkless media upload ./shot.png --site inkless-ops --json
 # Preferred write path:
 inkless pages get-draft ID --json
@@ -94,27 +94,25 @@ inkless articles list --site inkless-ops --missing-seo --json
 
 `articles apply` merges onto the current article (safe PUT).
 
-## Product-first home（主题内容槽）
+## Product-first home（theme-as-templates）
 
 | 真源 | 说明 |
 |------|------|
-| `content_documents.page_key=home` | product-first 落地页文案/配图 |
+| **`unified_pages` slug=`home`** | 推荐运营真源（`templateKey` 如 `product-first/home@1`） |
+| `content_documents.page_key=home` | 迁移期 / 公开双读回退 |
 | **不是** articles | `articles list` 看不到 home |
-| **不是** unified pages | `pages list` 通常为空/无 home |
 
 **最小闭环：**
 
-1. `whoami` → `themeContent: true`
-2. `media upload` → 拿到 `url`
-3. 编辑 `home.json`：`hero/showcase/features/howItWorks/install/bottomCta`；**MediaRef 的 url/alt/caption 必须是 string**（禁止 `{zh,en}`）
-4. `content apply home --from-file home.json --dry-run` → 看 diff + validate
-5. `content apply home --from-file home.json` → 写 draft
-6. `content get home --public` + 浏览器 smoke（防 React #31）
-7. `publish_policy=never` → **不要** `content publish`；人工在后台发，或改 policy 后再发
+1. `whoami` → `pages: true`，`pageTemplates` 含 home 模板
+2. `templates list` / `pages list` 确认 slug=home
+3. `media upload` → 拿到 `url`
+4. 编辑 `home.json`：`hero/showcase/features/…`；**MediaRef 的 url/alt/caption 必须是 string**
+5. `pages put-draft ID --from-file home.json --dry-run` → 再 apply
+6. 迁移期可用 `content apply home`（bridge + deprecation）
+7. `publish_policy=never` → **不要** CLI publish；人工后台发
 
-无 content API 的旧 host：**禁止写生产库**；请升级到含 theme content Admin API 的版本。
-
-设计：`docs/design-theme-content-admin-api.md`。
+设计：`docs/design-theme-as-templates.md`、`docs/design-theme-content-admin-api.md`。
 
 ## Dynamic pages (presets)
 

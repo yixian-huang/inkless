@@ -2,7 +2,7 @@
 
 | 字段 | 值 |
 |------|-----|
-| 状态 | **T1–T2 in progress / partial** — templateKey + home Page seed + dual-read |
+| 状态 | **T1–T4 done** — templateKey, home Page, bridge, templates discovery API/CLI |
 | 日期 | 2026-08-01 |
 | 范围 | 内容真源收敛到 Page（unified_pages）+ Post（articles）；主题提供模板/默认 seed/section；迁移 content_documents 与硬编码 C 页 |
 | 相关 | [ADR-0002](adr/0002-theme-host-boundary.md)（将修订）、[theme-contract](theme-contract.md)、[theme-content-slots](design-theme-content-slots.md)（演进）、[theme-content-admin-api](design-theme-content-admin-api.md)、[agent-access](agent-access.md) |
@@ -290,10 +290,10 @@ content_documents.page_key=home (published)
 | **T1** | Page：`templateKey`；bootstrap/public list 纳入 template 页 | **done**（本迭代） |
 | **T2** | product/blog-first：EnsureHomePage seed；product-first 双读 Page→content | **done**（本迭代） |
 | **T3** | 迁移工具 content→page；content API bridge + Deprecation 头；CLI migrate-to-pages | **done**（本迭代） |
-| **T4** | `templates[]` 发现 API；contentSlots 只读投影；CLI 别名 | 待做 |
+| **T4** | `templates[]` 发现 API；contentSlots 只读投影；CLI 别名 | **done**（本迭代） |
 | **T5** | 硬编码 pages[] 薄壳化 / 文档删除生产 content 写路径 | 待做 |
 
-**T1–T2 本迭代已落地 MVP**；content API 仍可用作回退写路径。
+**T1–T4 已落地 MVP**：Page 绑定 + 迁移桥 + `GET /admin/themes/active/templates` + `inkless templates *`；content API 仍为回退写路径。
 
 ---
 

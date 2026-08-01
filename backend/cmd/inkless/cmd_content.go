@@ -260,7 +260,12 @@ func contentSlotsCmd() *cobra.Command {
 	var f remoteFlags
 	cmd := &cobra.Command{
 		Use:   "slots",
-		Short: "GET /admin/content/slots (active theme contentSlots)",
+		Short: "GET /admin/content/slots (deprecated: prefer templates list)",
+		Long: `GET /admin/content/slots — legacy contentSlots discovery.
+
+Prefer:
+  inkless templates list
+Response may include templatesProjection (theme-as-templates T4).`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ep, err := f.resolve()
 			if err != nil {
@@ -271,6 +276,9 @@ func contentSlotsCmd() *cobra.Command {
 			c := f.client(ep)
 			if err := f.verifyIfNeeded(ctx, ep, c); err != nil {
 				return err
+			}
+			if !f.jsonOut {
+				warnContentDeprecated("use: inkless templates list")
 			}
 			res, err := c.ListContentSlots(ctx)
 			if err != nil {
@@ -287,8 +295,13 @@ func contentSchemaCmd() *cobra.Command {
 	var f remoteFlags
 	cmd := &cobra.Command{
 		Use:   "schema <pageKey>",
-		Short: "GET /admin/content/:pageKey/schema",
-		Args:  cobra.ExactArgs(1),
+		Short: "GET /admin/content/:pageKey/schema (deprecated: prefer templates get)",
+		Long: `GET /admin/content/:pageKey/schema — legacy slot schema.
+
+Prefer:
+  inkless templates get <templateKey>
+Response may include templateKey when projected.`,
+		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			pageKey := strings.TrimSpace(args[0])
 			ep, err := f.resolve()
@@ -300,6 +313,9 @@ func contentSchemaCmd() *cobra.Command {
 			c := f.client(ep)
 			if err := f.verifyIfNeeded(ctx, ep, c); err != nil {
 				return err
+			}
+			if !f.jsonOut {
+				warnContentDeprecated("use: inkless templates get <templateKey>")
 			}
 			res, err := c.GetContentSchema(ctx, pageKey)
 			if err != nil {
@@ -586,7 +602,7 @@ func contentKeysCmd() *cobra.Command {
 	var f remoteFlags
 	cmd := &cobra.Command{
 		Use:   "keys",
-		Short: "List theme content pageKeys from whoami (activeTheme + contentSlots)",
+		Short: "List theme content keys from whoami (pageTemplates + contentSlots)",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ep, err := f.resolve()
 			if err != nil {
@@ -609,14 +625,20 @@ func contentKeysCmd() *cobra.Command {
 			if raw, ok := caps["contentSlots"].([]any); ok {
 				slots = raw
 			}
+			var pageTmpls []any
+			if raw, ok := caps["pageTemplates"].([]any); ok {
+				pageTmpls = raw
+			}
 			out := map[string]any{
-				"siteId":               ep.SiteID,
-				"baseUrl":              w.BaseURL,
-				"themeContent":         themeContent,
-				"themeContentKeys":     keys,
-				"activeThemeId":        caps["activeThemeId"],
-				"activeThemeVersion":   caps["activeThemeVersion"],
-				"contentSlots":         slots,
+				"siteId":             ep.SiteID,
+				"baseUrl":            w.BaseURL,
+				"themeContent":       themeContent,
+				"themeContentKeys":   keys,
+				"activeThemeId":      caps["activeThemeId"],
+				"activeThemeVersion": caps["activeThemeVersion"],
+				"contentSlots":       slots,
+				"pageTemplates":      pageTmpls,
+				"postTemplate":       caps["postTemplate"],
 			}
 			return f.printJSON(out)
 		},

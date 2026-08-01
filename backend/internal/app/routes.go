@@ -43,6 +43,7 @@ import (
 	tagHandler "github.com/yixian-huang/inkless/backend/internal/handler/tag"
 	themeHandler "github.com/yixian-huang/inkless/backend/internal/handler/theme"
 	themeExportHandler "github.com/yixian-huang/inkless/backend/internal/handler/theme_export"
+	themeTemplatesHandler "github.com/yixian-huang/inkless/backend/internal/handler/themetemplates"
 	translationHandler "github.com/yixian-huang/inkless/backend/internal/handler/translation"
 	unifiedPageHandler "github.com/yixian-huang/inkless/backend/internal/handler/unified_page"
 	userHandler "github.com/yixian-huang/inkless/backend/internal/handler/user"
@@ -109,6 +110,7 @@ type Handlers struct {
 	Translation    *translationHandler.Handler
 	UnifiedPage    *unifiedPageHandler.Handler
 	Content        *contentHandler.Handler
+	ThemeTemplates *themeTemplatesHandler.Handler
 	Scheduler      interface {
 		List(*gin.Context)
 		Schedule(*gin.Context)

@@ -9,14 +9,16 @@ import (
 	"github.com/yixian-huang/inkless/backend/internal/contentslots"
 	"github.com/yixian-huang/inkless/backend/internal/middleware"
 	"github.com/yixian-huang/inkless/backend/internal/model"
+	"github.com/yixian-huang/inkless/backend/internal/themetemplates"
 	"github.com/yixian-huang/inkless/backend/pkg/apierror"
 )
 
 // Handler serves agent-oriented discovery endpoints (multi-site fleet helpers).
 type Handler struct {
-	baseURL string
-	version string
-	slots   *contentslots.Resolver
+	baseURL   string
+	version   string
+	slots     *contentslots.Resolver
+	templates *themetemplates.Resolver
 }
 
 // NewHandler creates an agent handler. baseURL should be the instance BASE_URL (canonical).
@@ -31,6 +33,14 @@ func NewHandler(baseURL, version string) *Handler {
 func (h *Handler) WithSlots(r *contentslots.Resolver) *Handler {
 	if h != nil {
 		h.slots = r
+	}
+	return h
+}
+
+// WithTemplates attaches theme templates discovery (T4).
+func (h *Handler) WithTemplates(r *themetemplates.Resolver) *Handler {
+	if h != nil {
+		h.templates = r
 	}
 	return h
 }
@@ -66,10 +76,14 @@ type WhoamiCapabilities struct {
 	// Active theme discovery (for multi-theme agents).
 	ActiveThemeID      string   `json:"activeThemeId,omitempty"`
 	ActiveThemeVersion string   `json:"activeThemeVersion,omitempty"`
-	ContentSlots       []string `json:"contentSlots,omitempty"` // pageKeys from theme contentSlots
-	MediaUpload        bool     `json:"mediaUpload"`             // media:create
-	AIArticleMeta      bool     `json:"aiArticleMeta"`           // articles:update
-	Publish            bool     `json:"publish"`                 // articles:publish or pages:publish
+	ContentSlots       []string `json:"contentSlots,omitempty"` // pageKeys from theme contentSlots (deprecated; prefer pageTemplates)
+	// PageTemplates lists template keys for page appliesTo (theme-as-templates T4).
+	PageTemplates []string `json:"pageTemplates,omitempty"`
+	// PostTemplate is defaultTemplates.post when present.
+	PostTemplate  string `json:"postTemplate,omitempty"`
+	MediaUpload   bool   `json:"mediaUpload"`   // media:create
+	AIArticleMeta bool   `json:"aiArticleMeta"` // articles:update
+	Publish       bool   `json:"publish"`       // articles:publish or pages:publish
 }
 
 // Whoami GET /admin/agent/whoami
@@ -126,7 +140,7 @@ func (h *Handler) Whoami(c *gin.Context) {
 			h.can(c, user, "pages", "publish"),
 	}
 
-	// Theme contentSlots discovery
+	// Theme contentSlots discovery (legacy keys)
 	if h.slots != nil {
 		res := h.slots.ResolveActive(c.Request.Context())
 		caps.ActiveThemeID = res.ActiveThemeID
@@ -140,6 +154,24 @@ func (h *Handler) Whoami(c *gin.Context) {
 			if canTheme {
 				caps.ThemeContentKeys = keys
 			}
+		}
+	}
+	// T4: templates discovery
+	if h.templates != nil {
+		tres := h.templates.ResolveActive(c.Request.Context())
+		if tres.ActiveThemeID != "" {
+			caps.ActiveThemeID = tres.ActiveThemeID
+			caps.ActiveThemeVersion = tres.ActiveThemeVersion
+		}
+		var pageTmpls []string
+		for _, t := range tres.Templates {
+			if t.AppliesTo == "page" {
+				pageTmpls = append(pageTmpls, t.Key)
+			}
+		}
+		caps.PageTemplates = pageTmpls
+		if tres.DefaultTemplates != nil {
+			caps.PostTemplate = tres.DefaultTemplates["post"]
 		}
 	}
 	if canTheme && len(caps.ThemeContentKeys) == 0 {

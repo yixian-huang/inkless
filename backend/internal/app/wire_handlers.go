@@ -20,6 +20,8 @@ import (
 	chunkedUploadHandler "github.com/yixian-huang/inkless/backend/internal/handler/chunked_upload"
 	contentHandler "github.com/yixian-huang/inkless/backend/internal/handler/content"
 	"github.com/yixian-huang/inkless/backend/internal/contentslots"
+	themeTemplatesHandler "github.com/yixian-huang/inkless/backend/internal/handler/themetemplates"
+	"github.com/yixian-huang/inkless/backend/internal/themetemplates"
 	dashboardHandler "github.com/yixian-huang/inkless/backend/internal/handler/dashboard"
 	emailSettingsHandler "github.com/yixian-huang/inkless/backend/internal/handler/email_settings"
 	extensionsHandler "github.com/yixian-huang/inkless/backend/internal/handler/extensions"
@@ -241,6 +243,7 @@ func wireHandlers(
 	contentVersionRepo := repository.NewGormContentVersionRepository(database.DB)
 	validationSvc := service.NewValidationService()
 	contentSlotResolver := contentslots.NewResolver(r.installedTheme, contentslots.DefaultRegistry())
+	themeTemplateResolver := themetemplates.NewResolver(r.installedTheme, contentslots.DefaultRegistry(), themetemplates.DefaultNativeRegistry())
 	contentSvc := service.NewContentService(database.DB, r.contentDoc, contentVersionRepo, validationSvc).
 		WithSlotValidator(func(ctx context.Context, pageKey model.PageKey, config model.JSONMap) *service.ValidationResult {
 			res, slot, ok := contentSlotResolver.ResolveSlot(ctx, string(pageKey))
@@ -265,7 +268,9 @@ func wireHandlers(
 		Bootstrap:      bootstrapHandler.NewHandler(r.contentDoc, r.installedTheme, r.page, r.unifiedPage, r.siteConfig, publicCache),
 		Media:          mediaHandler.NewHandlerWithStorage(r.media, cfg.UploadDir, "", storageRuntime),
 		APIKey:         apiKeyHandler.NewHandler(apiKeySvc),
-		Agent:          agentHandler.NewHandler(cfg.BaseURL, build.Version).WithSlots(contentSlotResolver),
+		Agent: agentHandler.NewHandler(cfg.BaseURL, build.Version).
+			WithSlots(contentSlotResolver).
+			WithTemplates(themeTemplateResolver),
 		Analytics:      analyticsHandler.NewHandler(r.pageView).WithCache(publicCache),
 		Dashboard:      dashboardHandler.NewHandler(r.article, r.unifiedPage, r.media, r.pageView).WithCache(publicCache),
 		Category:       categoryHandler.NewHandler(r.category, r.article),
@@ -308,7 +313,9 @@ func wireHandlers(
 			auditDbWriter,
 			publicCache,
 		).WithSlots(contentSlotResolver).
-			WithPages(r.unifiedPage, unifiedPageSvc),
+			WithPages(r.unifiedPage, unifiedPageSvc).
+			WithTemplates(themeTemplateResolver),
+		ThemeTemplates: themeTemplatesHandler.NewHandler(themeTemplateResolver),
 		Scheduler:    schedulerHandler.NewHandler(schedulerService),
 		PageTemplate: pageTemplateHandler.NewHandler(r.pageTemplate),
 		ThemeExport:  themeExportHandler.NewHandler(themeExportSvc),
