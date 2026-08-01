@@ -55,20 +55,85 @@ func ProductFirstManifest() Manifest {
 }
 
 func productFirstHomeJSONSchema() map[string]any {
-	// Lightweight draft-07-ish object schema for discovery + future validator.
-	// Path rules (mediaRef/string/localized) are the enforcement MVP.
+	// Path rules remain primary; schema adds type checks for known sections.
+	localized := map[string]any{
+		"type": []any{"string", "object"},
+	}
+	mediaRef := map[string]any{
+		"type": "object",
+		"properties": map[string]any{
+			"url":     map[string]any{"type": "string"},
+			"alt":     map[string]any{"type": "string"},
+			"caption": map[string]any{"type": "string"},
+		},
+		"additionalProperties": true,
+	}
 	return map[string]any{
-		"$schema": "http://json-schema.org/draft-07/schema#",
-		"$id":     "product-first/home@1",
-		"type":    "object",
+		"$schema":              "http://json-schema.org/draft-07/schema#",
+		"$id":                  "product-first/home@1",
+		"type":                 "object",
 		"additionalProperties": true,
 		"properties": map[string]any{
-			"hero":        map[string]any{"type": "object"},
-			"showcase":    map[string]any{"type": "object"},
-			"features":    map[string]any{"type": "object"},
-			"howItWorks":  map[string]any{"type": "object"},
-			"install":     map[string]any{"type": "object"},
-			"bottomCta":   map[string]any{"type": "object"},
+			"hero": map[string]any{
+				"type": "object",
+				"properties": map[string]any{
+					"title":    localized,
+					"subtitle": localized,
+					"eyebrow":  localized,
+					"badge":    localized,
+					"media":    mediaRef,
+					"primaryCta": map[string]any{
+						"type": "object",
+						"properties": map[string]any{
+							"label": localized,
+							"href":  map[string]any{"type": "string"},
+						},
+					},
+					"secondaryCta": map[string]any{
+						"type": "object",
+						"properties": map[string]any{
+							"label": localized,
+							"href":  map[string]any{"type": "string"},
+						},
+					},
+				},
+			},
+			"showcase": map[string]any{
+				"type": "object",
+				"properties": map[string]any{
+					"title": localized,
+					"items": map[string]any{"type": "array", "items": mediaRef},
+				},
+			},
+			"features": map[string]any{
+				"type": "object",
+				"properties": map[string]any{
+					"title": localized,
+					"items": map[string]any{
+						"type": "array",
+						"items": map[string]any{
+							"type": "object",
+							"properties": map[string]any{
+								"title":       localized,
+								"description": localized,
+								"icon":        map[string]any{"type": "string"},
+								"href":        map[string]any{"type": "string"},
+								"media":       mediaRef,
+							},
+						},
+					},
+				},
+			},
+			"howItWorks": map[string]any{"type": "object"},
+			"install": map[string]any{
+				"type": "object",
+				"properties": map[string]any{
+					"title":   localized,
+					"caption": localized,
+					"code":    map[string]any{"type": "string"},
+				},
+			},
+			"bottomCta": map[string]any{"type": "object"},
 		},
 	}
 }

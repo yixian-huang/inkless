@@ -6,6 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"github.com/yixian-huang/inkless/backend/internal/contentslots"
 	"github.com/yixian-huang/inkless/backend/internal/middleware"
 	"github.com/yixian-huang/inkless/backend/internal/model"
 	"github.com/yixian-huang/inkless/backend/pkg/apierror"
@@ -15,6 +16,7 @@ import (
 type Handler struct {
 	baseURL string
 	version string
+	slots   *contentslots.Resolver
 }
 
 // NewHandler creates an agent handler. baseURL should be the instance BASE_URL (canonical).
@@ -23,6 +25,14 @@ func NewHandler(baseURL, version string) *Handler {
 		baseURL: strings.TrimRight(strings.TrimSpace(baseURL), "/"),
 		version: version,
 	}
+}
+
+// WithSlots attaches theme contentSlots resolver for whoami discovery fields.
+func (h *Handler) WithSlots(r *contentslots.Resolver) *Handler {
+	if h != nil {
+		h.slots = r
+	}
+	return h
 }
 
 // WhoamiResponse is the payload for GET /admin/agent/whoami.
@@ -46,16 +56,20 @@ type WhoamiUser struct {
 
 // WhoamiCapabilities summarizes effective content powers (RBAC ∩ key scopes).
 type WhoamiCapabilities struct {
-	Articles      bool `json:"articles"`      // articles:read
-	Pages         bool `json:"pages"`         // pages:read (unified /admin/pages)
+	Articles bool `json:"articles"` // articles:read
+	Pages    bool `json:"pages"`    // pages:read (unified /admin/pages)
 	// ThemeContent is true when the agent can use theme-bound content_documents
 	// Admin API (/admin/content/:pageKey/*). Gated by pages:read (same as content GET draft).
 	ThemeContent bool `json:"themeContent"`
-	// ThemeContentKeys lists writable/readable content pageKeys (agent discovery).
+	// ThemeContentKeys lists content pageKeys: theme slots when declared, else host whitelist.
 	ThemeContentKeys []string `json:"themeContentKeys,omitempty"`
-	MediaUpload      bool     `json:"mediaUpload"`   // media:create
-	AIArticleMeta    bool     `json:"aiArticleMeta"` // articles:update (article-meta endpoint)
-	Publish          bool     `json:"publish"`       // articles:publish or pages:publish
+	// Active theme discovery (for multi-theme agents).
+	ActiveThemeID      string   `json:"activeThemeId,omitempty"`
+	ActiveThemeVersion string   `json:"activeThemeVersion,omitempty"`
+	ContentSlots       []string `json:"contentSlots,omitempty"` // pageKeys from theme contentSlots
+	MediaUpload        bool     `json:"mediaUpload"`             // media:create
+	AIArticleMeta      bool     `json:"aiArticleMeta"`           // articles:update
+	Publish            bool     `json:"publish"`                 // articles:publish or pages:publish
 }
 
 // Whoami GET /admin/agent/whoami
@@ -101,6 +115,37 @@ func (h *Handler) Whoami(c *gin.Context) {
 		role = string(user.Role)
 	}
 
+	canTheme := h.can(c, user, "pages", "read")
+	caps := WhoamiCapabilities{
+		Articles:      h.can(c, user, "articles", "read"),
+		Pages:         h.can(c, user, "pages", "read"),
+		ThemeContent:  canTheme,
+		MediaUpload:   h.can(c, user, "media", "create"),
+		AIArticleMeta: h.can(c, user, "articles", "update"),
+		Publish: h.can(c, user, "articles", "publish") ||
+			h.can(c, user, "pages", "publish"),
+	}
+
+	// Theme contentSlots discovery
+	if h.slots != nil {
+		res := h.slots.ResolveActive(c.Request.Context())
+		caps.ActiveThemeID = res.ActiveThemeID
+		caps.ActiveThemeVersion = res.ActiveThemeVersion
+		if len(res.Slots) > 0 {
+			keys := make([]string, 0, len(res.Slots))
+			for _, s := range res.Slots {
+				keys = append(keys, s.PageKey)
+			}
+			caps.ContentSlots = keys
+			if canTheme {
+				caps.ThemeContentKeys = keys
+			}
+		}
+	}
+	if canTheme && len(caps.ThemeContentKeys) == 0 {
+		caps.ThemeContentKeys = hostContentPageKeys()
+	}
+
 	resp := WhoamiResponse{
 		BaseURL:     h.baseURL,
 		Version:     h.version,
@@ -112,37 +157,15 @@ func (h *Handler) Whoami(c *gin.Context) {
 			Username: uc.Username,
 			Role:     role,
 		},
-		Permissions: permissions,
-		Capabilities: WhoamiCapabilities{
-			Articles:     h.can(c, user, "articles", "read"),
-			Pages:        h.can(c, user, "pages", "read"),
-			ThemeContent: h.can(c, user, "pages", "read"),
-			ThemeContentKeys: themeContentPageKeys(
-				h.can(c, user, "pages", "read"),
-			),
-			MediaUpload:   h.can(c, user, "media", "create"),
-			AIArticleMeta: h.can(c, user, "articles", "update"),
-			Publish: h.can(c, user, "articles", "publish") ||
-				h.can(c, user, "pages", "publish"),
-		},
+		Permissions:  permissions,
+		Capabilities: caps,
 	}
 	c.JSON(http.StatusOK, resp)
 }
 
-// themeContentPageKeys returns content_documents page keys for agent discovery.
-// Excludes internal-only keys (e.g. theme package blob).
-func themeContentPageKeys(allowed bool) []string {
-	if !allowed {
-		return nil
-	}
-	out := make([]string, 0, len(model.ValidPageKeys))
-	for _, k := range model.ValidPageKeys {
-		if k == model.PageKeyTheme {
-			continue
-		}
-		out = append(out, string(k))
-	}
-	return out
+// hostContentPageKeys returns full host content_documents whitelist (legacy discovery).
+func hostContentPageKeys() []string {
+	return contentslots.HostPageKeys()
 }
 
 func (h *Handler) can(c *gin.Context, user *model.User, resource, action string) bool {

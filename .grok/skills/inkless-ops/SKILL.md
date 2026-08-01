@@ -47,7 +47,7 @@ Create key: login ops site → **设置 → API Key** → preset **内容 Agent�
 source ~/.config/inkless/dogfood.sh
 
 inkless-ops whoami
-# expect capabilities.themeContent + themeContentKeys including "home"
+# expect: themeContent, activeThemeId, contentSlots, themeContentKeys
 
 inkless-ops articles list --missing-seo --json
 inkless-ops articles get ID --json

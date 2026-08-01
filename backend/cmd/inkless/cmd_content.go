@@ -524,7 +524,7 @@ func contentKeysCmd() *cobra.Command {
 	var f remoteFlags
 	cmd := &cobra.Command{
 		Use:   "keys",
-		Short: "List theme content pageKeys from whoami.capabilities.themeContentKeys",
+		Short: "List theme content pageKeys from whoami (activeTheme + contentSlots)",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ep, err := f.resolve()
 			if err != nil {
@@ -543,11 +543,18 @@ func contentKeysCmd() *cobra.Command {
 			if raw, ok := caps["themeContentKeys"].([]any); ok {
 				keys = raw
 			}
+			var slots []any
+			if raw, ok := caps["contentSlots"].([]any); ok {
+				slots = raw
+			}
 			out := map[string]any{
-				"siteId":           ep.SiteID,
-				"baseUrl":          w.BaseURL,
-				"themeContent":     themeContent,
-				"themeContentKeys": keys,
+				"siteId":               ep.SiteID,
+				"baseUrl":              w.BaseURL,
+				"themeContent":         themeContent,
+				"themeContentKeys":     keys,
+				"activeThemeId":        caps["activeThemeId"],
+				"activeThemeVersion":   caps["activeThemeVersion"],
+				"contentSlots":         slots,
 			}
 			return f.printJSON(out)
 		},

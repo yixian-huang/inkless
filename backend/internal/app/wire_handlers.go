@@ -265,7 +265,7 @@ func wireHandlers(
 		Bootstrap:      bootstrapHandler.NewHandler(r.contentDoc, r.installedTheme, r.page, r.unifiedPage, r.siteConfig, publicCache),
 		Media:          mediaHandler.NewHandlerWithStorage(r.media, cfg.UploadDir, "", storageRuntime),
 		APIKey:         apiKeyHandler.NewHandler(apiKeySvc),
-		Agent:          agentHandler.NewHandler(cfg.BaseURL, build.Version),
+		Agent:          agentHandler.NewHandler(cfg.BaseURL, build.Version).WithSlots(contentSlotResolver),
 		Analytics:      analyticsHandler.NewHandler(r.pageView).WithCache(publicCache),
 		Dashboard:      dashboardHandler.NewHandler(r.article, r.unifiedPage, r.media, r.pageView).WithCache(publicCache),
 		Category:       categoryHandler.NewHandler(r.category, r.article),

@@ -43,14 +43,26 @@ func TestResolver_ProductFirstFromRegistry(t *testing.T) {
 }
 
 func TestResolver_HostFallbackNoSlots(t *testing.T) {
+	// corporate-classic has no contentSlots embed → host-fallback
 	r := NewResolver(&fakeThemes{active: &model.InstalledTheme{
-		ThemeID: builtinthemes.BlogFirst,
+		ThemeID: builtinthemes.CorporateClassic,
 		Version: "1.0.0",
 	}}, DefaultRegistry())
 
 	res := r.ResolveActive(context.Background())
 	assert.Equal(t, "host-fallback", res.Source)
 	assert.Empty(t, res.Slots)
+}
+
+func TestResolver_BlogFirstFromRegistry(t *testing.T) {
+	r := NewResolver(&fakeThemes{active: &model.InstalledTheme{
+		ThemeID: builtinthemes.BlogFirst,
+		Version: "1.0.0",
+	}}, DefaultRegistry())
+	res := r.ResolveActive(context.Background())
+	assert.Equal(t, "theme", res.Source)
+	require.NotEmpty(t, res.Slots)
+	assert.Equal(t, "blog-first/home@1", res.Slots[0].SchemaID)
 }
 
 func TestResolver_ConfigOverride(t *testing.T) {

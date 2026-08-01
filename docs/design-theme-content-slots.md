@@ -283,9 +283,10 @@ Dry-run 输出增量：
 |------|------|----------|
 | **S0（文档）** | 本文 + theme-contract 指针 | **done** |
 | **S1 Host** | 解析激活主题 `contentSlots`；`GET slots` / `GET :pageKey/schema` | **done**（registry + installed config override） |
-| **S2 校验** | paths-only MVP + schemaId/schemaSource on validate/publish | **done**（完整 JSON Schema 执行可后续） |
+| **S2 校验** | paths + **JSON Schema 执行**（santhosh-tekuri/jsonschema v6）+ schemaId/schemaSource | **done** |
 | **S3 CLI** | `content slots/schema`、`--validate-schema` / `--no-schema` | **done** |
-| **S4 官方主题** | product-first contentSlots + home.schema.json；host embed 同步 | **done**（blog-first 可选未做） |
+| **S4 官方主题** | product-first + **blog-first** contentSlots；host embed 同步 | **done** |
+| **S5 whoami** | `activeThemeId` / `contentSlots` / keys 随 slots 收窄 | **done** |
 
 **S1 最小可用：** 即使暂不跑完整 JSON Schema，只要 **mediaRefPaths / stringPaths / localizedPaths** 进 validate，已能替代大部分启发式。
 

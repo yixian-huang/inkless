@@ -108,7 +108,10 @@ curl -sS "$INKLESS_BASE_URL/admin/agent/whoami" \
     "articles": true,
     "pages": false,
     "themeContent": true,
-    "themeContentKeys": ["home", "about", "contact", "…"],
+    "themeContentKeys": ["home"],
+    "activeThemeId": "product-first",
+    "activeThemeVersion": "0.1.9",
+    "contentSlots": ["home"],
     "mediaUpload": true,
     "aiArticleMeta": true,
     "publish": false
@@ -123,7 +126,9 @@ curl -sS "$INKLESS_BASE_URL/admin/agent/whoami" \
 | `scopes` | key 声明的 scope；session 为空数组 |
 | `capabilities` | **RBAC ∩ scopes** 的摘要，便于 agent 短路 |
 | `capabilities.themeContent` | 能否走 `/admin/content/:pageKey`（主题绑定槽，如 product-first `home`） |
-| `capabilities.themeContentKeys` | 可读写的 pageKey 列表（`home` 等；**不是** `pages list` 里的 unified 页） |
+| `capabilities.themeContentKeys` | 有主题 slots 时 = slots 的 pageKey；否则 Host 白名单 |
+| `capabilities.activeThemeId` | 当前激活主题 id |
+| `capabilities.contentSlots` | 主题声明的 contentSlots pageKey 列表（可空） |
 
 Agent 规则：若 `baseUrl` 与任务站点 profile 不一致 → **中止写操作**。
 

@@ -20,6 +20,7 @@ func NewRegistry() *Registry {
 func DefaultRegistry() *Registry {
 	r := NewRegistry()
 	r.Register(ProductFirstManifest())
+	r.Register(BlogFirstManifest())
 	return r
 }
 

@@ -13,7 +13,8 @@ type PathError struct {
 	Message string
 }
 
-// ValidateConfigAgainstSlot enforces mediaRefPaths / stringPaths / localizedPaths on config.
+// ValidateConfigAgainstSlot enforces mediaRefPaths / stringPaths / localizedPaths
+// and optional JSON Schema (SchemaInline) on config.
 func ValidateConfigAgainstSlot(config map[string]any, slot Slot) []PathError {
 	if config == nil {
 		config = map[string]any{}
@@ -100,6 +101,9 @@ func ValidateConfigAgainstSlot(config map[string]any, slot Slot) []PathError {
 			}
 		}
 	}
+
+	// JSON Schema (when theme provides SchemaInline)
+	errs = append(errs, ValidateJSONSchema(config, slot.SchemaInline)...)
 
 	return errs
 }

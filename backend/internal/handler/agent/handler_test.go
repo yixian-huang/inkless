@@ -1,6 +1,7 @@
 package agent
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -10,9 +11,18 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/yixian-huang/inkless/backend/internal/contentslots"
 	"github.com/yixian-huang/inkless/backend/internal/middleware"
 	"github.com/yixian-huang/inkless/backend/internal/model"
 )
+
+type fakeActiveTheme struct {
+	theme *model.InstalledTheme
+}
+
+func (f *fakeActiveTheme) FindActive(ctx context.Context) (*model.InstalledTheme, error) {
+	return f.theme, nil
+}
 
 func init() {
 	gin.SetMode(gin.TestMode)
@@ -89,6 +99,32 @@ func TestWhoami_Session(t *testing.T) {
 	assert.Contains(t, resp.Capabilities.ThemeContentKeys, "home")
 	assert.NotContains(t, resp.Capabilities.ThemeContentKeys, "theme")
 	assert.True(t, resp.Capabilities.Publish)
+}
+
+func TestWhoami_WithContentSlots(t *testing.T) {
+	h := NewHandler("https://ops.example.com", "dev")
+	h.WithSlots(contentslots.NewResolver(&fakeActiveTheme{
+		theme: &model.InstalledTheme{ThemeID: "product-first", Version: "0.1.9", IsActive: true},
+	}, contentslots.DefaultRegistry()))
+
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Request = httptest.NewRequest(http.MethodGet, "/admin/agent/whoami", nil)
+	c.Set(string(middleware.UserContextKey), &middleware.UserContext{
+		UserID: 1, Username: "admin", Role: model.RoleAdmin,
+	})
+	c.Set("rbac_user", &model.User{
+		ID: 1, Username: "admin", Role: model.RoleAdmin, IsSuperAdmin: true,
+	})
+
+	h.Whoami(c)
+	require.Equal(t, http.StatusOK, w.Code)
+	var resp WhoamiResponse
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &resp))
+	assert.Equal(t, "product-first", resp.Capabilities.ActiveThemeID)
+	assert.Equal(t, "0.1.9", resp.Capabilities.ActiveThemeVersion)
+	assert.Equal(t, []string{"home"}, resp.Capabilities.ContentSlots)
+	assert.Equal(t, []string{"home"}, resp.Capabilities.ThemeContentKeys)
 }
 
 func TestWhoami_Unauthorized(t *testing.T) {
