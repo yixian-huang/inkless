@@ -9,6 +9,42 @@
     "host": "localhost:8088",
     "basePath": "/",
     "paths": {
+        "/admin/agent/whoami": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns baseUrl, auth method, scopes, and effective capabilities for multi-site agents",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Agent"
+                ],
+                "summary": "Agent whoami / instance probe",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler_agent.WhoamiResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "error": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/admin/analytics/summary": {
             "get": {
                 "security": [
@@ -1193,6 +1229,410 @@
                             "properties": {
                                 "message": {
                                     "type": "string"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/content/{pageKey}/draft": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns draft config for a content_documents pageKey (theme-bound home, etc.)",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Content (Admin)"
+                ],
+                "summary": "Get theme content draft",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Page key (home, contact, …)",
+                        "name": "pageKey",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler_content.GetDraftResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "error": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Optimistic lock via If-Match draft version; MediaRef url/alt/caption must be strings",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Content (Admin)"
+                ],
+                "summary": "Update theme content draft",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Page key",
+                        "name": "pageKey",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Expected draft version",
+                        "name": "If-Match",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "description": "Draft body",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler_content.UpdateDraftRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler_content.UpdateDraftResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "error": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "error": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/content/{pageKey}/publish": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Promotes draft to published with expectedDraftVersion lock; invalidates content cache",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Content (Admin)"
+                ],
+                "summary": "Publish theme content",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Page key",
+                        "name": "pageKey",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Publish parameters",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler_content.PublishRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler_content.PublishResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "error": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Unprocessable Entity",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "error": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/content/{pageKey}/rollback/{version}": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Creates a new published version from a historical snapshot (does not mutate old versions)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Content (Admin)"
+                ],
+                "summary": "Rollback theme content",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Page key",
+                        "name": "pageKey",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Source published version",
+                        "name": "version",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Optional change note",
+                        "name": "body",
+                        "in": "body",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler_content.RollbackRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler_content.RollbackResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "error": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/content/{pageKey}/validate": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Schema + MediaRef checks; returns schemaKind (product-first|corporate|…)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Content (Admin)"
+                ],
+                "summary": "Validate theme content config",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Page key",
+                        "name": "pageKey",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Config to validate",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler_content.ValidateRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler_content.ValidateResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "error": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/content/{pageKey}/versions": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Content (Admin)"
+                ],
+                "summary": "List theme content versions",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Page key",
+                        "name": "pageKey",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Page number",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 20,
+                        "description": "Page size",
+                        "name": "pageSize",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler_content.GetVersionsResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/content/{pageKey}/versions/{version}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Content (Admin)"
+                ],
+                "summary": "Get theme content version detail",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Page key",
+                        "name": "pageKey",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Version number",
+                        "name": "version",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handler_content.GetVersionDetailResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "error": {
+                                    "type": "object"
                                 }
                             }
                         }
@@ -5152,6 +5592,120 @@
             "type": "object",
             "additionalProperties": true
         },
+        "github_com_yixian-huang_inkless_backend_internal_service.TranslationState": {
+            "type": "string",
+            "enum": [
+                "done",
+                "missing",
+                "stale"
+            ],
+            "x-enum-varnames": [
+                "TranslationStateDone",
+                "TranslationStateMissing",
+                "TranslationStateStale"
+            ]
+        },
+        "github_com_yixian-huang_inkless_backend_internal_service.ValidationError": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "path": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_handler_agent.WhoamiCapabilities": {
+            "type": "object",
+            "properties": {
+                "aiArticleMeta": {
+                    "description": "articles:update (article-meta endpoint)",
+                    "type": "boolean"
+                },
+                "articles": {
+                    "description": "articles:read",
+                    "type": "boolean"
+                },
+                "mediaUpload": {
+                    "description": "media:create",
+                    "type": "boolean"
+                },
+                "pages": {
+                    "description": "pages:read (unified /admin/pages)",
+                    "type": "boolean"
+                },
+                "publish": {
+                    "description": "articles:publish or pages:publish",
+                    "type": "boolean"
+                },
+                "themeContent": {
+                    "description": "ThemeContent is true when the agent can use theme-bound content_documents\nAdmin API (/admin/content/:pageKey/*). Gated by pages:read (same as content GET draft).",
+                    "type": "boolean"
+                },
+                "themeContentKeys": {
+                    "description": "ThemeContentKeys lists writable/readable content pageKeys (agent discovery).",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "internal_handler_agent.WhoamiResponse": {
+            "type": "object",
+            "properties": {
+                "apiKeyId": {
+                    "type": "integer"
+                },
+                "authMethod": {
+                    "description": "\"api_key\" | \"session\"",
+                    "type": "string"
+                },
+                "baseUrl": {
+                    "type": "string"
+                },
+                "capabilities": {
+                    "$ref": "#/definitions/internal_handler_agent.WhoamiCapabilities"
+                },
+                "permissions": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "scopes": {
+                    "description": "empty for session JWT",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "user": {
+                    "$ref": "#/definitions/internal_handler_agent.WhoamiUser"
+                },
+                "version": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_handler_agent.WhoamiUser": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "integer"
+                },
+                "role": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
+        },
         "internal_handler_article.createUpdateInput": {
             "type": "object",
             "properties": {
@@ -5329,6 +5883,195 @@
                     "type": "string"
                 },
                 "expiresIn": {
+                    "type": "integer"
+                }
+            }
+        },
+        "internal_handler_content.GetDraftResponse": {
+            "type": "object",
+            "properties": {
+                "config": {
+                    "$ref": "#/definitions/github_com_yixian-huang_inkless_backend_internal_model.JSONMap"
+                },
+                "pageKey": {
+                    "type": "string"
+                },
+                "publishedVersion": {
+                    "type": "integer"
+                },
+                "updatedAt": {
+                    "type": "string"
+                },
+                "version": {
+                    "type": "integer"
+                }
+            }
+        },
+        "internal_handler_content.GetVersionDetailResponse": {
+            "type": "object",
+            "properties": {
+                "config": {
+                    "$ref": "#/definitions/github_com_yixian-huang_inkless_backend_internal_model.JSONMap"
+                },
+                "createdBy": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "pageKey": {
+                    "type": "string"
+                },
+                "publishedAt": {
+                    "type": "string"
+                },
+                "version": {
+                    "type": "integer"
+                }
+            }
+        },
+        "internal_handler_content.GetVersionsResponse": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_handler_content.VersionListItem"
+                    }
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "internal_handler_content.PublishRequest": {
+            "type": "object",
+            "required": [
+                "expectedDraftVersion"
+            ],
+            "properties": {
+                "changeNote": {
+                    "type": "string"
+                },
+                "expectedDraftVersion": {
+                    "type": "integer"
+                }
+            }
+        },
+        "internal_handler_content.PublishResponse": {
+            "type": "object",
+            "properties": {
+                "pageKey": {
+                    "type": "string"
+                },
+                "publishedAt": {
+                    "type": "string"
+                },
+                "publishedVersion": {
+                    "type": "integer"
+                }
+            }
+        },
+        "internal_handler_content.RollbackRequest": {
+            "type": "object",
+            "properties": {
+                "changeNote": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_handler_content.RollbackResponse": {
+            "type": "object",
+            "properties": {
+                "pageKey": {
+                    "type": "string"
+                },
+                "publishedAt": {
+                    "type": "string"
+                },
+                "publishedVersion": {
+                    "type": "integer"
+                },
+                "sourceVersion": {
+                    "type": "integer"
+                }
+            }
+        },
+        "internal_handler_content.UpdateDraftRequest": {
+            "type": "object",
+            "required": [
+                "config"
+            ],
+            "properties": {
+                "changeNote": {
+                    "type": "string"
+                },
+                "config": {
+                    "$ref": "#/definitions/github_com_yixian-huang_inkless_backend_internal_model.JSONMap"
+                }
+            }
+        },
+        "internal_handler_content.UpdateDraftResponse": {
+            "type": "object",
+            "properties": {
+                "pageKey": {
+                    "type": "string"
+                },
+                "updatedAt": {
+                    "type": "string"
+                },
+                "version": {
+                    "type": "integer"
+                }
+            }
+        },
+        "internal_handler_content.ValidateRequest": {
+            "type": "object",
+            "required": [
+                "config"
+            ],
+            "properties": {
+                "config": {
+                    "$ref": "#/definitions/github_com_yixian-huang_inkless_backend_internal_model.JSONMap"
+                }
+            }
+        },
+        "internal_handler_content.ValidateResponse": {
+            "type": "object",
+            "properties": {
+                "errors": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_yixian-huang_inkless_backend_internal_service.ValidationError"
+                    }
+                },
+                "schemaKind": {
+                    "type": "string"
+                },
+                "translationStatus": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "$ref": "#/definitions/github_com_yixian-huang_inkless_backend_internal_service.TranslationState"
+                    }
+                },
+                "valid": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "internal_handler_content.VersionListItem": {
+            "type": "object",
+            "properties": {
+                "changeNote": {
+                    "type": "string"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "operator": {
+                    "type": "string"
+                },
+                "version": {
                     "type": "integer"
                 }
             }

@@ -27,6 +27,8 @@ type ValidationResult struct {
 	Valid             bool                        `json:"valid"`
 	Errors            []ValidationError           `json:"errors"`
 	TranslationStatus map[string]TranslationState `json:"translationStatus"`
+	// SchemaKind is a discovery hint for agents: product-first | corporate | empty | unknown | global | …
+	SchemaKind string `json:"schemaKind,omitempty"`
 }
 
 // ValidationService provides content validation and translation state tracking
@@ -57,22 +59,31 @@ func (vs *ValidationService) ValidateConfig(pageKey model.PageKey, config model.
 	case model.PageKeyHome:
 		vs.validateHomePage(config, result)
 	case model.PageKeyAbout:
+		result.SchemaKind = "corporate"
 		vs.validateAboutPage(config, result)
 	case model.PageKeyAdvantages:
+		result.SchemaKind = "corporate"
 		vs.validateAdvantagesPage(config, result)
 	case model.PageKeyCoreServices:
+		result.SchemaKind = "corporate"
 		vs.validateCoreServicesPage(config, result)
 	case model.PageKeyCases:
+		result.SchemaKind = "corporate"
 		vs.validateCasesPage(config, result)
 	case model.PageKeyExperts:
+		result.SchemaKind = "corporate"
 		vs.validateExpertsPage(config, result)
 	case model.PageKeyContact:
+		result.SchemaKind = "contact"
 		vs.validateContactPage(config, result)
 	case model.PageKeyGlobal:
+		result.SchemaKind = "global"
 		vs.validateGlobalPage(config, result)
 	case model.PageKeyTheme:
+		result.SchemaKind = "theme"
 		// Theme settings blob — structure owned by theme; MediaRef walk already applied.
 	default:
+		result.SchemaKind = "unknown"
 		result.Valid = false
 		result.Errors = append(result.Errors, ValidationError{
 			Path:    "pageKey",
@@ -104,12 +115,18 @@ func (vs *ValidationService) CanPublish(validationResult *ValidationResult) bool
 // Helper functions for validation
 
 func (vs *ValidationService) validateHomePage(config model.JSONMap, result *ValidationResult) {
+	if len(config) == 0 {
+		result.SchemaKind = "empty"
+		return
+	}
 	// product-first home schema (hero/showcase/features/…) — do not require corporate blocks.
 	if isProductFirstHomeConfig(config) {
+		result.SchemaKind = "product-first"
 		vs.validateProductFirstHome(config, result)
 		return
 	}
 
+	result.SchemaKind = "corporate"
 	// Corporate / legacy home schema
 	hero := getMapField(config, "hero")
 	if hero == nil {
@@ -223,11 +240,10 @@ func isProductFirstHomeConfig(config model.JSONMap) bool {
 }
 
 func (vs *ValidationService) validateProductFirstHome(config model.JSONMap, result *ValidationResult) {
-	// Light structure checks only — MediaRef leaves already collected.
-	// Empty config is allowed for draft; publish can ship placeholders via theme.
+	// Light structure checks — MediaRef leaves already collected globally.
+	// Empty sections are allowed (theme placeholders); when present, check shapes.
 	hero := getMapField(config, "hero")
 	if hero != nil {
-		// title may be Localized or already string after partial edits
 		if title, ok := hero["title"]; ok && title != nil {
 			if m, isMap := title.(map[string]interface{}); isMap {
 				validateLocalizedTextMap(m, "hero.title", result, false)
@@ -236,6 +252,82 @@ func (vs *ValidationService) validateProductFirstHome(config model.JSONMap, resu
 		if sub, ok := hero["subtitle"]; ok && sub != nil {
 			if m, isMap := sub.(map[string]interface{}); isMap {
 				validateLocalizedTextMap(m, "hero.subtitle", result, false)
+			}
+		}
+		if media := getMapField(hero, "media"); media != nil {
+			if _, hasURL := media["url"]; hasURL && strings.TrimSpace(getStringField(media, "url")) == "" {
+				result.Errors = append(result.Errors, ValidationError{
+					Path: "hero.media.url", Code: "REQUIRED", Message: "media url is empty",
+				})
+			}
+		}
+	}
+
+	if showcase := getMapField(config, "showcase"); showcase != nil {
+		items := getArrayField(showcase, "items")
+		for i, item := range items {
+			itemMap, ok := item.(map[string]interface{})
+			if !ok {
+				result.Errors = append(result.Errors, ValidationError{
+					Path:    fmt.Sprintf("showcase.items[%d]", i),
+					Code:    "INVALID_TYPE",
+					Message: "showcase item must be a MediaRef object",
+				})
+				continue
+			}
+			// Prefer objects with url when present; allow empty placeholder objects.
+			if url, has := itemMap["url"]; has {
+				if s, ok := url.(string); !ok {
+					result.Errors = append(result.Errors, ValidationError{
+						Path:    fmt.Sprintf("showcase.items[%d].url", i),
+						Code:    "MEDIAREF_TYPE",
+						Message: "url must be a string",
+					})
+				} else if strings.TrimSpace(s) == "" {
+					result.Errors = append(result.Errors, ValidationError{
+						Path:    fmt.Sprintf("showcase.items[%d].url", i),
+						Code:    "REQUIRED",
+						Message: "showcase item url is empty",
+					})
+				}
+			}
+		}
+	}
+
+	if features := getMapField(config, "features"); features != nil {
+		items := getArrayField(features, "items")
+		for i, item := range items {
+			itemMap, ok := item.(map[string]interface{})
+			if !ok {
+				result.Errors = append(result.Errors, ValidationError{
+					Path:    fmt.Sprintf("features.items[%d]", i),
+					Code:    "INVALID_TYPE",
+					Message: "feature item must be an object",
+				})
+				continue
+			}
+			base := fmt.Sprintf("features.items[%d]", i)
+			if title, ok := itemMap["title"]; ok && title != nil {
+				if m, isMap := title.(map[string]interface{}); isMap {
+					validateLocalizedTextMap(m, base+".title", result, false)
+				}
+			}
+			if desc, ok := itemMap["description"]; ok && desc != nil {
+				if m, isMap := desc.(map[string]interface{}); isMap {
+					validateLocalizedTextMap(m, base+".description", result, false)
+				}
+			}
+		}
+	}
+
+	if install := getMapField(config, "install"); install != nil {
+		if code, ok := install["code"]; ok && code != nil {
+			if _, isStr := code.(string); !isStr {
+				result.Errors = append(result.Errors, ValidationError{
+					Path:    "install.code",
+					Code:    "INVALID_TYPE",
+					Message: "install.code must be a plain string (not LocalizedText)",
+				})
 			}
 		}
 	}

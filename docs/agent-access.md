@@ -322,10 +322,12 @@ CLI（推荐）：
 
 ```bash
 inkless site whoami --site SITE   # capabilities.themeContent + themeContentKeys
+inkless content keys --site SITE  # 同上 keys，短输出
 
 inkless media upload ./shot.png --site SITE --json   # → .url
 
 # home.json = product-first config；MediaRef 全 string
+# --dry-run：深层 path diff + local MediaRef 预检 + 服务端 validate（含 schemaKind）
 inkless content apply home --site SITE --from-file home.json --dry-run
 inkless content apply home --site SITE --from-file home.json
 
@@ -333,7 +335,13 @@ inkless content apply home --site SITE --from-file home.json
 inkless content publish home --site SITE
 
 inkless content get home --site SITE --public --locale zh --json
+inkless content versions home --site SITE
+inkless content version home 3 --site SITE
+# rollback 同 publish 门禁（never/manual+--force）
+# inkless content rollback home 2 --site SITE
 ```
+
+Swagger：`/api-docs` → tag **Content (Admin)**。
 
 curl 等价：
 

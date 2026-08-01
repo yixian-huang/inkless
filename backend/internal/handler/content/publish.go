@@ -28,6 +28,18 @@ type PublishResponse struct {
 }
 
 // Publish promotes draft to published and invalidates public content cache.
+// @Summary      Publish theme content
+// @Description  Promotes draft to published with expectedDraftVersion lock; invalidates content cache
+// @Tags         Content (Admin)
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        pageKey path string true "Page key"
+// @Param        body    body PublishRequest true "Publish parameters"
+// @Success      200 {object} PublishResponse
+// @Failure      409 {object} object{error=object}
+// @Failure      422 {object} object{error=object}
+// @Router       /admin/content/{pageKey}/publish [post]
 func (h *Handler) Publish(c *gin.Context) {
 	pageKeyStr := c.Param("pageKey")
 	pageKey := model.PageKey(pageKeyStr)

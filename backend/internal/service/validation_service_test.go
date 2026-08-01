@@ -5,6 +5,55 @@ import (
 	"testing"
 )
 
+func TestValidateConfig_ProductFirst_SchemaKind(t *testing.T) {
+	vs := NewValidationService()
+	config := model.JSONMap{
+		"hero": map[string]interface{}{
+			"title": map[string]interface{}{"zh": "产品", "en": "Product"},
+			"media": map[string]interface{}{"url": "/h.png", "alt": "h"},
+		},
+		"showcase": map[string]interface{}{
+			"items": []interface{}{
+				map[string]interface{}{"url": "/a.png", "alt": "A"},
+			},
+		},
+		"features": map[string]interface{}{
+			"items": []interface{}{
+				map[string]interface{}{
+					"title": map[string]interface{}{"zh": "快", "en": "Fast"},
+				},
+			},
+		},
+		"install": map[string]interface{}{"code": "curl | sh"},
+	}
+	res := vs.ValidateConfig(model.PageKeyHome, config)
+	if !res.Valid {
+		t.Fatalf("valid=%v errors=%+v", res.Valid, res.Errors)
+	}
+	if res.SchemaKind != "product-first" {
+		t.Fatalf("schemaKind=%q", res.SchemaKind)
+	}
+}
+
+func TestValidateConfig_ProductFirst_InstallCodeNotLocalized(t *testing.T) {
+	vs := NewValidationService()
+	config := model.JSONMap{
+		"hero": map[string]interface{}{
+			"title": map[string]interface{}{"zh": "x", "en": "x"},
+		},
+		"install": map[string]interface{}{
+			"code": map[string]interface{}{"zh": "a", "en": "b"},
+		},
+	}
+	res := vs.ValidateConfig(model.PageKeyHome, config)
+	if res.Valid {
+		t.Fatal("expected invalid install.code")
+	}
+	if res.SchemaKind != "product-first" {
+		t.Fatalf("schemaKind=%q", res.SchemaKind)
+	}
+}
+
 func TestValidateConfig_HomePage_Valid(t *testing.T) {
 	vs := NewValidationService()
 

@@ -19,12 +19,24 @@ type ValidateRequest struct {
 
 // ValidateResponse is the validation result payload.
 type ValidateResponse struct {
-	Valid             bool                               `json:"valid"`
-	Errors            []service.ValidationError          `json:"errors"`
+	Valid             bool                                `json:"valid"`
+	Errors            []service.ValidationError           `json:"errors"`
 	TranslationStatus map[string]service.TranslationState `json:"translationStatus"`
+	SchemaKind        string                              `json:"schemaKind,omitempty"`
 }
 
 // Validate checks a config without saving.
+// @Summary      Validate theme content config
+// @Description  Schema + MediaRef checks; returns schemaKind (product-first|corporate|…)
+// @Tags         Content (Admin)
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        pageKey path string true "Page key"
+// @Param        body    body ValidateRequest true "Config to validate"
+// @Success      200 {object} ValidateResponse
+// @Failure      400 {object} object{error=object}
+// @Router       /admin/content/{pageKey}/validate [post]
 func (h *Handler) Validate(c *gin.Context) {
 	pageKey := model.PageKey(c.Param("pageKey"))
 	metrics.Global().RecordValidationAttempt()
@@ -67,5 +79,6 @@ func (h *Handler) Validate(c *gin.Context) {
 		Valid:             result.Valid,
 		Errors:            result.Errors,
 		TranslationStatus: result.TranslationStatus,
+		SchemaKind:        result.SchemaKind,
 	})
 }

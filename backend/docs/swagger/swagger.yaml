@@ -3,6 +3,88 @@ definitions:
   github_com_yixian-huang_inkless_backend_internal_model.JSONMap:
     additionalProperties: true
     type: object
+  github_com_yixian-huang_inkless_backend_internal_service.TranslationState:
+    enum:
+    - done
+    - missing
+    - stale
+    type: string
+    x-enum-varnames:
+    - TranslationStateDone
+    - TranslationStateMissing
+    - TranslationStateStale
+  github_com_yixian-huang_inkless_backend_internal_service.ValidationError:
+    properties:
+      code:
+        type: string
+      message:
+        type: string
+      path:
+        type: string
+    type: object
+  internal_handler_agent.WhoamiCapabilities:
+    properties:
+      aiArticleMeta:
+        description: articles:update (article-meta endpoint)
+        type: boolean
+      articles:
+        description: articles:read
+        type: boolean
+      mediaUpload:
+        description: media:create
+        type: boolean
+      pages:
+        description: pages:read (unified /admin/pages)
+        type: boolean
+      publish:
+        description: articles:publish or pages:publish
+        type: boolean
+      themeContent:
+        description: |-
+          ThemeContent is true when the agent can use theme-bound content_documents
+          Admin API (/admin/content/:pageKey/*). Gated by pages:read (same as content GET draft).
+        type: boolean
+      themeContentKeys:
+        description: ThemeContentKeys lists writable/readable content pageKeys (agent
+          discovery).
+        items:
+          type: string
+        type: array
+    type: object
+  internal_handler_agent.WhoamiResponse:
+    properties:
+      apiKeyId:
+        type: integer
+      authMethod:
+        description: '"api_key" | "session"'
+        type: string
+      baseUrl:
+        type: string
+      capabilities:
+        $ref: '#/definitions/internal_handler_agent.WhoamiCapabilities'
+      permissions:
+        items:
+          type: string
+        type: array
+      scopes:
+        description: empty for session JWT
+        items:
+          type: string
+        type: array
+      user:
+        $ref: '#/definitions/internal_handler_agent.WhoamiUser'
+      version:
+        type: string
+    type: object
+  internal_handler_agent.WhoamiUser:
+    properties:
+      id:
+        type: integer
+      role:
+        type: string
+      username:
+        type: string
+    type: object
   internal_handler_article.createUpdateInput:
     properties:
       allowComments:
@@ -122,6 +204,128 @@ definitions:
       accessToken:
         type: string
       expiresIn:
+        type: integer
+    type: object
+  internal_handler_content.GetDraftResponse:
+    properties:
+      config:
+        $ref: '#/definitions/github_com_yixian-huang_inkless_backend_internal_model.JSONMap'
+      pageKey:
+        type: string
+      publishedVersion:
+        type: integer
+      updatedAt:
+        type: string
+      version:
+        type: integer
+    type: object
+  internal_handler_content.GetVersionDetailResponse:
+    properties:
+      config:
+        $ref: '#/definitions/github_com_yixian-huang_inkless_backend_internal_model.JSONMap'
+      createdBy:
+        type: integer
+      id:
+        type: integer
+      pageKey:
+        type: string
+      publishedAt:
+        type: string
+      version:
+        type: integer
+    type: object
+  internal_handler_content.GetVersionsResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/internal_handler_content.VersionListItem'
+        type: array
+      total:
+        type: integer
+    type: object
+  internal_handler_content.PublishRequest:
+    properties:
+      changeNote:
+        type: string
+      expectedDraftVersion:
+        type: integer
+    required:
+    - expectedDraftVersion
+    type: object
+  internal_handler_content.PublishResponse:
+    properties:
+      pageKey:
+        type: string
+      publishedAt:
+        type: string
+      publishedVersion:
+        type: integer
+    type: object
+  internal_handler_content.RollbackRequest:
+    properties:
+      changeNote:
+        type: string
+    type: object
+  internal_handler_content.RollbackResponse:
+    properties:
+      pageKey:
+        type: string
+      publishedAt:
+        type: string
+      publishedVersion:
+        type: integer
+      sourceVersion:
+        type: integer
+    type: object
+  internal_handler_content.UpdateDraftRequest:
+    properties:
+      changeNote:
+        type: string
+      config:
+        $ref: '#/definitions/github_com_yixian-huang_inkless_backend_internal_model.JSONMap'
+    required:
+    - config
+    type: object
+  internal_handler_content.UpdateDraftResponse:
+    properties:
+      pageKey:
+        type: string
+      updatedAt:
+        type: string
+      version:
+        type: integer
+    type: object
+  internal_handler_content.ValidateRequest:
+    properties:
+      config:
+        $ref: '#/definitions/github_com_yixian-huang_inkless_backend_internal_model.JSONMap'
+    required:
+    - config
+    type: object
+  internal_handler_content.ValidateResponse:
+    properties:
+      errors:
+        items:
+          $ref: '#/definitions/github_com_yixian-huang_inkless_backend_internal_service.ValidationError'
+        type: array
+      schemaKind:
+        type: string
+      translationStatus:
+        additionalProperties:
+          $ref: '#/definitions/github_com_yixian-huang_inkless_backend_internal_service.TranslationState'
+        type: object
+      valid:
+        type: boolean
+    type: object
+  internal_handler_content.VersionListItem:
+    properties:
+      changeNote:
+        type: string
+      createdAt:
+        type: string
+      operator:
+        type: string
+      version:
         type: integer
     type: object
   internal_handler_role.AssignRoleRequest:
@@ -289,6 +493,29 @@ info:
   title: Inkless CMS API
   version: "1.0"
 paths:
+  /admin/agent/whoami:
+    get:
+      description: Returns baseUrl, auth method, scopes, and effective capabilities
+        for multi-site agents
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_handler_agent.WhoamiResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            properties:
+              error:
+                type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Agent whoami / instance probe
+      tags:
+      - Agent
   /admin/analytics/summary:
     get:
       description: Returns page view statistics including today, last 7 days, last
@@ -1034,6 +1261,266 @@ paths:
       summary: Reply as site author (admin)
       tags:
       - Comments (Admin)
+  /admin/content/{pageKey}/draft:
+    get:
+      description: Returns draft config for a content_documents pageKey (theme-bound
+        home, etc.)
+      parameters:
+      - description: Page key (home, contact, …)
+        in: path
+        name: pageKey
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_handler_content.GetDraftResponse'
+        "400":
+          description: Bad Request
+          schema:
+            properties:
+              error:
+                type: object
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get theme content draft
+      tags:
+      - Content (Admin)
+    put:
+      consumes:
+      - application/json
+      description: Optimistic lock via If-Match draft version; MediaRef url/alt/caption
+        must be strings
+      parameters:
+      - description: Page key
+        in: path
+        name: pageKey
+        required: true
+        type: string
+      - description: Expected draft version
+        in: header
+        name: If-Match
+        required: true
+        type: string
+      - description: Draft body
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_handler_content.UpdateDraftRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_handler_content.UpdateDraftResponse'
+        "400":
+          description: Bad Request
+          schema:
+            properties:
+              error:
+                type: object
+            type: object
+        "409":
+          description: Conflict
+          schema:
+            properties:
+              error:
+                type: object
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Update theme content draft
+      tags:
+      - Content (Admin)
+  /admin/content/{pageKey}/publish:
+    post:
+      consumes:
+      - application/json
+      description: Promotes draft to published with expectedDraftVersion lock; invalidates
+        content cache
+      parameters:
+      - description: Page key
+        in: path
+        name: pageKey
+        required: true
+        type: string
+      - description: Publish parameters
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_handler_content.PublishRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_handler_content.PublishResponse'
+        "409":
+          description: Conflict
+          schema:
+            properties:
+              error:
+                type: object
+            type: object
+        "422":
+          description: Unprocessable Entity
+          schema:
+            properties:
+              error:
+                type: object
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Publish theme content
+      tags:
+      - Content (Admin)
+  /admin/content/{pageKey}/rollback/{version}:
+    post:
+      consumes:
+      - application/json
+      description: Creates a new published version from a historical snapshot (does
+        not mutate old versions)
+      parameters:
+      - description: Page key
+        in: path
+        name: pageKey
+        required: true
+        type: string
+      - description: Source published version
+        in: path
+        name: version
+        required: true
+        type: integer
+      - description: Optional change note
+        in: body
+        name: body
+        schema:
+          $ref: '#/definitions/internal_handler_content.RollbackRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_handler_content.RollbackResponse'
+        "404":
+          description: Not Found
+          schema:
+            properties:
+              error:
+                type: object
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Rollback theme content
+      tags:
+      - Content (Admin)
+  /admin/content/{pageKey}/validate:
+    post:
+      consumes:
+      - application/json
+      description: Schema + MediaRef checks; returns schemaKind (product-first|corporate|…)
+      parameters:
+      - description: Page key
+        in: path
+        name: pageKey
+        required: true
+        type: string
+      - description: Config to validate
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_handler_content.ValidateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_handler_content.ValidateResponse'
+        "400":
+          description: Bad Request
+          schema:
+            properties:
+              error:
+                type: object
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Validate theme content config
+      tags:
+      - Content (Admin)
+  /admin/content/{pageKey}/versions:
+    get:
+      parameters:
+      - description: Page key
+        in: path
+        name: pageKey
+        required: true
+        type: string
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 20
+        description: Page size
+        in: query
+        name: pageSize
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_handler_content.GetVersionsResponse'
+      security:
+      - BearerAuth: []
+      summary: List theme content versions
+      tags:
+      - Content (Admin)
+  /admin/content/{pageKey}/versions/{version}:
+    get:
+      parameters:
+      - description: Page key
+        in: path
+        name: pageKey
+        required: true
+        type: string
+      - description: Version number
+        in: path
+        name: version
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_handler_content.GetVersionDetailResponse'
+        "404":
+          description: Not Found
+          schema:
+            properties:
+              error:
+                type: object
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get theme content version detail
+      tags:
+      - Content (Admin)
   /admin/dashboard/summary:
     get:
       description: Returns today visits, pages/articles/media counts for the dashboard

@@ -28,6 +28,19 @@ type UpdateDraftResponse struct {
 // UpdateDraft updates draft with If-Match optimistic locking.
 // MediaRef string-leaf violations return 400.
 // Missing document + If-Match: 0 creates a new document at version 1.
+// @Summary      Update theme content draft
+// @Description  Optimistic lock via If-Match draft version; MediaRef url/alt/caption must be strings
+// @Tags         Content (Admin)
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        pageKey  path   string true "Page key"
+// @Param        If-Match header string true "Expected draft version"
+// @Param        body     body   UpdateDraftRequest true "Draft body"
+// @Success      200 {object} UpdateDraftResponse
+// @Failure      400 {object} object{error=object}
+// @Failure      409 {object} object{error=object}
+// @Router       /admin/content/{pageKey}/draft [put]
 func (h *Handler) UpdateDraft(c *gin.Context) {
 	pageKey := model.PageKey(c.Param("pageKey"))
 	if !isValidPageKey(pageKey) {

@@ -2,7 +2,7 @@
 
 | 字段 | 值 |
 |------|-----|
-| 状态 | **M1+M2 implemented** — Admin API + CLI content/media + whoami.themeContent + docs/skill |
+| 状态 | **M1–M3 implemented** — Admin API + CLI + deep dry-run + versions/rollback + swagger |
 | 日期 | 2026-08-01 |
 | 范围 | Host：Admin API + cache + CLI/skill 文档；**不改** product-first 视觉 |
 | 相关 | [ADR-0002 主题边界](adr/0002-theme-host-boundary.md)、[product-first 设计](design-product-first-theme.md)、[api-spec § content](api-spec.md)、[agent-access](agent-access.md) |
@@ -169,7 +169,7 @@ curl -sS "$BASE/public/content/home?locale=zh" | jq .config.hero
 |------|------|----------|
 | **M1** | 恢复 GET/PUT draft + POST publish + cache invalidate + MediaRef 校验 + 集成测试 | **done** |
 | **M2** | CLI content/media + whoami.themeContent + agent-access/skill | **done** |
-| **M3** | validate 增强、versions/rollback 对齐 swagger、CLI dry-run 深度 diff | 运维完备 |
+| **M3** | deep dry-run diff、local MediaRef preflight、versions/rollback CLI、schemaKind、swagger Content (Admin) | **done** |
 | **Out** | home → unified 迁移、服务端全量 locale flatten、CF bot 规则 | 另案 |
 
 ---

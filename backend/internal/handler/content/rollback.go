@@ -29,6 +29,18 @@ type RollbackResponse struct {
 }
 
 // Rollback creates a new published version from a historical snapshot.
+// @Summary      Rollback theme content
+// @Description  Creates a new published version from a historical snapshot (does not mutate old versions)
+// @Tags         Content (Admin)
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        pageKey path string true "Page key"
+// @Param        version path int    true "Source published version"
+// @Param        body    body RollbackRequest false "Optional change note"
+// @Success      200 {object} RollbackResponse
+// @Failure      404 {object} object{error=object}
+// @Router       /admin/content/{pageKey}/rollback/{version} [post]
 func (h *Handler) Rollback(c *gin.Context) {
 	pageKeyStr := c.Param("pageKey")
 	pageKey := model.PageKey(pageKeyStr)

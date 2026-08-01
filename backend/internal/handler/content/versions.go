@@ -36,6 +36,15 @@ type GetVersionDetailResponse struct {
 }
 
 // GetVersions lists published content versions.
+// @Summary      List theme content versions
+// @Tags         Content (Admin)
+// @Produce      json
+// @Security     BearerAuth
+// @Param        pageKey  path  string true  "Page key"
+// @Param        page     query int    false "Page number" default(1)
+// @Param        pageSize query int    false "Page size" default(20)
+// @Success      200 {object} GetVersionsResponse
+// @Router       /admin/content/{pageKey}/versions [get]
 func (h *Handler) GetVersions(c *gin.Context) {
 	pageKey := model.PageKey(c.Param("pageKey"))
 	if !isValidPageKey(pageKey) {
@@ -74,6 +83,15 @@ func (h *Handler) GetVersions(c *gin.Context) {
 }
 
 // GetVersionDetail returns one published version snapshot.
+// @Summary      Get theme content version detail
+// @Tags         Content (Admin)
+// @Produce      json
+// @Security     BearerAuth
+// @Param        pageKey path string true "Page key"
+// @Param        version path int    true "Version number"
+// @Success      200 {object} GetVersionDetailResponse
+// @Failure      404 {object} object{error=object}
+// @Router       /admin/content/{pageKey}/versions/{version} [get]
 func (h *Handler) GetVersionDetail(c *gin.Context) {
 	pageKey := model.PageKey(c.Param("pageKey"))
 	if !isValidPageKey(pageKey) {

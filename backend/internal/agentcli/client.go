@@ -385,8 +385,14 @@ func ContentConfigFromFileBody(raw map[string]any) (map[string]any, error) {
 	return raw, nil
 }
 
-// ShallowConfigDiff returns keys present only in left, only in right, or changed (JSON-equal).
+// ShallowConfigDiff returns top-level keys present only in left, only in right, or changed.
 func ShallowConfigDiff(left, right map[string]any) map[string]any {
+	if left == nil {
+		left = map[string]any{}
+	}
+	if right == nil {
+		right = map[string]any{}
+	}
 	added := []string{}
 	removed := []string{}
 	changed := []string{}
@@ -414,6 +420,47 @@ func ShallowConfigDiff(left, right map[string]any) map[string]any {
 		"removed": removed,
 		"changed": changed,
 	}
+}
+
+// ListContentVersions GET /admin/content/:pageKey/versions
+func (c *Client) ListContentVersions(ctx context.Context, pageKey string, page, pageSize int) (map[string]any, error) {
+	if page <= 0 {
+		page = 1
+	}
+	if pageSize <= 0 {
+		pageSize = 20
+	}
+	path := fmt.Sprintf("/admin/content/%s/versions?page=%d&pageSize=%d",
+		url.PathEscape(pageKey), page, pageSize)
+	var out map[string]any
+	if err := c.DoJSON(ctx, http.MethodGet, path, nil, &out); err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// GetContentVersion GET /admin/content/:pageKey/versions/:version
+func (c *Client) GetContentVersion(ctx context.Context, pageKey string, version int) (map[string]any, error) {
+	path := fmt.Sprintf("/admin/content/%s/versions/%d", url.PathEscape(pageKey), version)
+	var out map[string]any
+	if err := c.DoJSON(ctx, http.MethodGet, path, nil, &out); err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// RollbackContent POST /admin/content/:pageKey/rollback/:version
+func (c *Client) RollbackContent(ctx context.Context, pageKey string, sourceVersion int, changeNote string) (map[string]any, error) {
+	body := map[string]any{}
+	if changeNote != "" {
+		body["changeNote"] = changeNote
+	}
+	path := fmt.Sprintf("/admin/content/%s/rollback/%d", url.PathEscape(pageKey), sourceVersion)
+	var out map[string]any
+	if err := c.DoJSON(ctx, http.MethodPost, path, body, &out); err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 // ArticleMissingSEO returns true if common SEO fields look empty.

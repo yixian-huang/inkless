@@ -20,6 +20,15 @@ type GetDraftResponse struct {
 }
 
 // GetDraft returns the draft config (empty config + version 0 if missing).
+// @Summary      Get theme content draft
+// @Description  Returns draft config for a content_documents pageKey (theme-bound home, etc.)
+// @Tags         Content (Admin)
+// @Produce      json
+// @Security     BearerAuth
+// @Param        pageKey path string true "Page key (home, contact, …)"
+// @Success      200 {object} GetDraftResponse
+// @Failure      400 {object} object{error=object}
+// @Router       /admin/content/{pageKey}/draft [get]
 func (h *Handler) GetDraft(c *gin.Context) {
 	pageKey := model.PageKey(c.Param("pageKey"))
 	if !isValidPageKey(pageKey) {
