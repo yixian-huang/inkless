@@ -17,11 +17,15 @@ type GetDraftResponse struct {
 	Config           model.JSONMap `json:"config"`
 	PublishedVersion int           `json:"publishedVersion"`
 	UpdatedAt        time.Time     `json:"updatedAt"`
+	// Storage indicates where the draft was loaded from (page | content_documents).
+	Storage string `json:"storage,omitempty"`
+	PageID  *uint  `json:"pageId,omitempty"`
 }
 
 // GetDraft returns the draft config (empty config + version 0 if missing).
+// Prefers unified Page when present (theme-as-templates T3).
 // @Summary      Get theme content draft
-// @Description  Returns draft config for a content_documents pageKey (theme-bound home, etc.)
+// @Description  Deprecated: prefer /admin/pages. Returns draft from Page when bridged, else content_documents.
 // @Tags         Content (Admin)
 // @Produce      json
 // @Security     BearerAuth
@@ -33,6 +37,26 @@ func (h *Handler) GetDraft(c *gin.Context) {
 	pageKey := model.PageKey(c.Param("pageKey"))
 	if !isValidPageKey(pageKey) {
 		apierror.Write(c, apierror.BadRequest("Invalid page key"))
+		return
+	}
+	setContentDeprecationHeaders(c, string(pageKey))
+
+	// T3 bridge: prefer unified page
+	if page := h.findBridgePage(c.Request.Context(), pageKey); page != nil {
+		cfg := model.JSONMap(page.DraftConfig)
+		if cfg == nil {
+			cfg = model.JSONMap{}
+		}
+		id := page.ID
+		c.JSON(http.StatusOK, GetDraftResponse{
+			PageKey:          string(pageKey),
+			Version:          page.DraftVersion,
+			Config:           cfg,
+			PublishedVersion: page.PublishedVersion,
+			UpdatedAt:        page.UpdatedAt,
+			Storage:          "page",
+			PageID:           &id,
+		})
 		return
 	}
 
@@ -56,5 +80,6 @@ func (h *Handler) GetDraft(c *gin.Context) {
 		Config:           cfg,
 		PublishedVersion: doc.PublishedVersion,
 		UpdatedAt:        doc.UpdatedAt,
+		Storage:          "content_documents",
 	})
 }

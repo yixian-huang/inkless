@@ -7,6 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"github.com/yixian-huang/inkless/backend/internal/cache"
 	"github.com/yixian-huang/inkless/backend/internal/middleware"
 	"github.com/yixian-huang/inkless/backend/internal/model"
 	"github.com/yixian-huang/inkless/backend/internal/service"
@@ -59,6 +60,53 @@ func (h *Handler) Publish(c *gin.Context) {
 	user := middleware.GetUserContext(c)
 	if user == nil {
 		apierror.Write(c, apierror.Unauthorized("User context not found"))
+		return
+	}
+	setContentDeprecationHeaders(c, pageKeyStr)
+
+	// T3 bridge: publish unified Page when present
+	if page := h.findBridgePage(c.Request.Context(), pageKey); page != nil && h.pageSvc != nil {
+		err := h.pageSvc.Publish(c.Request.Context(), page.ID, req.ExpectedDraftVersion, user.UserID)
+		if err != nil {
+			metrics.Global().RecordPublishFailure()
+			h.logPublishFail(pageKeyStr, user.Username, err, req.ExpectedDraftVersion)
+			if errors.Is(err, service.ErrPageVersionConflict) {
+				apierror.Write(c, apierror.New(http.StatusConflict, "CONFLICT_VERSION", "Draft version mismatch"))
+				return
+			}
+			apierror.Write(c, apierror.InternalServerError("Failed to publish page: "+err.Error()))
+			return
+		}
+		fresh, _ := h.pageRepo.FindByID(c.Request.Context(), page.ID)
+		if fresh != nil {
+			_ = service.SyncContentDocumentFromPage(c.Request.Context(), h.docRepo, fresh, pageKey)
+		}
+		metrics.Global().RecordPublishSuccess()
+		if h.auditLog != nil {
+			pubVer := 0
+			if fresh != nil {
+				pubVer = fresh.PublishedVersion
+			}
+			h.auditLog.LogPublishSuccess(pageKeyStr, pubVer, user.Username, req.ExpectedDraftVersion)
+		}
+		invalidateContentCache(h.publicCache, pageKeyStr)
+		// also invalidate page caches
+		if h.publicCache != nil {
+			cache.InvalidatePagePublic(h.publicCache, pageKeyStr)
+		}
+		publishedAt := time.Now().UTC()
+		pubVer := 0
+		if fresh != nil {
+			pubVer = fresh.PublishedVersion
+			if fresh.PublishedAt != nil {
+				publishedAt = *fresh.PublishedAt
+			}
+		}
+		c.JSON(http.StatusOK, PublishResponse{
+			PageKey:          pageKeyStr,
+			PublishedVersion: pubVer,
+			PublishedAt:      publishedAt,
+		})
 		return
 	}
 

@@ -146,6 +146,8 @@ func registerAdminContent(
 	// Register static /content/slots BEFORE /content/:pageKey/* so "slots" is not a pageKey.
 	if h.Content != nil {
 		admin.GET("/content/slots", require("pages", "read"), h.Content.ListSlots)
+		// Static migrate path before :pageKey
+		admin.POST("/content/migrate-to-pages", require("pages", "update"), h.Content.MigrateToPages)
 		admin.GET("/content/:pageKey/schema", require("pages", "read"), h.Content.GetSchema)
 		admin.GET("/content/:pageKey/draft", require("pages", "read"), h.Content.GetDraft)
 		admin.PUT("/content/:pageKey/draft", require("pages", "update"), h.Content.UpdateDraft)

@@ -289,7 +289,7 @@ content_documents.page_key=home (published)
 | **T0** | 本文 + ADR 修订草案 + 弃用说明 | **done**（design） |
 | **T1** | Page：`templateKey`；bootstrap/public list 纳入 template 页 | **done**（本迭代） |
 | **T2** | product/blog-first：EnsureHomePage seed；product-first 双读 Page→content | **done**（本迭代） |
-| **T3** | 迁移工具 content→page；content API deprecation | 待做 |
+| **T3** | 迁移工具 content→page；content API bridge + Deprecation 头；CLI migrate-to-pages | **done**（本迭代） |
 | **T4** | `templates[]` 发现 API；contentSlots 只读投影；CLI 别名 | 待做 |
 | **T5** | 硬编码 pages[] 薄壳化 / 文档删除生产 content 写路径 | 待做 |
 

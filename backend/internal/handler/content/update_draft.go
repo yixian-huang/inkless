@@ -1,6 +1,7 @@
 package content
 
 import (
+	"errors"
 	"net/http"
 	"strconv"
 	"time"
@@ -8,6 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/yixian-huang/inkless/backend/internal/model"
+	"github.com/yixian-huang/inkless/backend/internal/repository"
 	"github.com/yixian-huang/inkless/backend/internal/service"
 	"github.com/yixian-huang/inkless/backend/pkg/apierror"
 )
@@ -68,6 +70,8 @@ func (h *Handler) UpdateDraft(c *gin.Context) {
 		req.Config = model.JSONMap{}
 	}
 
+	setContentDeprecationHeaders(c, string(pageKey))
+
 	// Hard reject invalid MediaRef leaves on write (prevents React #31 in themes).
 	if mediaErrs := service.CollectMediaRefLeafErrors(req.Config); len(mediaErrs) > 0 {
 		details := make([]map[string]string, 0, len(mediaErrs))
@@ -84,6 +88,31 @@ func (h *Handler) UpdateDraft(c *gin.Context) {
 	}
 
 	ctx := c.Request.Context()
+
+	// T3 bridge: write unified Page draft when present; dual-write content_documents.
+	if page := h.findBridgePage(ctx, pageKey); page != nil {
+		newVersion, err := h.pageRepo.UpdateDraft(ctx, page.ID, expectedVersion, req.Config)
+		if err != nil {
+			if errors.Is(err, repository.ErrUnifiedPageDraftVersionConflict) {
+				apierror.Write(c, apierror.New(http.StatusConflict, "CONFLICT_VERSION", "Draft version conflict"))
+				return
+			}
+			apierror.Write(c, apierror.InternalServerError("Failed to update page draft: "+err.Error()))
+			return
+		}
+		// dual-write legacy content_documents for public dual-read
+		if fresh, fe := h.pageRepo.FindByID(ctx, page.ID); fe == nil && fresh != nil {
+			_ = service.SyncContentDocumentFromPage(ctx, h.docRepo, fresh, pageKey)
+		}
+		invalidateContentCache(h.publicCache, string(pageKey))
+		c.JSON(http.StatusOK, UpdateDraftResponse{
+			PageKey:   string(pageKey),
+			Version:   newVersion,
+			UpdatedAt: time.Now().UTC(),
+		})
+		return
+	}
+
 	_, findErr := h.docRepo.FindByPageKey(ctx, pageKey)
 	if findErr != nil && isNotFoundErr(findErr) {
 		if expectedVersion != 0 {

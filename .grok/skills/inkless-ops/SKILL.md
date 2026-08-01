@@ -58,17 +58,16 @@ inkless-ops articles apply ID --from-file patch.json
 inkless-ops pages list
 inkless-ops pages get-draft ID
 
-# product-first home (theme content slot — NOT pages list)
-inkless content slots --site inkless-ops          # activeTheme + contentSlots
-inkless content schema home --site inkless-ops    # schemaId / mediaRefPaths
-inkless content keys --site inkless-ops
-inkless content get home --site inkless-ops --json
+# product-first home (theme-as-templates: prefer pages)
+inkless content migrate-to-pages --site inkless-ops   # once: content_documents → Page home
+inkless pages list --site inkless-ops                 # should include slug=home
+inkless content slots --site inkless-ops
 inkless media upload ./shot.png --site inkless-ops --json
-inkless content apply home --site inkless-ops --from-file home.json --dry-run --validate-schema
-# dry-run: diff.paths / localMediaIssues / validate.schemaSource=theme
-inkless content apply home --site inkless-ops --from-file home.json --validate-schema
-inkless content get home --site inkless-ops --public --locale zh --json
-inkless content versions home --site inkless-ops
+# Preferred write path:
+inkless pages get-draft ID --json
+inkless pages put-draft ID --from-file home.json --dry-run
+# Legacy content apply still works (bridges to Page + deprecation warning):
+inkless content apply home --site inkless-ops --from-file home.json --dry-run
 ```
 
 Full form:

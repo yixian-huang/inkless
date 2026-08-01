@@ -360,6 +360,19 @@ func (c *Client) ValidateContent(ctx context.Context, pageKey string, config map
 	return out, nil
 }
 
+// MigrateContentToPages POST /admin/content/migrate-to-pages
+func (c *Client) MigrateContentToPages(ctx context.Context, force bool, themeID string) (map[string]any, error) {
+	body := map[string]any{"force": force}
+	if themeID != "" {
+		body["themeId"] = themeID
+	}
+	var out map[string]any
+	if err := c.DoJSON(ctx, http.MethodPost, "/admin/content/migrate-to-pages", body, &out); err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // PublishContent POST /admin/content/:pageKey/publish
 func (c *Client) PublishContent(ctx context.Context, pageKey string, expectedDraftVersion int, changeNote string) (map[string]any, error) {
 	body := map[string]any{"expectedDraftVersion": expectedDraftVersion}

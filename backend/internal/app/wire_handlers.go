@@ -307,7 +307,8 @@ func wireHandlers(
 			contentSvc,
 			auditDbWriter,
 			publicCache,
-		).WithSlots(contentSlotResolver),
+		).WithSlots(contentSlotResolver).
+			WithPages(r.unifiedPage, unifiedPageSvc),
 		Scheduler:    schedulerHandler.NewHandler(schedulerService),
 		PageTemplate: pageTemplateHandler.NewHandler(r.pageTemplate),
 		ThemeExport:  themeExportHandler.NewHandler(themeExportSvc),

@@ -368,6 +368,21 @@ curl -sS "$INKLESS_BASE_URL/public/content/home?locale=zh" | jq .
 
 无 content API 的旧实例：**禁止写库**；应升级 host 到含 M1 的版本，或人工在 SPA 编辑（若 UI 已接同一 API）。
 
+### 5.5c 迁移到 Page（theme-as-templates T3）
+
+生产写路径目标为 **unified pages**。一次性迁移：
+
+```bash
+inkless content migrate-to-pages --site SITE
+# 强制用 content_documents 覆盖 Page（慎用）:
+inkless content migrate-to-pages --site SITE --force
+
+inkless pages list --site SITE   # 应见 slug=home
+```
+
+迁移后 `content get/apply/publish home` 仍可用：有 Page 时 **桥接到 Page**，并 dual-write content_documents 供公开双读；响应带 `Deprecation` / `X-Inkless-Prefer` 头。  
+新 skill 请优先 `pages *`。
+
 ### 5.6 验收
 
 - 公开页与 `/public/bootstrap`（主题 / identity）  

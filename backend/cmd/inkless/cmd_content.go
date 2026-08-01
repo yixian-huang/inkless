@@ -25,7 +25,11 @@ Typical product-first flow:
   inkless content versions home
   inkless content rollback home 3
 
-MediaRef leaves (url/alt/caption) must be plain strings.`,
+MediaRef leaves (url/alt/caption) must be plain strings.
+
+DEPRECATED (theme-as-templates T3): prefer inkless pages * for home and other
+operational pages. content get/apply/publish still work and bridge to unified
+Page when slug=pageKey exists; responses include Deprecation headers.`,
 		SilenceUsage: true,
 	}
 	cmd.AddCommand(contentGetCmd())
@@ -38,7 +42,12 @@ MediaRef leaves (url/alt/caption) must be plain strings.`,
 	cmd.AddCommand(contentKeysCmd())
 	cmd.AddCommand(contentSlotsCmd())
 	cmd.AddCommand(contentSchemaCmd())
+	cmd.AddCommand(contentMigrateToPagesCmd())
 	return cmd
+}
+
+func warnContentDeprecated(msg string) {
+	fmt.Fprintf(os.Stderr, "warning: content API is deprecated (theme-as-templates); prefer pages. %s\n", msg)
 }
 
 func contentGetCmd() *cobra.Command {
@@ -66,6 +75,9 @@ func contentGetCmd() *cobra.Command {
 			c := f.client(ep)
 			if err := f.verifyIfNeeded(ctx, ep, c); err != nil {
 				return err
+			}
+			if !public {
+				warnContentDeprecated("use: inkless pages get-draft <id>")
 			}
 			var out map[string]any
 			if public {
@@ -151,6 +163,7 @@ Use --dry-run for deep path diff + local MediaRef preflight + server validate.
 			if err := f.verifyIfNeeded(ctx, ep, c); err != nil {
 				return err
 			}
+			warnContentDeprecated("writes bridge to Page when present; prefer pages apply/put-draft")
 
 			draft, err := c.GetContentDraft(ctx, pageKey)
 			if err != nil {
@@ -296,6 +309,55 @@ func contentSchemaCmd() *cobra.Command {
 		},
 	}
 	f.addTo(cmd)
+	return cmd
+}
+
+func contentMigrateToPagesCmd() *cobra.Command {
+	var f remoteFlags
+	var force bool
+	var themeID string
+	cmd := &cobra.Command{
+		Use:   "migrate-to-pages",
+		Short: "POST /admin/content/migrate-to-pages (content_documents → unified Page)",
+		Long: `One-shot migration for theme-as-templates T3.
+
+Ensures slug=home Page exists (from content_documents when product/blog-first).
+Use --force to overwrite Page draft+published from content_documents.
+
+After migration, prefer:
+  inkless pages list
+  inkless pages get-draft ID
+  inkless pages put-draft ID --from-file home.json`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			ep, err := f.resolve()
+			if err != nil {
+				return err
+			}
+			if !f.jsonOut {
+				printEndpointSummary(ep)
+			}
+			ctx, cancel := f.context()
+			defer cancel()
+			c := f.client(ep)
+			if err := f.verifyIfNeeded(ctx, ep, c); err != nil {
+				return err
+			}
+			res, err := c.MigrateContentToPages(ctx, force, themeID)
+			if err != nil {
+				return err
+			}
+			if f.jsonOut {
+				return f.printJSON(res)
+			}
+			raw, _ := json.MarshalIndent(res, "", "  ")
+			fmt.Println(string(raw))
+			fmt.Fprintln(os.Stderr, "hint: next use inkless pages list / pages apply")
+			return nil
+		},
+	}
+	f.addTo(cmd)
+	cmd.Flags().BoolVar(&force, "force", false, "Overwrite Page config from content_documents")
+	cmd.Flags().StringVar(&themeID, "theme-id", "", "Theme id (default: active theme)")
 	return cmd
 }
 

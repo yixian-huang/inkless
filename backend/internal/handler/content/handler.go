@@ -5,6 +5,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gin-gonic/gin"
+
 	"github.com/yixian-huang/inkless/backend/internal/cache"
 	"github.com/yixian-huang/inkless/backend/internal/contentslots"
 	"github.com/yixian-huang/inkless/backend/internal/model"
@@ -37,6 +39,8 @@ type Auditor interface {
 }
 
 // Handler serves Admin theme-content (content_documents) APIs.
+// T3: when a unified Page exists for the same slug as pageKey, draft/publish
+// prefer that Page and dual-write content_documents for public dual-read fallback.
 type Handler struct {
 	db            *gorm.DB
 	docRepo       repository.ContentDocumentRepository
@@ -46,6 +50,8 @@ type Handler struct {
 	auditLog      Auditor
 	publicCache   *cache.Cache
 	slots         *contentslots.Resolver
+	pageRepo      repository.UnifiedPageRepository
+	pageSvc       *service.UnifiedPageService
 }
 
 // NewHandler constructs a content admin handler.
@@ -75,6 +81,42 @@ func (h *Handler) WithSlots(r *contentslots.Resolver) *Handler {
 		h.slots = r
 	}
 	return h
+}
+
+// WithPages enables content API bridge to unified_pages (theme-as-templates T3).
+func (h *Handler) WithPages(pageRepo repository.UnifiedPageRepository, pageSvc *service.UnifiedPageService) *Handler {
+	if h != nil {
+		h.pageRepo = pageRepo
+		h.pageSvc = pageSvc
+	}
+	return h
+}
+
+func setContentDeprecationHeaders(c *gin.Context, pageKey string) {
+	if c == nil {
+		return
+	}
+	c.Header("Deprecation", "true")
+	c.Header("Sunset", "Sat, 01 Aug 2027 00:00:00 GMT")
+	c.Header("Link", `</admin/pages>; rel="successor-version"`)
+	c.Header("X-Inkless-Deprecated", "content-documents")
+	c.Header("X-Inkless-Prefer", "Use /admin/pages for operational page content (theme-as-templates)")
+	if pageKey != "" {
+		c.Header("X-Inkless-Page-Slug", pageKey)
+	}
+}
+
+// findBridgePage returns unified page for pageKey slug when bridge is enabled.
+func (h *Handler) findBridgePage(ctx context.Context, pageKey model.PageKey) *model.UnifiedPage {
+	if h == nil || h.pageRepo == nil {
+		return nil
+	}
+	slug := service.PageKeyToSlug(string(pageKey))
+	page, err := h.pageRepo.FindBySlug(ctx, slug)
+	if err != nil || page == nil {
+		return nil
+	}
+	return page
 }
 
 // NewHandlerWithLogger is a convenience when using pkg/audit.Logger.
