@@ -19,7 +19,7 @@
     "@codemirror/search": "^6.7.1",
     "@codemirror/state": "^6.7.1",
     "@codemirror/theme-one-dark": "^6.1.3",
-    "@codemirror/view": "^6.43.6",
+    "@codemirror/view": "^6.43.7",
     "@inkless/editor": "workspace:*",
     "@inkless/theme-blog-first": "github:yixian-huang/inkless-theme-blog-first#9bffe9d",
     "@inkless/theme-corporate-classic": "workspace:*",
