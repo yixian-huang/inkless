@@ -68,8 +68,8 @@
     "turndown": "^7.2.4"
   },
   "devDependencies": {
-    "@types/react": "^19.2.17",
-    "@types/react-dom": "^19.1.6",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.4",
     "@types/turndown": "^5.0.6",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
