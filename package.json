@@ -33,7 +33,7 @@
     "migrate:db": "./scripts/migrate-db.sh"
   },
   "devDependencies": {
-    "playwright": "^1.62.0"
+    "playwright": "^1.62.1"
   },
   "pnpm": {
     "overrides": {
