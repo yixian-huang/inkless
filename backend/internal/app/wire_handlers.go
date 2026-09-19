@@ -302,8 +302,7 @@ func wireHandlers(
 		System: systemHandler.NewHandler(database.DB, cfg.UploadDir, build.Version).
 			WithSelfUpdate(service.NewHostSelfUpdateService(cfg, build.Version)),
 		Translation:    translationHandler.NewHandlerWithRegistry(registry, r.glossary, r.article),
-		UnifiedPage: unifiedPageHandler.NewHandler(r.unifiedPage, r.pageVersion, unifiedPageSvc, publicCache, bus).
-			WithInstalledThemes(r.installedTheme),
+		UnifiedPage: unifiedPageHandler.NewHandler(r.unifiedPage, r.pageVersion, unifiedPageSvc, publicCache, bus),
 		Content: contentHandler.NewHandler(
 			database.DB,
 			r.contentDoc,

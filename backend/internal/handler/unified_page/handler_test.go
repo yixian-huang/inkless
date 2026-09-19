@@ -2,7 +2,6 @@ package unified_page
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -30,41 +29,46 @@ func TestValidatePublicPageSlug(t *testing.T) {
 	require.Error(t, validatePublicPageSlug("metrics"))
 }
 
-type stubActiveThemeRepo struct {
-	themeID string
-}
+func TestAdminCreateAllowsActiveThemeSlug(t *testing.T) {
+	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
+	require.NoError(t, err)
+	require.NoError(t, db.AutoMigrate(&model.UnifiedPage{}, &model.PageVersion{}))
 
-func (s *stubActiveThemeRepo) List(context.Context) ([]*model.InstalledTheme, error) {
-	return nil, nil
-}
-func (s *stubActiveThemeRepo) FindByThemeID(context.Context, string) (*model.InstalledTheme, error) {
-	return nil, gorm.ErrRecordNotFound
-}
-func (s *stubActiveThemeRepo) FindActive(context.Context) (*model.InstalledTheme, error) {
-	if s.themeID == "" {
-		return nil, gorm.ErrRecordNotFound
-	}
-	return &model.InstalledTheme{ThemeID: s.themeID, IsActive: true}, nil
-}
-func (s *stubActiveThemeRepo) SetActive(context.Context, string) error { return nil }
-func (s *stubActiveThemeRepo) Create(context.Context, *model.InstalledTheme) error {
-	return nil
-}
-func (s *stubActiveThemeRepo) Update(context.Context, *model.InstalledTheme) error {
-	return nil
-}
-func (s *stubActiveThemeRepo) Delete(context.Context, uint) error { return nil }
+	pageRepo := repository.NewGormUnifiedPageRepository(db)
+	versionRepo := repository.NewGormPageVersionRepository(db)
+	handler := NewHandler(
+		pageRepo,
+		versionRepo,
+		service.NewUnifiedPageService(pageRepo, versionRepo),
+		nil,
+		nil,
+	)
+	gin.SetMode(gin.TestMode)
+	router := gin.New()
+	router.POST("/admin/pages", handler.AdminCreate)
 
-func TestValidateSlugAgainstActiveTheme_ProductFirst(t *testing.T) {
-	require.NotEmpty(t, service.BuiltInThemePages)
+	body, err := json.Marshal(map[string]any{
+		"slug":        "features",
+		"zhTitle":     "能力",
+		"enTitle":     "Features",
+		"mode":        model.PageModeTemplate,
+		"templateKey": "product-first/features",
+		"showInNav":   false,
+		"draftConfig": map[string]any{"title": map[string]string{"zh": "产品能力", "en": "Product capabilities"}},
+	})
+	require.NoError(t, err)
+	recorder := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodPost, "/admin/pages", bytes.NewReader(body))
+	request.Header.Set("Content-Type", "application/json")
+	router.ServeHTTP(recorder, request)
 
-	h := NewHandler(nil, nil, nil, nil, nil).WithInstalledThemes(&stubActiveThemeRepo{themeID: "product-first"})
-	defs := service.BuiltInThemePages["product-first"]
-	if len(defs) == 0 {
-		t.Skip("no product-first builtin pages in this build")
-	}
-	require.Error(t, h.validateSlugAgainstActiveTheme(t.Context(), defs[0].Slug))
-	require.NoError(t, h.validateSlugAgainstActiveTheme(t.Context(), "privacy-policy"))
+	require.Equal(t, http.StatusCreated, recorder.Code, recorder.Body.String())
+	var created model.UnifiedPage
+	require.NoError(t, json.Unmarshal(recorder.Body.Bytes(), &created))
+	require.Equal(t, "features", created.Slug)
+	require.Equal(t, model.PageModeTemplate, created.Mode)
+	require.Equal(t, "product-first/features", created.TemplateKey)
+	require.Equal(t, "draft", created.Status)
 }
 
 func TestAdminUpdatePersistsNavigationMetadataAndInvalidatesPublicCaches(t *testing.T) {

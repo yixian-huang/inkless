@@ -66,7 +66,6 @@ type Handler struct {
 	pageSvc            *service.UnifiedPageService
 	cache              *cache.Cache
 	eventBus           eventbus.EventBus
-	installedThemeRepo repository.InstalledThemeRepository // optional; theme slug conflicts
 }
 
 // NewHandler creates a new unified page handler.
@@ -78,12 +77,6 @@ func NewHandler(
 	eventBus eventbus.EventBus,
 ) *Handler {
 	return &Handler{pageRepo: pageRepo, versionRepo: versionRepo, pageSvc: pageSvc, cache: cache, eventBus: eventBus}
-}
-
-// WithInstalledThemes enables active-theme page slug conflict checks (ADR-0002 appendix D).
-func (h *Handler) WithInstalledThemes(repo repository.InstalledThemeRepository) *Handler {
-	h.installedThemeRepo = repo
-	return h
 }
 
 // getUserID extracts the authenticated user ID from the Gin context.
@@ -115,28 +108,6 @@ func validatePublicPageSlug(slug string) error {
 	}
 	if _, reserved := reservedPublicPageSlugs[slug]; reserved {
 		return errors.New("slug is reserved by the application")
-	}
-	return nil
-}
-
-// validateSlugAgainstActiveTheme rejects slugs declared by the active theme's pages seed
-// (theme routes outrank /p/* — ADR-0002 appendix D). No-op if theme repo unset.
-func (h *Handler) validateSlugAgainstActiveTheme(ctx context.Context, slug string) error {
-	if h == nil || h.installedThemeRepo == nil {
-		return nil
-	}
-	active, err := h.installedThemeRepo.FindActive(ctx)
-	if err != nil || active == nil || active.ThemeID == "" {
-		return nil
-	}
-	defs, ok := service.BuiltInThemePages[active.ThemeID]
-	if !ok {
-		return nil
-	}
-	for _, def := range defs {
-		if def.Slug == slug || def.ContentKey == slug {
-			return errors.New("slug conflicts with an active theme page (theme routes outrank /p/*)")
-		}
 	}
 	return nil
 }
@@ -358,10 +329,9 @@ func (h *Handler) AdminCreate(c *gin.Context) {
 		apierror.Message(c, http.StatusBadRequest, err.Error())
 		return
 	}
-	if err := h.validateSlugAgainstActiveTheme(c.Request.Context(), input.Slug); err != nil {
-		apierror.Message(c, http.StatusBadRequest, err.Error())
-		return
-	}
+	// Theme-declared slugs (features, home, …) are allowed: Page is the data
+	// record for that shell (ADR-0002 appendix D/F). Only reserved Host paths
+	// and duplicate slugs are rejected.
 	if existing, err := h.pageRepo.FindBySlug(c.Request.Context(), input.Slug); err == nil && existing != nil {
 		apierror.Message(c, http.StatusConflict, "slug already exists")
 		return
@@ -459,14 +429,6 @@ func (h *Handler) AdminUpdate(c *gin.Context) {
 	if err != nil {
 		apierror.Message(c, http.StatusNotFound, "page not found")
 		return
-	}
-	// Allow keeping an existing slug even if it later collides with a theme page;
-	// only block renames onto theme-declared paths.
-	if input.Slug != page.Slug {
-		if err := h.validateSlugAgainstActiveTheme(c.Request.Context(), input.Slug); err != nil {
-			apierror.Message(c, http.StatusBadRequest, err.Error())
-			return
-		}
 	}
 	if existing, findErr := h.pageRepo.FindBySlug(c.Request.Context(), input.Slug); findErr == nil && existing.ID != id {
 		apierror.Message(c, http.StatusConflict, "slug already exists")
